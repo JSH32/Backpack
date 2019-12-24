@@ -14,8 +14,10 @@ mongo.init().then(db => {
     })
 
     require('./api/authentication')({ 
-        db, 
-        app 
+        db, app 
+    })
+    require('./api/token')({
+        db, app
     })
 })
 

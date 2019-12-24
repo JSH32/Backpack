@@ -1,5 +1,5 @@
 const argon = require('argon2')
-const uuid = require('uuid/v4');
+const uuid = require('uuid/v4')
 
 module.exports = ({ db, app }) => {
     app.post('/signup', async (req, res) => {
@@ -29,7 +29,9 @@ module.exports = ({ db, app }) => {
         }  else {
             const password_hash = await argon.hash(password)
 
-            await Users.insertOne({ username, password_hash })
+            const token = await uuid()
+
+            await Users.insertOne({ username, password_hash, token })
 
             res.status(200).send('Success!')
         }

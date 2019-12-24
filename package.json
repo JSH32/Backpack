@@ -11,7 +11,10 @@
     "discord.js": "^11.5.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "express-fileupload": "^1.1.6",
+    "express-session": "^1.17.0",
     "mongodb": "^3.4.1",
+    "multer": "^1.4.2",
     "uuid": "^3.3.3"
   }
 }
