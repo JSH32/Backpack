@@ -9,14 +9,18 @@ app.use(express.json())
 app.use(cookieParser())
 
 mongo.init().then(db => {
-    app.get('/', (req, res) => {
-        res.send('hello world')
-    })
+    app.use('/', express.static('uploads'))
 
     require('./api/authentication')({ 
         db, app 
     })
-    require('./api/token')({
+    require('./api/token/get')({
+        db, app
+    })
+    require('./api/upload')({
+        db, app
+    })
+    require('./api/token/regen')({
         db, app
     })
 })
