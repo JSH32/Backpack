@@ -1,0 +1,5 @@
+User login with discord
+User has token for sharex and third party uploaders
+Whitelist for specific users
+Files hosted from upload directory
+User can keep track and delete the previous uploaded files
