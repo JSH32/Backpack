@@ -18,16 +18,22 @@ module.exports = ({ db, app }) => {
             } else {
                 // The name of the input field
                 let uploadFile = req.files.uploadFile;
-                // Random file name generation
-                var extension = path.extname(uploadFile.name);
-                const randomstring = cryptoRandomString({length: 6, type: 'url-safe'});
-                const file = (randomstring + extension)
+                // File name generation
+                const extension = path.extname(uploadFile.name);
+                var randomstring = cryptoRandomString({length: 7, type: 'url-safe'});
+                var file = (randomstring + extension)
+                // If value found in database then reroll filename
+                while (Boolean(await Uploads.findOne({ file }))) {
+                    var randomstring = cryptoRandomString({length: 7, type: 'url-safe'});
+                    var file = (randomstring + extension)
+                }
                 // Upload file to server
                 uploadFile.mv(process.env.UPLOAD_DIR + file)
-                // Send URL and put in mongo
+                // Send filedata to database
                 const { username } = await Users.findOne({ token })
                 await Uploads.insertOne({ file, username })
                 return res.send(process.env.URL + file)
+                
             }   
         } else {
             return res.status(400).send('Invalid Token!');

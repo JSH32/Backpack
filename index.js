@@ -23,6 +23,9 @@ mongo.init().then(db => {
     require('./api/token/regen')({
         db, app
     })
+    require('./api/user/listfiles')({
+        db, app
+    })
 })
 
 app.listen(8080)

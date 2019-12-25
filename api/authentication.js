@@ -45,7 +45,7 @@ module.exports = ({ db, app }) => {
         const Users = db.collection('users')
         // const Sessions = db.collection('sessions')
         const userExists = Boolean(await Users.findOne({ username }))
-   
+        
 
         if (userExists) {
             const { password_hash } = await Users.findOne({ username })
