@@ -26,6 +26,9 @@ mongo.init().then(db => {
     require('./api/user/listfiles')({
         db, app
     })
+    require('./api/delete')({
+        db, app
+    })
 })
 
 app.listen(8080)
