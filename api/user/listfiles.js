@@ -9,14 +9,13 @@ module.exports = ({ db, app }) => {
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')
 
-        const { password_hash, token } = await Users.findOne({ username })
+        const { password_hash } = await Users.findOne({ username })
 
         if (password_hash && await argon.verify(password_hash, password)) {
-            Uploads.find({username}, {projection:{_id: 0, username: 0}})
-            .toArray(function(err, result) {
-                if (err) throw err;
-                res.status(200).json(result)
-            });
+            const results = (
+                await Uploads.find({ username }).toArray()
+            ).map( ({ file }) => file )
+            res.status(200).json(results)
 
         } else {
             res.status(400).send('The username/password you entered is incorrect!')
