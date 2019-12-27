@@ -18,8 +18,8 @@ module.exports = ({ db, app }) => {
                     const { username } = await Uploads.findOne({ file })
                     if (username === req.body.username) {
                         Uploads.deleteOne({ file : req.body.file }, function(err, result) {
-                            assert.equal(err, null);
-                            assert.equal(1, result.result.n);
+                            assert.equal(err, null)
+                            assert.equal(1, result.result.n)
                         });
                         fs.unlinkSync(process.env.UPLOAD_DIR + file)
                         res.status(200).send(file + ' has been deleted!')

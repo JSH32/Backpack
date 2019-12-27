@@ -1,0 +1,13 @@
+{
+  "Name": "Riku",
+  "DestinationType": "ImageUploader, TextUploader, FileUploader",
+  "RequestMethod": "POST",
+  "RequestURL": "http://localhost:8080/upload",
+  "Headers": {
+    "token": "3ebde9e9-c414-4fcf-9bd3-6e1fe2b759ad"
+  },
+  "Body": "MultipartFormData",
+  "FileFormName": "uploadFile",
+  "URL": "$response$",
+  "ThumbnailURL": "$response$"
+}

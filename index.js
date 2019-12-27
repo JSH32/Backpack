@@ -4,9 +4,12 @@ const express = require('express')
 const mongo = require('./api/mongo')
 const app = express()
 const cookieParser = require('cookie-parser')
+const bodyParser = require('body-parser');
+
 
 app.use(express.json())
 app.use(cookieParser())
+app.use(bodyParser.json());
 
 mongo.init().then(db => {
     app.use('/', express.static('uploads'))
