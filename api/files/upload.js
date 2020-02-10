@@ -7,7 +7,7 @@ const app = express();
 module.exports = ({ db, app }) => {
     app.use(fileUpload());
     
-    app.post('/upload/sharex', async (req, res) => {
+    app.post('/files/upload', async (req, res) => {
         const { token } = req.headers
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')

@@ -1,8 +1,11 @@
 {
-  "name": "riku",
+  "name": "Baka.js",
   "version": "1.0.0",
+  "description": "A simple screenshot API 💾",
   "main": "index.js",
-  "license": "MIT",
+  "repository": "https://github.com/Riku32/Baka.js",
+  "author": "Riku32",
+  "license": "ISC",
   "dependencies": {
     "argon2": "^0.25.1",
     "assert": "^2.0.0",
@@ -11,7 +14,6 @@
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
     "crypto-random-string": "^3.0.1",
-    "discord.js": "^11.5.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.6",

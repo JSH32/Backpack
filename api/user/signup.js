@@ -2,16 +2,19 @@ const argon = require('argon2')
 const uuid = require('uuid/v4')
 
 module.exports = ({ db, app }) => {
-    app.post('/signup', async (req, res) => {
-        const { username, password } = req.body
+    app.post('/user/signup', async (req, res) => {
+        const { username, password, regkey } = req.body
 
         const Users = db.collection('users')
+        const Uploads = db.collection('uploads')
         // const Sessions = db.collection('sessions')
 
         if (!username) {
             return res.status(400).send('Username is not defined')
         } else if (!password) {
             return res.status(400).send('Password is not defined')
+        } else if (!regkey) {
+            return res.status(400).send('Regkey is not defined')
         }
 
         const userExists = Boolean(await Users.findOne({ username }))
@@ -26,7 +29,7 @@ module.exports = ({ db, app }) => {
             res.status(400).send('Password too short (minimum 6 characters)')
         } else if (password.length > 256) {
             res.status(400).send('Password too long (maximum 256 characters)')
-        }  else {
+        } else if (regkey == process.env.regkey) {
             const password_hash = await argon.hash(password)
 
             const token = await uuid()
@@ -34,28 +37,8 @@ module.exports = ({ db, app }) => {
             await Users.insertOne({ username, password_hash, token })
 
             res.status(200).send('Success!')
-        }
-    })
-
-    app.post('/login', async (req, res) => {
-        
-        // Get data from request
-        const { username, password } = req.body 
- 
-        const Users = db.collection('users')
-        // const Sessions = db.collection('sessions')
-        const userExists = Boolean(await Users.findOne({ username }))
-        
-
-        if (userExists) {
-            const { password_hash } = await Users.findOne({ username })
-            if (await argon.verify(password_hash, password)) {
-                res.status(200).send('You have accessed the matrix!')
-            } else {
-                res.status(400).send('The username/password you entered is incorrect!')
-            }
         } else {
-            res.status(400).send('The username/password you entered is incorrect!')
+            res.status(400).send('Invalid regkey')
         }
     })
 }  

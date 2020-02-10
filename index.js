@@ -3,33 +3,41 @@ require('dotenv').config()
 const express = require('express')
 const mongo = require('./api/mongo')
 const app = express()
-const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser');
 
 
 app.use(express.json())
-app.use(cookieParser())
 app.use(bodyParser.json());
 
 mongo.init().then(db => {
-    app.use('/', express.static('uploads'))
+    app.use('/', express.static(process.env.UPLOAD_DIR))
+    app.use('/', express.static('./public'))
 
-    require('./api/authentication')({ 
+    require('./api/user/signup')({ 
+        db, app 
+    })
+    require('./api/user/passreset')({ 
+        db, app 
+    })
+    require('./api/user/delete')({ 
         db, app 
     })
     require('./api/token/get')({
         db, app
     })
-    require('./api/upload')({
+    require('./api/files/upload')({
+        db, app
+    })
+    require('./api/files/filecount')({
         db, app
     })
     require('./api/token/regen')({
         db, app
     })
-    require('./api/user/listfiles')({
+    require('./api/files/listfiles')({
         db, app
     })
-    require('./api/delete')({
+    require('./api/files/delete')({
         db, app
     })
 })
