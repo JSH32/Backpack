@@ -1,3 +1,4 @@
+
 # Baka.js
 ![Baka.js](https://riku.club/yKB2E.png)
 Baka.js is an open source screenshot/filehost api.
@@ -18,6 +19,7 @@ Change the mongo URL accordingly and make sure the same dbname is used in the tw
 ## Users
 
 **Creating users**
+
 First step is to generate the user, open postman and make sure you are in the *Body* tab, then send a request to the `/user/signup` endpoint similar to this.
 ```JS
 {
@@ -30,7 +32,9 @@ The regkey value is a static value in .env that is required to make a user, this
 
 If you did everything properly you should recieve a message that says `Success!`
 
+
 **Deleting users**
+
 To delete the user you need to send a request to `/user/delete` that looks something like this
 ```JS
 {
@@ -41,6 +45,7 @@ To delete the user you need to send a request to `/user/delete` that looks somet
 This will delete every file that belongs to you from the database and the server itself.
 
 **Changing password**
+
 To change the password send a request to `/user/passreset` that looks something like this
 
 ```JS
@@ -53,6 +58,7 @@ To change the password send a request to `/user/passreset` that looks something 
 ## Tokens
 
 **Getting tokens**
+
 In order to upload you must have a user token, these are automatically generated and can be regenerated if you wish. Post to `/token/get` with a request like this
 ```JS
 {
@@ -63,6 +69,7 @@ In order to upload you must have a user token, these are automatically generated
 This should get you a token that looks like this `7bc9cc67-bf55-4afe-a449-3a92a431df65`
 
 **Regenerating tokens**
+
 Lets say someone has your user token and you dont want them to have access to it, posting to `/token/regen` with a request like this
 ```JS
 {
@@ -74,6 +81,7 @@ This will regenerate your token, you will need to get your token from the API af
 my token after regenerating was `58cb61e2-b2b6-4487-841d-5e3205514c31`
 ## File
 **Uploads**
+
 Uploading is done through the `/files/upload` endpoint. In this scenario I will be using sharex, however anything that can upload through multipart will work. The sharex configuration file looks somewhat like this
 ```JS
 {
@@ -93,6 +101,7 @@ Uploading is done through the `/files/upload` endpoint. In this scenario I will 
 Change the `RequestURL` to where your instance is hosted and make sure that the `token` is valid and filled in with your token you generated earlier. Now sharex should function normally.
 
 **Listing**
+
 Listing owned files is done through the `/files/list` You must send a request similar to this 
 ```JS
 {
@@ -109,6 +118,7 @@ This will return an array with all your uploaded files, it will look like this
 ```
 
 **Deleting**
+
 Deleting is done through the `/files/delete` endpoint. You must send a request similar to this 
 ```JS
 {
