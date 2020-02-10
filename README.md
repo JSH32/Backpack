@@ -17,7 +17,6 @@ URL=http://localhost:8080/
 Change the mongo URL accordingly and make sure the same dbname is used in the two different sections. The URL value is where you will be accessing this publicly, by default this is localhost. REGKEY is a special key you will use for registering users. UPLOAD_DIR is the upload directory for files
 
 ## Users
-
 **Creating users**
 
 First step is to generate the user, open postman and make sure you are in the *Body* tab, then send a request to the `/user/signup` endpoint similar to this.
@@ -44,6 +43,7 @@ To delete the user you need to send a request to `/user/delete` that looks somet
 ```
 This will delete every file that belongs to you from the database and the server itself.
 
+
 **Changing password**
 
 To change the password send a request to `/user/passreset` that looks something like this
@@ -56,7 +56,6 @@ To change the password send a request to `/user/passreset` that looks something 
 }
 ```
 ## Tokens
-
 **Getting tokens**
 
 In order to upload you must have a user token, these are automatically generated and can be regenerated if you wish. Post to `/token/get` with a request like this
@@ -67,6 +66,7 @@ In order to upload you must have a user token, these are automatically generated
 }
 ```
 This should get you a token that looks like this `7bc9cc67-bf55-4afe-a449-3a92a431df65`
+
 
 **Regenerating tokens**
 
@@ -79,6 +79,7 @@ Lets say someone has your user token and you dont want them to have access to it
 ```
 This will regenerate your token, you will need to get your token from the API after this aswell,
 my token after regenerating was `58cb61e2-b2b6-4487-841d-5e3205514c31`
+
 ## File
 **Uploads**
 
@@ -100,6 +101,7 @@ Uploading is done through the `/files/upload` endpoint. In this scenario I will 
 ```
 Change the `RequestURL` to where your instance is hosted and make sure that the `token` is valid and filled in with your token you generated earlier. Now sharex should function normally.
 
+
 **Listing**
 
 Listing owned files is done through the `/files/list` You must send a request similar to this 
@@ -117,6 +119,7 @@ This will return an array with all your uploaded files, it will look like this
 ]
 ```
 
+
 **Deleting**
 
 Deleting is done through the `/files/delete` endpoint. You must send a request similar to this 
@@ -130,3 +133,4 @@ Deleting is done through the `/files/delete` endpoint. You must send a request s
 This will delete the file from the database and the upload directory
 
 > NOTE: The database and the upload directory are not the same, the database tracks what user owns which files, deleting a file from the upload directory will not delete it from the database and vice versa.
+
