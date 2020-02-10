@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": "https://github.com/Riku32/Baka.js",
   "author": "Riku32",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "argon2": "^0.25.1",
     "assert": "^2.0.0",
