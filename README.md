@@ -1,6 +1,8 @@
-
 # Baka.js
 ![Baka.js](https://riku.club/yKB2E.png)
+
+## THESE DOCS ARE NOT UPDATED, ALOT OF STUFF HAS CHANGED!
+
 Baka.js is an open source screenshot/filehost api.
 
 Make sure you have mongodb and postman installed(or any software that does post requests). This is specifically made for a program called [sharex](https://getsharex.com/), but it can be used with any program that uploads using multipart data.
