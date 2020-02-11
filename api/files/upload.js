@@ -8,14 +8,16 @@ module.exports = ({ db, app }) => {
     app.use(fileUpload());
     
     app.post('/files/upload', async (req, res) => {
+        
         const { token } = req.headers
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')
         const tokenExists = Boolean(await Users.findOne({ token }))
         if(tokenExists) {
-            if (!req.files.uploadFile || Object.keys(req.files).length === 0) {
+            if (req.files == null || Object.keys(req.files).length === 0) {
                 return res.status(400).send('No files were uploaded!');
             } else {
+                
                 // The name of the input field
                 let uploadFile = req.files.uploadFile;
                 // File name generation
@@ -33,7 +35,6 @@ module.exports = ({ db, app }) => {
                 const { username } = await Users.findOne({ token })
                 await Uploads.insertOne({ file, username })
                 return res.send(process.env.URL + file)
-                
             }   
         } else {
             return res.status(400).send('Invalid Token!');

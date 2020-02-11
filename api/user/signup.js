@@ -29,7 +29,7 @@ module.exports = ({ db, app }) => {
             res.status(400).send('Password too short (minimum 6 characters)')
         } else if (password.length > 256) {
             res.status(400).send('Password too long (maximum 256 characters)')
-        } else if (regkey == process.env.regkey) {
+        } else if (regkey == process.env.REGKEY) {
             const password_hash = await argon.hash(password)
 
             const token = await uuid()

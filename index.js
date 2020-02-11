@@ -25,6 +25,9 @@ mongo.init().then(db => {
     require('./api/token/get')({
         db, app
     })
+    require('./api/token/valid')({
+        db, app
+    })
     require('./api/files/upload')({
         db, app
     })
