@@ -16,6 +16,28 @@ if (localStorage.getItem("token") !== null) {
 } 
 
 
+function openTab(evt, tabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+  
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+  
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+  
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+
 axios({
     method: 'post',
     url: '/files/list',
@@ -49,8 +71,6 @@ function checkifzero () {
     }
 }
 
-
-
 $( document ).ready(function() {
     axios({
         method: 'post',
@@ -62,28 +82,8 @@ $( document ).ready(function() {
     }).then(function (response) {
         var usrname = response.data.username
     
-        $("#subtitle").append(`
+        $("#file-subtitle").append(`
             <p>Uploads for user <b>${usrname}</b></p>
         `)
     })
 });
-
-
-
-$(document).on('click','.dl', function(){
-    var id = $(this).attr('id');
-    var file = $(this).attr('filename');
-    // make delete request with id
-
-    axios({
-        method: 'post',
-        url: '/files/delete',
-        data: {
-            'token': localStorage.getItem("token"),
-            'file': file
-        }
-    }).then(function () {
-        document.getElementById(id).remove();
-        checkifzero()
-    })
-})
