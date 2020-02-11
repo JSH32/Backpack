@@ -16,6 +16,9 @@ mongo.init().then(db => {
     require('./api/user/signup')({ 
         db, app 
     })
+    require('./api/user/info')({ 
+        db, app 
+    })
     require('./api/user/passreset')({ 
         db, app 
     })
