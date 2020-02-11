@@ -87,3 +87,21 @@ $( document ).ready(function() {
         `)
     })
 });
+
+$(document).on('click','.dl', function(){
+    var id = $(this).attr('id');
+    var file = $(this).attr('filename');
+    // make delete request with id
+
+    axios({
+        method: 'post',
+        url: '/files/delete',
+        data: {
+            'token': localStorage.getItem("token"),
+            'file': file
+        }
+    }).then(function () {
+        document.getElementById(id).remove();
+        checkifzero()
+    })
+})
