@@ -19,9 +19,10 @@ function uploadfile() {
     var formData = new FormData();
     var uploadFile = document.querySelector('#uploadFile');
     formData.append("uploadFile", uploadFile.files[0]);
-    if (uploadFile.files[0] == undefined) {
-        alert('no')
-    } else {
+    // if (uploadFile.files[0] == undefined) {
+        
+    // } else
+    {
         
         var loadingbars = document.getElementById("file-list");
 
@@ -37,7 +38,7 @@ function uploadfile() {
                 'Content-Type': 'multipart/form-data'
             }
         }).then(function (response) {
-            var filereturn = response.data // Link response data
+            var filereturn = response.data.url // Link response data
             var filelist = document.getElementById("file-list"); // Div where links will go
 
             // Generated element
@@ -48,6 +49,25 @@ function uploadfile() {
             filelist.appendChild(linkgen);
             
             document.getElementById("loading_bar").remove();
+        }).catch(function (error) {
+            if (error.response.status == 413) {
+
+                document.getElementById("loading_bar").remove(); // Remove existing loading bar
+
+                var errorup = document.createElement("center"); 
+                errorup.innerHTML = `<p>You have exceeded the file limit!</p>` 
+        
+                document.getElementById("file-list").appendChild(errorup);
+
+            } else if (error.response.status == 400) {
+                document.getElementById("loading_bar").remove(); // Remove existing loading bar
+
+                var errorup = document.createElement("center"); 
+                errorup.innerHTML = `<p>No files have been uploaded!</p>` 
+        
+                document.getElementById("file-list").appendChild(errorup);
+            }
+
         })
     }
 }

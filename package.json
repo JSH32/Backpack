@@ -1,7 +1,7 @@
 {
   "name": "Baka.js",
   "version": "1.0.0",
-  "description": "A simple screenshot API 💾",
+  "description": "A simple filehost 💾",
   "main": "index.js",
   "repository": "https://github.com/Riku32/Baka.js",
   "author": "Riku32",

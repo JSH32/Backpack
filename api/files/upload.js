@@ -5,7 +5,10 @@ const path = require('path');
 const app = express();
 
 module.exports = ({ db, app }) => {
-    app.use(fileUpload());
+    app.use(fileUpload({
+        limits: { fileSize: 50 * 1024 * 1024 },
+        abortOnLimit: true
+    }))
     
     app.post('/files/upload', async (req, res) => {
         
@@ -37,7 +40,9 @@ module.exports = ({ db, app }) => {
                 // Send filedata to database
                 const { username } = await Users.findOne({ token })
                 await Uploads.insertOne({ file, username })
-                return res.send(process.env.URL + file)
+                return res.json({
+                    'url': process.env.URL + file
+                })
             }   
         } else {
             return res.status(400).send('Invalid Token!');
