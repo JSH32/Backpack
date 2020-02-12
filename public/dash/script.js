@@ -15,6 +15,12 @@ if (localStorage.getItem("token") !== null) {
     window.location.replace("/login");
 } 
 
+// Logout
+function logout() {
+    localStorage.removeItem("token")
+    window.location.replace("/login");
+}
+
 // Tabs
 function openTab(evt, tabName) {
     // Declare all variables
@@ -82,7 +88,7 @@ $( document ).ready(function() {
         }
     
     }).then(function (response) {
-        var usrname = response.data.username
+        window.usrname = response.data.username
         var totalfiles = response.data.filecount
     
         $("#file-subtitle").append(`
@@ -154,7 +160,6 @@ $( document ).ready(function(){
 })
 
 function reset() {
-    username = document.getElementById("userfield").value
     password = document.getElementById("passfield").value
     newpassword = document.getElementById("newpassfield").value
 
@@ -162,7 +167,7 @@ function reset() {
         method: 'post',
         url: '/user/passreset',
         data: {
-            'username': username,
+            'username': window.usrname,
             'password': password,
             'newpassword': newpassword
         }

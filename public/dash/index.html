@@ -13,8 +13,8 @@
     <script src="https://code.jquery.com/jquery-3.4.1.slim.js"
         integrity="sha256-BTlTdQO9/fascB1drekrDVkaKd9PkwBymMlHOiG+qLI=" crossorigin="anonymous"></script>
     <script src="script.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    </link>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
+    <script src="/assets/components/footer.js"></script>
 </head>
 
 <body>
@@ -29,18 +29,15 @@
 
                 <div>
                     <!-- Tab links -->
-
                     <div style="display: flex; justify-content: center;" class="buttons has-addons">
                         <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
                         <button class="button is-link is-outlined" onclick="openTab(event, 'token')">Token</button>
-                        <button class="button is-link is-outlined"
-                            onclick="openTab(event, 'settings')">Settings</button>
+                        <button class="button is-link is-outlined" onclick="openTab(event, 'settings')">Settings</button>
+                        <button class="button is-link is-outlined" onclick="logout()">Logout</button>
                     </div>
 
 
                     <!-- Tab content -->
-
-
                     <div id="uploads" class="tabcontent">
                         <h2 class="subtitle" id="file-subtitle"></h2 id="file-subtitle">
                         <div style="margin-top: -25px; margin-bottom: 15px; color: #616161" id="filecount"></div>
@@ -64,18 +61,6 @@
                             <div id="errormessage"></div>
 
                             <div class="field">
-                                <label style="color: #4f4f4f;" class="label">Username</label>
-                                <div class="control">
-                                    <center>
-                                        <input class="input" id="userfield"
-                                            style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
-                                            type="text">
-                                    </center>
-
-                                </div>
-                            </div>
-
-                            <div class="field">
                                 <label style="color: #4f4f4f;" class="label">Password</label>
                                 <div class="control">
                                     <center>
@@ -97,21 +82,15 @@
                                 </div>
                             </div>
 
-                            <button onclick="reset()" class="button is-link is-outlined">Reset Password</button>
+                            <button style="margin-bottom: 10px;" onclick="reset()" class="button is-link is-outlined">Reset Password</button>
 
                         </div>
                     </div>
 
                 </div>
 
-
-                <!-- JS Generated content -->
-                <div style="margin-bottom: 10px;" id="file-list"></div>
-                <div style="display: flex; justify-content: center;" id="loadingbars"></div>
-
-                <a href="https://github.com/Riku32/Baka.js"><i class='fab fa-github'></i></a>
-                &nbsp
-                <a href="https://github.com/Riku32/Baka.js/blob/master/README.md"><i class="fas fa-info-circle"></i></a>
+                
+                <footer-area></footer-area>
             </div>
         </div>
         </div>

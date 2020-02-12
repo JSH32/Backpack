@@ -1,10 +1,9 @@
 /* Style the tab content */
-  .tabcontent {
-    display: none;
+.tabcontent {
     padding: 6px 12px;
     border: 2px solid #ccc;
     border-radius: 5px;
     max-width: 400px;
     margin:auto auto;
     margin-bottom: 10px;
-  }
+}

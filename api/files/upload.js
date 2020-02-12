@@ -22,11 +22,14 @@ module.exports = ({ db, app }) => {
                 let uploadFile = req.files.uploadFile;
                 // File name generation
                 const extension = path.extname(uploadFile.name);
-                var randomstring = cryptoRandomString({length: 7, type: 'url-safe'});
+                var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
+                while (randomstring.includes (".")) {
+                    var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
+                }
                 var file = (randomstring + extension)
                 // If value found in database then reroll filename
                 while (Boolean(await Uploads.findOne({ file }))) {
-                    var randomstring = cryptoRandomString({length: 7, type: 'url-safe'});
+                    var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
                     var file = (randomstring + extension)
                 }
                 // Upload file to server
