@@ -15,7 +15,7 @@ if (localStorage.getItem("token") !== null) {
     window.location.replace("/login");
 } 
 
-
+// Tabs
 function openTab(evt, tabName) {
     // Declare all variables
     var i, tabcontent, tablinks;
@@ -37,7 +37,7 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
-
+// Create element for each filelist
 axios({
     method: 'post',
     url: '/files/list',
@@ -68,9 +68,11 @@ function checkifzero () {
         <p>You have not uploaded any files :(</p>
         </div>
         `)
+    document.getElementById("filecount").remove();
     }
 }
 
+// Setting username upload
 $( document ).ready(function() {
     axios({
         method: 'post',
@@ -81,13 +83,38 @@ $( document ).ready(function() {
     
     }).then(function (response) {
         var usrname = response.data.username
+        var totalfiles = response.data.filecount
     
         $("#file-subtitle").append(`
             <p>Uploads for user <b>${usrname}</b></p>
         `)
+
+        if ($('#filecount').length > 0) {
+            document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
+        }
     })
 });
 
+// Checks filecount and resets value for each delete
+function getFilecount () {
+    axios({
+        method: 'post',
+        url: '/user/info',
+        data: {
+            'token': localStorage.getItem("token")
+        }
+    
+    }).then(function (response) {
+        var totalfiles = response.data.filecount
+
+        if ($('#filecount').length > 0) {
+            document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
+        }
+    })
+};
+
+
+// Delete files
 $(document).on('click','.dl', function(){
     var id = $(this).attr('id');
     var file = $(this).attr('filename');
@@ -103,5 +130,70 @@ $(document).on('click','.dl', function(){
     }).then(function () {
         document.getElementById(id).remove();
         checkifzero()
+        getFilecount()
     })
 })
+
+// Reset token button
+function resetToken() {
+    axios({
+        method: 'post',
+        url: '/token/regen',
+        data: {
+            'token': localStorage.getItem("token")
+        }
+    }).then(function () {
+        localStorage.removeItem("token")
+        window.location.replace("/login");
+    })
+}
+
+// Set token value
+$( document ).ready(function(){
+    document.getElementById("tokenval").innerHTML = `${localStorage.getItem("token")}`
+})
+
+function reset() {
+    username = document.getElementById("userfield").value
+    password = document.getElementById("passfield").value
+    newpassword = document.getElementById("newpassfield").value
+
+    axios({
+        method: 'post',
+        url: '/user/passreset',
+        data: {
+            'username': username,
+            'password': password,
+            'newpassword': newpassword
+        }
+      }).then(function() {
+        
+        if ($('#errortext').length > 0) {
+            document.getElementById("errortext").remove();
+        }
+        var errortext = document.createElement("p"); 
+        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-link">Password has been reset!</p></div>`
+        errortext.id = `errortext`
+        errormessage.appendChild(errortext);
+
+        // Sending breakline under text
+        var breakline = document.createElement("br")
+        errortext.appendChild(breakline);
+        
+      }).catch(function (error) {
+        if ($('#errortext').length > 0) {
+            document.getElementById("errortext").remove();
+        }
+        // Sending error text
+        var errortext = document.createElement("p"); 
+        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
+        errortext.id = `errortext`
+        errormessage.appendChild(errortext);
+    
+        // Sending breakline under text
+        var breakline = document.createElement("br")
+        errortext.appendChild(breakline);
+        
+    })
+}
+

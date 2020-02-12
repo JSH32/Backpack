@@ -29,46 +29,80 @@
 
                 <div>
                     <!-- Tab links -->
-            
-                        <div style="display: flex; justify-content: center;" class="buttons has-addons">
-                            <button class="button is-link is-outlined" onclick="openTab(event, 'data')">Data</button>
-                            <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
-                            <button class="button is-link is-outlined" onclick="openTab(event, 'token')">Token</button>
-                            <button class="button is-link is-outlined" onclick="openTab(event, 'settings')">Settings</button>
-                        </div>
-                        
+
+                    <div style="display: flex; justify-content: center;" class="buttons has-addons">
+                        <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
+                        <button class="button is-link is-outlined" onclick="openTab(event, 'token')">Token</button>
+                        <button class="button is-link is-outlined"
+                            onclick="openTab(event, 'settings')">Settings</button>
+                    </div>
+
 
                     <!-- Tab content -->
-                    
-                        <div id="data" class="tabcontent">
-                            <h3>Data</h3>
-                            <p>User data goes here.</p>
-                        </div>
-                    
 
-                    
-                
-                        <div id="uploads" class="tabcontent">
-                            <h2 class="subtitle" id="file-subtitle"></h2 id="file-subtitle">
-                            <div style="margin-top: -20px;" id="efs"></div>
-                        </div>
-                    
 
-                
-                        <div id="token" class="tabcontent">
-                            <h3>token</h3>
-                            <p>user token goes here</p>
-                        </div>
-                    
+                    <div id="uploads" class="tabcontent">
+                        <h2 class="subtitle" id="file-subtitle"></h2 id="file-subtitle">
+                        <div style="margin-top: -25px; margin-bottom: 15px; color: #616161" id="filecount"></div>
+                        <div style="margin-top: -20px;" id="efs"></div>
+                    </div>
 
-                     
-                        <div id="settings" class="tabcontent">
-                            <h3>settings</h3>
-                            <p>user settings go here</p>
+
+                    <div id="token" class="tabcontent">
+                        <h2 class="subtitle"><b>Token</b></h2>
+                        <p style="margin-top: -25px;" id="tokenval"></p>
+                        <button class="button is-small is-link is-outlined" onclick="resetToken()">Reset</button>
+                    </div>
+
+
+                    <div id="settings" class="tabcontent">
+                        <h2 class="subtitle"><b>Settings</b></h2>
+
+                        <div style="margin-top: -20px;" id="passchange">
+                            <p><b>Change Password</b></p>
+
+                            <div id="errormessage"></div>
+
+                            <div class="field">
+                                <label style="color: #4f4f4f;" class="label">Username</label>
+                                <div class="control">
+                                    <center>
+                                        <input class="input" id="userfield"
+                                            style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                            type="text">
+                                    </center>
+
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label style="color: #4f4f4f;" class="label">Password</label>
+                                <div class="control">
+                                    <center>
+                                        <input class="input" type="password" id="passfield"
+                                            style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                            type="text">
+                                    </center>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label style="color: #4f4f4f;" class="label">New Password</label>
+                                <div class="control">
+                                    <center>
+                                        <input class="input" type="password" id="newpassfield"
+                                            style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                            type="text">
+                                    </center>
+                                </div>
+                            </div>
+
+                            <button onclick="reset()" class="button is-link is-outlined">Reset Password</button>
+
                         </div>
-                    
+                    </div>
+
                 </div>
-
 
 
                 <!-- JS Generated content -->
