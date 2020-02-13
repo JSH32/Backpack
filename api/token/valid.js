@@ -2,7 +2,7 @@ const argon = require('argon2')
 const uuid = require('uuid/v4')
 
 module.exports = ({ db, app }) => {
-    app.post('/token/valid', async (req, res) =>{
+    app.post('/api/token/valid', async (req, res) =>{
         const { token } = req.body
 
         const Users = db.collection('users')

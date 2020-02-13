@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 
 module.exports = ({ db, app }) => {
-    app.post('/user/info', async (req, res) => {
+    app.post('/api/user/info', async (req, res) => {
         const { token } = req.body
         
         const Uploads = db.collection('uploads')

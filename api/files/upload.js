@@ -12,7 +12,7 @@ module.exports = ({ db, app }) => {
         createParentPath: true
     }))
     
-    app.post('/files/upload', async (req, res) => {
+    app.post('/api/files/upload', async (req, res) => {
         
         const { token } = req.headers
         const Users = db.collection('users')

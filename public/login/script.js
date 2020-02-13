@@ -2,7 +2,7 @@
 if (localStorage.getItem("token") !== null) {
     axios({
         method: 'post',
-        url: '/token/valid',
+        url: '/api/token/valid',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -19,7 +19,7 @@ function login() {
     password = document.getElementById("passfield").value
     axios({
         method: 'post',
-        url: '/token/get',
+        url: '/api/token/get',
         data: {
             'username': username,
             'password': password

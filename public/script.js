@@ -1,5 +1,5 @@
 var xhr = new XMLHttpRequest();
-xhr.open('GET', "/files/total", true);
+xhr.open('GET', "/api/files/total", true);
 xhr.send();
 
 xhr.addEventListener("readystatechange", processRequest, false);

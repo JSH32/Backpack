@@ -4,7 +4,7 @@ const app = express();
 const assert = require('assert')
 
 module.exports = ({ db, app }) => {
-    app.post('/files/list', async (req, res) => {
+    app.post('/api/files/list', async (req, res) => {
         const { token } = req.body
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')

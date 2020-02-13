@@ -2,7 +2,7 @@
 if (localStorage.getItem("token") !== null) {
     axios({
         method: 'post',
-        url: '/token/valid',
+        url: '/api/token/valid',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -46,7 +46,7 @@ function openTab(evt, tabName) {
 // Create element for each filelist
 axios({
     method: 'post',
-    url: '/files/list',
+    url: '/api/files/list',
     data: {
         'token': localStorage.getItem("token")
     }
@@ -81,7 +81,7 @@ function checkifzero () {
 $( document ).ready(function() {
     axios({
         method: 'post',
-        url: '/user/info',
+        url: '/api/user/info',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -104,7 +104,7 @@ $( document ).ready(function() {
 function getFilecount () {
     axios({
         method: 'post',
-        url: '/user/info',
+        url: '/api/user/info',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -138,7 +138,7 @@ $(document).on('click','#purgebutton', function(){
             password = document.getElementById("passwordpurge").value
             axios({
                 method: 'post',
-                url: '/user/delete',
+                url: '/api/user/delete',
                 data: {
                     'username': username,
                     'password': password
@@ -208,7 +208,7 @@ function login() {
     password = document.getElementById("passwordpurge").value
     axios({
         method: 'post',
-        url: '/user/delete',
+        url: '/api/user/delete',
         data: {
             'username': username,
             'password': password
@@ -240,7 +240,7 @@ $(document).on('click','.dl', function(){
 
     axios({
         method: 'post',
-        url: '/files/delete',
+        url: '/api/files/delete',
         data: {
             'token': localStorage.getItem("token"),
             'file': file
@@ -256,7 +256,7 @@ $(document).on('click','.dl', function(){
 function resetToken() {
     axios({
         method: 'post',
-        url: '/token/regen',
+        url: '/api/token/regen',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -277,7 +277,7 @@ function reset() {
 
     axios({
         method: 'post',
-        url: '/user/passreset',
+        url: '/api/user/passreset',
         data: {
             'username': window.usrname,
             'password': password,

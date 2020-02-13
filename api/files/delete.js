@@ -5,7 +5,7 @@ const assert = require('assert')
 const fs = require('fs')
 
 module.exports = ({ db, app }) => {
-    app.post('/files/delete', async (req, res) => {
+    app.post('/api/files/delete', async (req, res) => {
         const { file, token } = req.body
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')

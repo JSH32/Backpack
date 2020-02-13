@@ -2,7 +2,7 @@
 if (localStorage.getItem("token") !== null) {
     axios({
         method: 'post',
-        url: '/token/valid',
+        url: '/api/token/valid',
         data: {
             'token': localStorage.getItem("token")
         }
@@ -28,7 +28,7 @@ function uploadfile() {
 
     loadingbars.appendChild(loading);
 
-    axios.post('/files/upload', formData, {
+    axios.post('/api/files/upload', formData, {
         headers: {
             'token': localStorage.getItem("token"),
             'Content-Type': 'multipart/form-data'
