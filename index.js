@@ -34,8 +34,8 @@ mongo.init().then(db => {
     require('./api/files/upload')({
         db, app
     })
-    require('./api/files/filecount')({
-        db, app
+    require('./api/admin/regkeygen')({ 
+        db, app 
     })
     require('./api/token/regen')({
         db, app
@@ -44,6 +44,9 @@ mongo.init().then(db => {
         db, app
     })
     require('./api/files/delete')({
+        db, app
+    })
+    require('./api/info')({
         db, app
     })
 })

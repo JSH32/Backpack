@@ -12,9 +12,17 @@ module.exports = ({ db, app }) => {
 
         if (Boolean(await Users.findOne({ token }))) {
             if (dbtoken.token = token) {
+
+                var newtoken = await uuid()
+
+                // Regen token if exists
+                while (Boolean(await Users.findOne({ newtoken }))) {
+                    var newtoken = await uuid()
+                }
+
                 await Users.updateOne({ token }, { 
                     $set: { 
-                        token: uuid() 
+                        token: newtoken 
                     } 
                 })
                 

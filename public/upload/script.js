@@ -51,8 +51,8 @@ function uploadfile() {
             
         document.getElementById("loading_bar").remove();
     }).catch(function (error) {
-        // I really hate this but for some reason express-fileupload isnt sending 413 so :/
-        if (error.response == null) {
+        // On windows it doesnt send 413 for some reason, so im also catching null responses
+        if (error.response == null || error.response.status == 413) {
             document.getElementById("loading_bar").remove(); // Remove existing loading bar
             if ($('#errorup').length > 0) {
                 document.getElementById("errorup").remove();

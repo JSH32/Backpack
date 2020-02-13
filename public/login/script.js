@@ -29,16 +29,14 @@ function login() {
         localStorage.setItem('token', token); // Set user token in localstorage
         window.location.replace("/upload");
     }).catch(function (error) {
-        if (!document.getElementById("errortext")) {
+        if ($('#errortext').length > 0) {
+            document.getElementById("errortext").remove();
+        }
         // Sending error text
         var errortext = document.createElement("p"); 
-        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
+        errortext.innerHTML = `<div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
         errortext.id = `errortext`
         errormessage.appendChild(errortext);
-    
-        // Sending breakline under text
-        var breakline = document.createElement("br")
-        errormessage.appendChild(breakline);
-        }
+        
     })
 }
