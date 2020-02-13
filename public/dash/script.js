@@ -64,7 +64,6 @@ axios({
     checkifzero()
 })
 
-
 // Check if the filelist is zero
 function checkifzero () {
     // Do nothing if more than zero, make element if over 0
@@ -119,6 +118,88 @@ function getFilecount () {
     })
 };
 
+$(document).on('click','#purgebutton', function(){
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        html: 
+        '<h1>Username</h1>' +
+        '<input style="text-align: center;" id="usernamepurge" class="swal2-input">' +
+        '<h1>Password</h1>' +
+        '<input style="text-align: center;" id="passwordpurge" class="swal2-input">',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Purge'
+      }).then((result) => {
+        if (result.value) {
+            username = document.getElementById("usernamepurge").value
+            password = document.getElementById("passwordpurge").value
+            axios({
+                method: 'post',
+                url: '/user/delete',
+                data: {
+                    'username': username,
+                    'password': password
+                }
+            }).then(function (response) {
+                localStorage.removeItem("token")
+                Swal.fire({
+                    title: 'Success',
+                    text: "User has been purged from the system!",
+                    icon: 'success',
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.value) {
+                        window.location.replace('/')
+                    }
+                })
+            }).catch(() => {
+                Swal.fire({
+                    title: 'Incorrect password!',
+                    text: 'User was not purged from the system!',
+                    icon: 'error',
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                })
+            })
+        }
+      })
+})
+
+
+function login() {
+    username = document.getElementById("usernamepurge").value
+    password = document.getElementById("passwordpurge").value
+    axios({
+        method: 'post',
+        url: '/user/delete',
+        data: {
+            'username': username,
+            'password': password
+        }
+      }).then(function (response) {
+        var token = response.data // Get user token
+        localStorage.setItem('token', token); // Set user token in localstorage
+        window.location.replace("/upload");
+    }).catch(function (error) {
+        if (!document.getElementById("errortext")) {
+        // Sending error text
+        var errortext = document.createElement("p"); 
+        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
+        errortext.id = `errortext`
+        errormessage.appendChild(errortext);
+    
+        // Sending breakline under text
+        var breakline = document.createElement("br")
+        errormessage.appendChild(breakline);
+        }
+    })
+}
 
 // Delete files
 $(document).on('click','.dl', function(){
@@ -201,4 +282,3 @@ function reset() {
         
     })
 }
-

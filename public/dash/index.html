@@ -7,14 +7,17 @@
     <title>What are you, stupid?</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-    <link rel="icon" href="favicon.png" type="image/png" sizes="HeightxWidth|any">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="HeightxWidth|any">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
         integrity="sha256-T/f7Sju1ZfNNfBh7skWn0idlCBcI3RwdLSS4/I7NQKQ=" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.slim.js"
         integrity="sha256-BTlTdQO9/fascB1drekrDVkaKd9PkwBymMlHOiG+qLI=" crossorigin="anonymous"></script>
     <script src="script.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css"></link>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    </link>
     <script src="/assets/components/footer.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@3/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9/dist/sweetalert2.min.js"></script>
 </head>
 
 <body>
@@ -32,7 +35,8 @@
                     <div style="display: flex; justify-content: center;" class="buttons has-addons">
                         <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
                         <button class="button is-link is-outlined" onclick="openTab(event, 'token')">Token</button>
-                        <button class="button is-link is-outlined" onclick="openTab(event, 'settings')">Settings</button>
+                        <button class="button is-link is-outlined"
+                            onclick="openTab(event, 'settings')">Settings</button>
                         <button class="button is-link is-outlined" onclick="logout()">Logout</button>
                     </div>
 
@@ -41,7 +45,7 @@
                     <div id="uploads" class="tabcontent">
                         <h2 class="subtitle" id="file-subtitle"></h2 id="file-subtitle">
                         <div style="margin-top: -25px; margin-bottom: 15px; color: #616161" id="filecount"></div>
-                        <div style="margin-top: -20px;" id="efs"></div>
+                        <div style="margin-top: -20px; overflow: hidden;" id="efs"></div>
                     </div>
 
 
@@ -53,9 +57,11 @@
 
 
                     <div id="settings" class="tabcontent">
-                        <h2 class="subtitle"><b>Settings</b></h2>
+                        <div style="margin-bottom: -10px;">
+                            <h2 class="subtitle"><b>Settings</b></h2>
+                        </div>
 
-                        <div style="margin-top: -20px;" id="passchange">
+                        <div class="innertabcontent" id="passchange">
                             <p><b>Change Password</b></p>
 
                             <div id="errormessage"></div>
@@ -82,15 +88,27 @@
                                 </div>
                             </div>
 
-                            <button style="margin-bottom: 10px;" onclick="reset()" class="button is-link is-outlined">Reset Password</button>
+                            <button style="margin-bottom: 10px;" onclick="reset()"
+                                class="button is-link is-outlined">Reset Password</button>
 
                         </div>
+
+
+                        <div style="margin-top: 15px;" class="innertabcontent" id="purge">
+                            <p><b>Purge content!</b></p>
+                            <p>This action will delete your account and all your uploads, this is <b>NOT</b> reversible!
+                            </p>
+
+                            <button style="margin-bottom: 5px; margin-top: 10px;" class="button is-danger is-outlined"
+                                id="purgebutton">Purge User</button>
+                        </div>
+
                     </div>
 
                 </div>
 
-                
                 <footer-area></footer-area>
+
             </div>
         </div>
         </div>

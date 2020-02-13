@@ -19,57 +19,64 @@ function uploadfile() {
     var formData = new FormData();
     var uploadFile = document.querySelector('#uploadFile');
     formData.append("uploadFile", uploadFile.files[0]);
-    // if (uploadFile.files[0] == undefined) {
-        
-    // } else
-    {
-        
-        var loadingbars = document.getElementById("file-list");
+    
+    var loadingbars = document.getElementById("file-list");
 
-        var loading = document.createElement("center"); 
-        loading.innerHTML = `<progress class="progress is-small is-info" style="max-width: 250px; border-radius: 3px; margin-bottom: 10px;" max="100">60%</progress>` 
-        loading.id = `loading_bar`
+    var loading = document.createElement("center"); 
+    loading.innerHTML = `<progress class="progress is-small is-info" style="max-width: 250px; border-radius: 3px; margin-bottom: 10px;" max="100">60%</progress>` 
+    loading.id = `loading_bar`
 
-        loadingbars.appendChild(loading);
+    loadingbars.appendChild(loading);
 
-        axios.post('/files/upload', formData, {
-            headers: {
-                'token': localStorage.getItem("token"),
-                'Content-Type': 'multipart/form-data'
-            }
-        }).then(function (response) {
-            var filereturn = response.data.url // Link response data
-            var filelist = document.getElementById("file-list"); // Div where links will go
+    axios.post('/files/upload', formData, {
+        headers: {
+            'token': localStorage.getItem("token"),
+            'Content-Type': 'multipart/form-data'
+        }
+    }).then(function (response) {
+        var filereturn = response.data.url // Link response data
+        var filelist = document.getElementById("file-list"); // Div where links will go
 
-            // Generated element
-            var linkgen = document.createElement("a"); 
-            linkgen.innerHTML = `<a href="${filereturn}">${filereturn}</a><br>` 
+        // Generated element
+        var linkgen = document.createElement("a"); 
+        linkgen.innerHTML = `<a href="${filereturn}">${filereturn}</a><br>` 
 
-            // Create element in list div
-            filelist.appendChild(linkgen);
+        // Delete previous error if it exists
+        if ($('#errorup').length > 0) {
+            document.getElementById("errorup").remove();
+        }
+
+        // Create element in list div
+        filelist.appendChild(linkgen);
             
-            document.getElementById("loading_bar").remove();
-        }).catch(function (error) {
-            if (error.response.status == 413) {
-
-                document.getElementById("loading_bar").remove(); // Remove existing loading bar
-
-                var errorup = document.createElement("center"); 
-                errorup.innerHTML = `<p>You have exceeded the file limit!</p>` 
-        
-                document.getElementById("file-list").appendChild(errorup);
-
-            } else if (error.response.status == 400) {
-                document.getElementById("loading_bar").remove(); // Remove existing loading bar
-
-                var errorup = document.createElement("center"); 
-                errorup.innerHTML = `<p>No files have been uploaded!</p>` 
-        
-                document.getElementById("file-list").appendChild(errorup);
+        document.getElementById("loading_bar").remove();
+    }).catch(function (error) {
+        // I really hate this but for some reason express-fileupload isnt sending 413 so :/
+        if (error.response == null) {
+            document.getElementById("loading_bar").remove(); // Remove existing loading bar
+            if ($('#errorup').length > 0) {
+                document.getElementById("errorup").remove();
             }
 
+            var errorup = document.createElement("div"); 
+            errorup.id = `errorup`
+            errorup.innerHTML = `<center><p>You have exceeded the file limit!</p></center>` 
+        
+            document.getElementById("file-list").appendChild(errorup);
+        } else if (error.response.status == 400) {
+                document.getElementById("loading_bar").remove(); // Remove existing loading bar
+            if ($('#errorup').length > 0) {
+                document.getElementById("errorup").remove();
+            }
+
+            var errorup = document.createElement("div"); 
+            errorup.id = `errorup`
+            errorup.innerHTML = `<center><p>No files have been uploaded!</p></center>` 
+        
+            document.getElementById("file-list").appendChild(errorup);
+            }
         })
-    }
+    
 }
 
 $(document).ready(function () {

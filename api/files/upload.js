@@ -5,9 +5,11 @@ const path = require('path');
 const app = express();
 
 module.exports = ({ db, app }) => {
+
     app.use(fileUpload({
-        limits: { fileSize: 50 * 1024 * 1024 },
-        abortOnLimit: true
+        limits: { fileSize: parseInt(process.env.MAXUPLOADSIZE) * 1024 * 1024 },
+        abortOnLimit: true,
+        createParentPath: true
     }))
     
     app.post('/files/upload', async (req, res) => {
@@ -20,7 +22,7 @@ module.exports = ({ db, app }) => {
             if (req.files == null || Object.keys(req.files).length === 0) {
                 return res.status(400).send('No files were uploaded!');
             } else {
-                
+
                 // The name of the input field
                 let uploadFile = req.files.uploadFile;
                 // File name generation
