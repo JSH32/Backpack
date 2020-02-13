@@ -33,11 +33,6 @@ function regkeygen() {
         var errortext = document.createElement("p"); 
         errortext.innerHTML = `<div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
         errortext.id = `errortext`
-        errormessage.appendChild(errortext);
-    
-        // Sending breakline under text
-        var breakline = document.createElement("br")
-        errotext.appendChild(breakline);
-        
+        errormessage.appendChild(errortext);    
     })
 }
