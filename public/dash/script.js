@@ -126,7 +126,7 @@ $(document).on('click','#purgebutton', function(){
         '<h1>Username</h1>' +
         '<input style="text-align: center;" id="usernamepurge" class="swal2-input">' +
         '<h1>Password</h1>' +
-        '<input style="text-align: center;" id="passwordpurge" class="swal2-input">',
+        '<input style="text-align: center;" type="password" id="passwordpurge" class="swal2-input">',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
@@ -170,6 +170,37 @@ $(document).on('click','#purgebutton', function(){
         }
       })
 })
+
+// I hate this more than words can express
+function downloadString() {
+    var sharex_dl = `{
+        "Name": "Baka",
+        "DestinationType": "ImageUploader, TextUploader, FileUploader",
+        "RequestMethod": "POST",
+        "RequestURL": "${window.location.origin}/files/upload",
+        "Headers": {
+            "token": "${localStorage.getItem("token")}"
+        },
+        "Body": "MultipartFormData",
+        "FileFormName": "uploadFile",
+        "URL": "$json:url$",
+        "ThumbnailURL": "$json:url$"
+    }`
+
+    var fileType = 'text/plain'
+
+    var blob = new Blob([sharex_dl], { type: fileType });
+  
+    var a = document.createElement('a');
+    a.download = 'sharex.sxcu';
+    a.href = URL.createObjectURL(blob);
+    a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1500);
+  }
 
 
 function login() {

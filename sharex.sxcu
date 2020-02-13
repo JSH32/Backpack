@@ -4,10 +4,10 @@
   "RequestMethod": "POST",
   "RequestURL": "http://localhost:8080/files/upload",
   "Headers": {
-    "token": "<token>"
+    "token": "de836531-d3fd-4556-9fa4-d3a6578bd7e4"
   },
   "Body": "MultipartFormData",
   "FileFormName": "uploadFile",
-  "URL": "$response$",
-  "ThumbnailURL": "$response$"
+  "URL": "$json:url$",
+  "ThumbnailURL": "$json:url$"
 }
