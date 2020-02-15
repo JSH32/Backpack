@@ -1,7 +1,4 @@
 const express = require('express');
-const argon = require('argon2')
-const app = express();
-const assert = require('assert')
 
 module.exports = ({ db, app }) => {
     app.post('/api/files/list', async (req, res) => {
@@ -20,7 +17,7 @@ module.exports = ({ db, app }) => {
                 res.status(200).json(results)
     
         } else {
-            res.status(400).send('The username/password you entered is incorrect!')
+            res.status(400).send('Invalid token!')
         }
     }
 )}

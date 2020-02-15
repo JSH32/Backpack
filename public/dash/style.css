@@ -20,3 +20,12 @@
     margin-top: 20px;
   }
 
+  .nekoPaginateNav a {
+    padding:5px;
+
+  }
+
+  .nekoPaginateNav a.current {
+    font-weight:bold;
+    text-decoration:underline;
+  }

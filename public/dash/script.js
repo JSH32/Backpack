@@ -62,6 +62,13 @@ axios({
     })
 }).then(function () {
     checkifzero()
+    $('#efs').nekoPaginate({
+        paginateElement: 'div',
+        elementsPerPage: 10,
+        lastButton: false,
+        firstButton: false,
+        hashPage: 'page'
+    });
 })
 
 // Check if the filelist is zero
@@ -173,19 +180,20 @@ $(document).on('click','#purgebutton', function(){
 
 // I hate this more than words can express
 function downloadString() {
-    var sharex_dl = `{
-        "Name": "Baka",
-        "DestinationType": "ImageUploader, TextUploader, FileUploader",
-        "RequestMethod": "POST",
-        "RequestURL": "${window.location.origin}/files/upload",
-        "Headers": {
-            "token": "${localStorage.getItem("token")}"
-        },
-        "Body": "MultipartFormData",
-        "FileFormName": "uploadFile",
-        "URL": "$json:url$",
-        "ThumbnailURL": "$json:url$"
-    }`
+    var sharex_dl = 
+`{
+    "Name": "nekos.cafe",
+    "DestinationType": "ImageUploader, TextUploader, FileUploader",
+    "RequestMethod": "POST",
+    "RequestURL": "${window.location.origin}/api/files/upload",
+    "Headers": {
+        "token": "${localStorage.getItem("token")}"
+    },
+    "Body": "MultipartFormData",
+    "FileFormName": "uploadFile",
+    "URL": "$json:url$",
+    "ThumbnailURL": "$json:url$"
+}`
 
     var fileType = 'text/plain'
 
@@ -232,6 +240,12 @@ function login() {
     })
 }
 
+function removeElement(array, index) {
+    if (index > -1) {
+        array.splice(index, 1);
+    }
+}
+
 // Delete files
 $(document).on('click','.dl', function(){
     var id = $(this).attr('id');
@@ -246,9 +260,14 @@ $(document).on('click','.dl', function(){
             'file': file
         }
     }).then(function () {
-        document.getElementById(id).remove();
+        // document.getElementById(id).remove(); 
+        removemsg = `<div class="listitem" style="color: #616161;"><th><p>This file has been deleted!</p></th></div>`
+        document.getElementById(id).innerHTML = removemsg
         checkifzero()
         getFilecount()
+        if (typeof pageobj != 'undefined') {
+            pageobj[id].innerHTML = removemsg
+        }
     })
 })
 
