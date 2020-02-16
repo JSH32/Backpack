@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nekos.cafe</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
+        integrity="sha256-T/f7Sju1ZfNNfBh7skWn0idlCBcI3RwdLSS4/I7NQKQ=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.js"
+        integrity="sha256-BTlTdQO9/fascB1drekrDVkaKd9PkwBymMlHOiG+qLI=" crossorigin="anonymous"></script>
+    <script src="script.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
+</head>
+
+<body>
+    <section class="hero is-success is-fullheight has-background-black">
+        <div class="hero-body">
+
+            
+
+                <div class="container has-text-centered">
+                    
+                    <h1 class="title">
+                        Nekos.cafe
+                    </h1>
+                    <h2 class="subtitle">
+                        Give me your files, nyaa~
+                    </h2>
+
+                <div class="tabcontent">
+
+                    <div style="margin-bottom: 5px;">
+                        <h2 class="subtitle">
+                            <b>Admin Login</b>
+                        </h2>
+                    </div>
+    
+                    <div id="errormessage"></div>
+    
+                    <div class="field">
+                        <label style="color: #4f4f4f;" class="label">Username</label>
+                        <div class="control">
+                            <center>
+                                <input class="input" id="userfield"
+                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                    type="text">
+                            </center>
+    
+                        </div>
+                    </div>
+    
+                    <div class="field">
+                        <label style="color: #4f4f4f;" class="label">Password</label>
+                        <div class="control">
+                            <center>
+                                <input class="input" type="password" id="passfield"
+                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                    type="text">
+                            </center>
+                        </div>
+                    </div>
+    
+                    <button style="margin-bottom: 10px;" onclick="login()" class="button is-link">Login</button>
+                </div>
+
+                <div>
+                    <a href="https://github.com/Riku32/Baka.js"><i class='fab fa-github'></i></a>
+                    &nbsp
+                    <a href="https://github.com/Riku32/Baka.js/blob/master/README.md"><i class="fas fa-info-circle"></i></a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

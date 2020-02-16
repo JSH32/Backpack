@@ -43,7 +43,7 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
-// Create element for each filelist
+// Create filelist and pagination array
 axios({
     method: 'post',
     url: '/api/files/list',
@@ -66,9 +66,34 @@ axios({
         paginateElement: 'div',
         elementsPerPage: 10,
         lastButton: false,
-        firstButton: false,
-        hashPage: 'page'
+        firstButton: false
     });
+})
+
+// Delete files
+$(document).on('click','.dl', function(){
+    var id = $(this).attr('id');
+    var file = $(this).attr('filename');
+    // make delete request with id
+    axios({
+        method: 'post',
+        url: '/api/files/delete',
+        data: {
+            'token': localStorage.getItem("token"),
+            'file': file
+        }
+    }).then(function () {
+        // document.getElementById(id).remove(); 
+        removemsg = `<div class="listitem" style="color: #383838;"><th><p>This file has been deleted!</p></th></div>`
+        // Display the remove message actively
+        document.getElementById(id).innerHTML = removemsg
+        checkifzero()
+        getFilecount()
+        // Set the value to removemsg in pagination array to prevent invalid value refreshing
+        if (typeof pageobj != 'undefined') {
+            pageobj[id].innerHTML = removemsg
+        }
+    })
 })
 
 // Check if the filelist is zero
@@ -124,59 +149,6 @@ function getFilecount () {
         }
     })
 };
-
-$(document).on('click','#purgebutton', function(){
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        html: 
-        '<h1>Username</h1>' +
-        '<input style="text-align: center;" id="usernamepurge" class="swal2-input">' +
-        '<h1>Password</h1>' +
-        '<input style="text-align: center;" type="password" id="passwordpurge" class="swal2-input">',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Purge'
-      }).then((result) => {
-        if (result.value) {
-            username = document.getElementById("usernamepurge").value
-            password = document.getElementById("passwordpurge").value
-            axios({
-                method: 'post',
-                url: '/api/user/delete',
-                data: {
-                    'username': username,
-                    'password': password
-                }
-            }).then(function (response) {
-                localStorage.removeItem("token")
-                Swal.fire({
-                    title: 'Success',
-                    text: "User has been purged from the system!",
-                    icon: 'success',
-                    showCancelButton: false,
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
-                }).then((result) => {
-                    if (result.value) {
-                        window.location.replace('/')
-                    }
-                })
-            }).catch(() => {
-                Swal.fire({
-                    title: 'Incorrect password!',
-                    text: 'User was not purged from the system!',
-                    icon: 'error',
-                    showCancelButton: false,
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
-                })
-            })
-        }
-      })
-})
 
 // I hate this more than words can express
 function downloadString() {
@@ -246,29 +218,9 @@ function removeElement(array, index) {
     }
 }
 
-// Delete files
-$(document).on('click','.dl', function(){
-    var id = $(this).attr('id');
-    var file = $(this).attr('filename');
-    // make delete request with id
-
-    axios({
-        method: 'post',
-        url: '/api/files/delete',
-        data: {
-            'token': localStorage.getItem("token"),
-            'file': file
-        }
-    }).then(function () {
-        // document.getElementById(id).remove(); 
-        removemsg = `<div class="listitem" style="color: #616161;"><th><p>This file has been deleted!</p></th></div>`
-        document.getElementById(id).innerHTML = removemsg
-        checkifzero()
-        getFilecount()
-        if (typeof pageobj != 'undefined') {
-            pageobj[id].innerHTML = removemsg
-        }
-    })
+// Set token value from localstorage
+$( document ).ready(function(){
+    document.getElementById("tokenval").innerHTML = `${localStorage.getItem("token")}`
 })
 
 // Reset token button
@@ -285,11 +237,7 @@ function resetToken() {
     })
 }
 
-// Set token value
-$( document ).ready(function(){
-    document.getElementById("tokenval").innerHTML = `${localStorage.getItem("token")}`
-})
-
+// Reset password
 function reset() {
     password = document.getElementById("passfield").value
     newpassword = document.getElementById("newpassfield").value
@@ -332,3 +280,57 @@ function reset() {
         
     })
 }
+
+// Purge account and data
+$(document).on('click','#purgebutton', function(){
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        html: 
+        '<h1>Username</h1>' +
+        '<input style="text-align: center;" id="usernamepurge" class="swal2-input">' +
+        '<h1>Password</h1>' +
+        '<input style="text-align: center;" type="password" id="passwordpurge" class="swal2-input">',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Purge'
+      }).then((result) => {
+        if (result.value) {
+            username = document.getElementById("usernamepurge").value
+            password = document.getElementById("passwordpurge").value
+            axios({
+                method: 'post',
+                url: '/api/user/delete',
+                data: {
+                    'username': username,
+                    'password': password
+                }
+            }).then(function (response) {
+                localStorage.removeItem("token")
+                Swal.fire({
+                    title: 'Success',
+                    text: "User has been purged from the system!",
+                    icon: 'success',
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.value) {
+                        window.location.replace('/')
+                    }
+                })
+            }).catch(() => {
+                Swal.fire({
+                    title: 'Incorrect password!',
+                    text: 'User was not purged from the system!',
+                    icon: 'error',
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                })
+            })
+        }
+      })
+})

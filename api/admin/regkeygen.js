@@ -7,7 +7,9 @@ module.exports = ({ db, app }) => {
 
         const Regkeys = db.collection('regkeys')
 
-        if (!password) {
+        if (process.env.INVITEONLY == false) {
+            return res.status(400).send('Regkeys are disabled!')
+        } else if (!password) {
             return res.status(400).send('Password is not defined')
         }
 
