@@ -4,16 +4,9 @@ const express = require('express')
 const mongo = require('./api/mongo')
 const app = express()
 const bodyParser = require('body-parser');
-const AWS = require('aws-sdk')
 
 app.use(express.json())
 app.use(bodyParser.json());
-
-const s3 = new AWS.S3({
-    accessKeyId: 'WIS9VB83YNIT5IALT7QR',
-    secretAccessKey: 'Fie4S9Uz7zBGYHpMidEfVR5whI9VWYlvtrqUE89q',
-    endpoint: 's3.us-east-2.wasabisys.com'
-});
 
 mongo.init().then(db => {
     app.use('/', express.static(process.env.UPLOAD_DIR))
