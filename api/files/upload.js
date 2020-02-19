@@ -3,8 +3,11 @@ const fileUpload = require('express-fileupload');
 const cryptoRandomString = require('crypto-random-string');
 const path = require('path');
 const app = express();
+const AWS = require('aws-sdk');
+const fs = require('fs')
 
-module.exports = ({ db, app }) => {
+
+module.exports = ({ db, app, s3 }) => {
 
     app.use(fileUpload({
         limits: { fileSize: parseInt(process.env.MAXUPLOADSIZE) * 1024 * 1024 },
@@ -44,8 +47,28 @@ module.exports = ({ db, app }) => {
                         var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
                         var file = (randomstring + extension)
                     }
+    
                     // Upload file to server
                     uploadFile.mv(process.env.UPLOAD_DIR + file)
+
+                    // Upload to S3 and delete local tempfile
+                    if (JSON.parse(process.env.S3USE) == true) {
+                        fs.readFile(process.env.UPLOAD_DIR + file, (err, data) => {
+                            if (err) throw err;
+                            const params = {
+                                Bucket: process.env.S3BUCKET, // bucket name
+                                Key: file,
+                                Body: JSON.stringify(data, null, 2)
+                            };
+                            s3.upload(params, function(s3Err, data) {
+                                if (s3Err) throw s3Err
+                                console.log(`File uploaded successfully at ${data.Location}`)
+                            });
+                         }).then(
+                            fs.unlinkSync(process.env.UPLOAD_DIR + file)
+                         )
+                    }
+                    
                     // Send filedata to database
                     const { username } = await Users.findOne({ token })
                     await Uploads.insertOne({ file, username, md5 })
