@@ -45,13 +45,16 @@ module.exports = ({ db, app }) => {
                         var file = (randomstring + extension)
                     }
                     // Upload file to server
-                    uploadFile.mv(process.env.UPLOAD_DIR + file)
-                    // Send filedata to database
-                    const { username } = await Users.findOne({ token })
-                    await Uploads.insertOne({ file, username, md5 })
-                    return res.json({
-                        'url': process.env.URL + file
-                    })
+                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(postUpload())
+
+                    // Send response and filedata to database 
+                    async function postUpload () {
+                        const { username } = await Users.findOne({ token })
+                        await Uploads.insertOne({ file, username, md5 })
+                        return res.json({
+                            'url': process.env.URL + file
+                        })
+                    }
                 }
             }   
         } else {

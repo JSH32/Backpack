@@ -9,7 +9,7 @@ app.use(express.json())
 app.use(bodyParser.json());
 
 mongo.init().then(db => {
-    app.use('/', express.static(process.env.UPLOAD_DIR))
+    if (JSON.parse(process.env.UPLOADS_SERVE) == true) {app.use('/', express.static(process.env.UPLOAD_DIR))}
     app.use('/', express.static('./public'))
 
     require('./api/user/signup')({ db, app })
