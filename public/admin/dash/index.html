@@ -32,7 +32,7 @@
 
                 <div>
                     <!-- Tab links -->
-                    <div style="display: flex; justify-content: center;" class="buttons has-addons">
+                    <div id="tablinks" style="display: flex; justify-content: center;" class="buttons has-addons">
                         <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
                         <button class="button is-link is-outlined" onclick="openTab(event, 'users')">Users</button>
                         <button class="button is-link is-outlined" onclick="logout()">Logout</button>
@@ -80,6 +80,22 @@
 
                         <div style="overflow: hidden;" id="efsusr"></div>
                     </div>
+
+
+                    <!-- Tab content -->
+                    <div id="regkey" class="tabcontent">
+                        <h2 class="subtitle">Regkey</h2>
+
+                        <div class="field">
+                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Generate one time registration keys!</label>
+                            <div class="control">
+                                <center>
+                                    <button onclick="regKeyGen()" style="margin-bottom: 5px;" class="button is-link is-outlined">Generate Regkey!</button>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+
 
                     <div>
                         <a href="https://github.com/Riku32/Baka.js"><i class='fab fa-github'></i></a>

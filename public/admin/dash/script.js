@@ -43,6 +43,17 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
+$(document).ready(function() {
+    axios({
+        method: 'get',
+        url: '/api/info'
+    }).then(function (response) {
+        if (response.data.inviteonly == true) {
+            $( "#tablinks" ).append(`<button class="button is-link is-outlined" onclick="openTab(event, 'regkey')">Regkeys</button>`);
+        }
+    })
+});
+
 // Get upload list
 function getListUpload() {
     query = document.getElementById("filesearch").value
@@ -177,3 +188,18 @@ $(document).on('click','.dlusr', function(){
         document.getElementById(id).innerHTML = removemsg
     })
 })
+
+function regKeyGen() {
+    axios({
+        method: 'post',
+        url: '/api/admin/regkeygen',
+        data: {
+            'token': localStorage.getItem("admin_token")
+        }
+    }).then(function (response) {
+        Swal.fire(
+            'Regkey generated!',
+            response.data.regkey
+        )
+    })
+}

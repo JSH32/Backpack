@@ -3,17 +3,18 @@ const uuid = require('uuid/v4')
 
 module.exports = ({ db, app }) => {
     app.post('/api/admin/regkeygen', async (req, res) => {
-        const { password } = req.body
+        const { token } = req.body
 
         const Regkeys = db.collection('regkeys')
+        const Admins = db.collection('admins')
 
         if (process.env.INVITEONLY == false) {
             return res.status(400).send('Regkeys are disabled!')
-        } else if (!password) {
-            return res.status(400).send('Password is not defined')
+        } else if (!token) {
+            return res.status(400).send('Token is not defined')
         }
 
-        if (await argon.verify(process.env.ADMINPASS, password)) {
+        if (Boolean(await Admins.findOne({ token }))) {
             // Create regkey
             var regkey = await uuid()
 
@@ -30,7 +31,7 @@ module.exports = ({ db, app }) => {
                 'regkey': regkey
             })
         } else {
-            res.status(400).send('Incorrect password!')
+            res.status(400).send('Invalid Token!')
         }
     
     })
