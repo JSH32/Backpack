@@ -43,32 +43,40 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
+
 // Create filelist and pagination array
 axios({
-    method: 'post',
-    url: '/api/files/list',
-    data: {
-        'token': localStorage.getItem("token")
-    }
+    method: 'get',
+    url: '/api/info'
 }).then(function (response) {
-    response.data.map( (file, index) => {
-        // create an element
-        $("#efs").append(`
-        <div class="listitem" id="${index}">
-        <th><a href="/${file}">${file}</a></th>
-        <th><a filename="${file}" id="${index}" style="color: #ff5145;" class="dl">Delete</a></tf>
-        </div>
-        `)
+    window.uploadURL = response.data.uploadURL
+    axios({
+        method: 'post',
+        url: '/api/files/list',
+        data: {
+            'token': localStorage.getItem("token")
+        }
+    }).then(function (response) {
+        response.data.map( (file, index) => {
+            // create an element
+            $("#efs").append(`
+            <div class="listitem" id="${index}">
+            <th><a href="${window.uploadURL}${file}">${file}</a></th>
+            <th><a filename="${file}" id="${index}" style="color: #ff5145;" class="dl">Delete</a></tf>
+            </div>
+            `)
+        })
+    }).then(function () {
+        checkifzero()
+        $('#efs').nekoPaginate({
+            paginateElement: 'div',
+            elementsPerPage: 10,
+            lastButton: false,
+            firstButton: false
+        });
     })
-}).then(function () {
-    checkifzero()
-    $('#efs').nekoPaginate({
-        paginateElement: 'div',
-        elementsPerPage: 10,
-        lastButton: false,
-        firstButton: false
-    });
 })
+
 
 // Delete files
 $(document).on('click','.dl', function(){
@@ -144,8 +152,10 @@ function getFilecount () {
     }).then(function (response) {
         var totalfiles = response.data.filecount
 
-        if ($('#filecount').length > 0) {
+        if (totalfiles > 0) {
             document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
+        } else {
+            document.getElementById("filecount").innerHTML = `<p>You have not uploaded any files :(</p>`
         }
     })
 };

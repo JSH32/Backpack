@@ -8,7 +8,8 @@ module.exports = ({ db, app, totalsize }) => {
         res.json({
             'inviteonly': JSON.parse(process.env.INVITEONLY),
             'adminreg': JSON.parse(process.env.ADMINREGISTER),
-            'totalfiles': filecount
+            'totalfiles': filecount,
+            'uploadURL': process.env.URL
         })
     }
 )}

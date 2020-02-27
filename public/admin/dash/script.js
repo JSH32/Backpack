@@ -48,6 +48,7 @@ $(document).ready(function() {
         method: 'get',
         url: '/api/info'
     }).then(function (response) {
+        window.uploadURL = response.data.uploadURL
         if (response.data.inviteonly == true) {
             $( "#tablinks" ).append(`<button class="button is-link is-outlined" onclick="openTab(event, 'regkey')">Regkeys</button>`);
         }
@@ -79,7 +80,7 @@ function getListUpload() {
             $("#efs").append(`
             <div id="${index}">
             <th><p style="display: inline; color: #7a7a7a;">${username}</p></th>
-            <th><a href="/${file}">${file}</a></th>
+            <th><a href="${window.uploadURL}${file}">${file}</a></th>
             <th><a filename="${file}" id="${index}" style="color: #ff5145;" class="dlfl">Delete</a></th>
             </div>
             `)
