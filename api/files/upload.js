@@ -45,7 +45,9 @@ module.exports = ({ db, app }) => {
                         var file = (randomstring + extension)
                     }
                     // Upload file to server
-                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(postUpload())
+                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(function () {
+                        postUpload()
+                    })
 
                     // Send response and filedata to database 
                     async function postUpload () {

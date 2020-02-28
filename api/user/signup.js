@@ -41,7 +41,7 @@ module.exports = ({ db, app }) => {
                 while (Boolean(await Users.findOne({ token }))) {
                     var token = uuid()
                 }
-    
+
                 await Users.insertOne({ username, password_hash, token })
     
                 await Regkeys.deleteOne({ regkey })
