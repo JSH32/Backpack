@@ -44,19 +44,15 @@ module.exports = ({ db, app }) => {
                         var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
                         var file = (randomstring + extension)
                     }
-                    // Upload file to server
-                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(function () {
-                        postUpload()
-                    })
 
-                    // Send response and filedata to database 
-                    async function postUpload () {
+                    // Upload file to server and send response
+                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(async function () {
                         const { username } = await Users.findOne({ token })
                         await Uploads.insertOne({ file, username, md5 })
                         return res.json({
                             'url': process.env.URL + file
                         })
-                    }
+                    })
                 }
             }   
         } else {

@@ -20,13 +20,13 @@ function uploadfile() {
     var uploadFile = document.querySelector('#uploadFile');
     formData.append("uploadFile", uploadFile.files[0]);
     
-    var loadingbars = document.getElementById("file-list");
+    var filelist = document.getElementById("file-list");
 
     var loading = document.createElement("center"); 
-    loading.innerHTML = `<progress class="progress is-small is-info" style="max-width: 250px; border-radius: 3px; margin-bottom: 10px;" max="100">60%</progress>` 
+    loading.innerHTML = `<div class="cloader"><div class="loaderBar"></div></div>` 
     loading.id = `loading_bar`
 
-    loadingbars.appendChild(loading);
+    filelist.appendChild(loading);
 
     axios.post('/api/files/upload', formData, {
         headers: {
