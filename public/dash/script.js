@@ -57,7 +57,7 @@ axios({
             'token': localStorage.getItem("token")
         }
     }).then(function (response) {
-        response.data.map( (file, index) => {
+        response.data.reverse().map( (file, index) => {
             // create an element
             $("#efs").append(`
             <div class="listitem" id="${index}">
