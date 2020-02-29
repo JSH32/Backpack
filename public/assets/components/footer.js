@@ -3,9 +3,9 @@ class Footer extends HTMLElement {
       this.innerHTML = `
       <div>
           
-      <a href="https://github.com/Riku32/Baka.js"><i class='fab fa-github'></i></a>
+      <a href="/"><i class="fas fa-home"></i></a>
       &nbsp
-      <a href="https://github.com/Riku32/Baka.js/blob/master/README.md"><i class="fas fa-info-circle"></i></a>
+      <a href="/about"><i class="fas fa-info-circle"></i></a>
       &nbsp
       <a href="/upload"><i class="fas fa-upload"></i></a>
       &nbsp
