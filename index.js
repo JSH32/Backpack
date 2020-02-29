@@ -4,6 +4,7 @@ const express = require('express')
 const mongo = require('./api/mongo')
 const app = express()
 const bodyParser = require('body-parser');
+const path = require('path');
 
 app.use(express.json())
 app.use(bodyParser.json());
@@ -12,7 +13,6 @@ app.use(bodyParser.json());
 mongo.init().then(db => {
     // Serving upload directory
     if (JSON.parse(process.env.UPLOADS_SERVE) == true) {app.use('/', express.static(process.env.UPLOAD_DIR))}
-    
 
     // Serve interface
     app.use('/', express.static('./public'))
@@ -47,6 +47,11 @@ mongo.init().then(db => {
 
     // Admin signup endpoint, usually disabled
     if (JSON.parse(process.env.ADMINREGISTER) == true) { require('./api/admin/signup')({ db, app }) }
+
+    // Error pages
+    app.use(function(req, res) {
+        res.sendFile(path.join(__dirname, '/public/error_pages/404.html'), 404) // 404
+    });
 })
 
-app.listen(8080)
+app.listen(process.env.PORT)

@@ -75,7 +75,7 @@ function getListUpload() {
             'query': query
         }
     }).then(function (response) {
-        response.data.map( ({file, username}, index) => {
+        response.data.reverse().map( ({file, username}, index) => {
             // create an element
             $("#efs").append(`
             <div id="${index}">
@@ -143,7 +143,7 @@ function getListUsers() {
             'query': query
         }
     }).then(function (response) {
-        response.data.map( (username, index) => {
+        response.data.reverse().map( (username, index) => {
             // create an element
             $("#efsusr").append(`
             <div id="${index}">

@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <!-- Required Stuff -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nekos.cafe</title>
@@ -9,15 +10,23 @@
     <script defer src="/assets/libs/fontawesome-5.12.1/js/all.js"></script>
     <link rel="icon" href="/favicon.png" type="image/png" sizes="HeightxWidth|any">
     <script src="/assets/libs/axios.min.js"></script>
-        
     <script src="/assets/libs/jquery-3.4.1.min.js"></script>
-        
     <script src="script.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
     </link>
     <script src="/assets/components/footer.js"></script>
-<link rel="stylesheet" href="/assets/libs/swal-dark.css">
+    <link rel="stylesheet" href="/assets/libs/swal-dark.css">
     <script src="/assets/libs/sweetalert2.min.js"></script>
+
+    <!-- Extra Meta -->
+    <meta name="title" content="nekos.cafe">
+    <meta name="description" content="Give me your files, nyaa~">
+    <meta name="keywords" content="file upload, sharex, upload, files, anime, Neko, nyaa">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="language" content="English">
+    <link rel='icon' href='/assets/images/favicon.png' type='image/x-icon'/ >
+    <meta name="theme-color" content="#3273dc">
 </head>
 
 <body>
@@ -45,7 +54,8 @@
                         <div id="errormessageupl"></div>
 
                         <div class="field">
-                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Either blank for all or exact filename!</label>
+                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Either blank for all or
+                                exact filename!</label>
                             <div class="control">
                                 <center>
                                     <input class="input" id="filesearch"
@@ -54,12 +64,13 @@
                                 </center>
                             </div>
                         </div>
-                        <button onclick="getListUpload()" style="margin-bottom: 5px;" class="button is-link is-outlined is-small">Search</button>
+                        <button onclick="getListUpload()" style="margin-bottom: 5px;"
+                            class="button is-link is-outlined is-small">Search</button>
 
                         <div style="overflow: hidden;" id="efs"></div>
-                        
+
                     </div>
-                    
+
 
                     <!-- Tab content -->
                     <div id="users" class="tabcontent">
@@ -67,7 +78,8 @@
                         <div id="errormessageusr"></div>
 
                         <div class="field">
-                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Either blank for all or exact username!</label>
+                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Either blank for all or
+                                exact username!</label>
                             <div class="control">
                                 <center>
                                     <input class="input" id="usersearch"
@@ -76,7 +88,8 @@
                                 </center>
                             </div>
                         </div>
-                        <button onclick="getListUsers()" style="margin-bottom: 5px;" class="button is-link is-outlined is-small">Search</button>
+                        <button onclick="getListUsers()" style="margin-bottom: 5px;"
+                            class="button is-link is-outlined is-small">Search</button>
 
                         <div style="overflow: hidden;" id="efsusr"></div>
                     </div>
@@ -87,24 +100,21 @@
                         <h2 class="subtitle">Regkey</h2>
 
                         <div class="field">
-                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Generate one time registration keys!</label>
+                            <label style="color: #4f4f4f; margin-top: -20px;" class="label">Generate one time
+                                registration keys!</label>
                             <div class="control">
                                 <center>
-                                    <button onclick="regKeyGen()" style="margin-bottom: 5px;" class="button is-link is-outlined">Generate Regkey!</button>
+                                    <button onclick="regKeyGen()" style="margin-bottom: 5px;"
+                                        class="button is-link is-outlined">Generate Regkey!</button>
                                 </center>
                             </div>
                         </div>
                     </div>
 
+                    <footer-area></footer-area>
 
-                    <div>
-                        <a href="https://github.com/Riku32/Baka.js"><i class='fab fa-github'></i></a>
-                        &nbsp
-                        <a href="https://github.com/Riku32/Baka.js/blob/master/README.md"><i class="fas fa-info-circle"></i></a>
-                    </div>
-
+                </div>
             </div>
-        </div>
         </div>
     </section>
 </body>
