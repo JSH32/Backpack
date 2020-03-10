@@ -11,7 +11,7 @@ module.exports = ({ db, app }) => {
                 
                 const { username } = await Users.findOne({ token })
                 const results = (
-                    await Uploads.find({ username }).toArray()
+                    await Uploads.find({ username }).sort({_id:-1}).toArray()
                 ).map( ({ file }) => file )
 
                 res.status(200).json(results)

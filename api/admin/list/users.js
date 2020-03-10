@@ -17,11 +17,11 @@ module.exports = ({ db, app }) => {
 
         if (tokenExists) {
             if (query == " ") {
-                const results = ( await Users.find({}).toArray() ).map( ({ username }) => username )
+                const results = ( await Users.find({}).sort({_id:-1}).toArray() ).map( ({ username }) => username )
 
                 res.status(200).json(results)
             } else {
-                const results = ( await Users.find({ "username": query }).toArray() ).map( ({ username }) => username )
+                const results = ( await Users.find({ "username": query }).sort({_id:-1}).toArray() ).map( ({ username }) => username )
 
                 res.status(200).json(results)
             }

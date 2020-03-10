@@ -17,11 +17,11 @@ module.exports = ({ db, app }) => {
 
         if (tokenExists) {
             if (query == " ") {
-                const results = ( await Uploads.find({}).toArray() ).map( file => { return {file: file.file, username: file.username} } )
+                const results = ( await Uploads.find({}).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} } )
 
                 res.status(200).json(results)
             } else {
-                const results = ( await Uploads.find({ "file": query }).toArray() ).map( file => { return {file: file.file, username: file.username} } )
+                const results = ( await Uploads.find({ "file": query }).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} } )
 
                 res.status(200).json(results)
             }
