@@ -36,7 +36,7 @@ module.exports = ({ db, app }) => {
                     const extension = path.extname(uploadFile.name);
                     var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
                     while (randomstring.includes (".")) {
-                    var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
+                        var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
                     }
                     var file = (randomstring + extension)
                     // If value found in database then reroll filename
