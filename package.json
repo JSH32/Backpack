@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A simple filehost 💾",
   "main": "index.js",
-  "repository": "https://github.com/Riku32/Baka.js",
+  "repository": "https://gitlab.com/Riku32/nekos-cafe",
   "author": "Riku32",
   "license": "MIT",
   "dependencies": {
