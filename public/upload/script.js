@@ -33,7 +33,7 @@ axios({
         previewsContainer: '#uploadcontainer',
         previewTemplate: `
         <div id="tpl">
-            <progress class="progress" value="15" max="100" data-dz-uploadprogress></progress>
+            <div id="loading_bar" style="max-width: 300px; margin: auto;"><progress class="progress is-link" max="100" data-dz-uploadprogress></progress></div>
             <div class="dz-error-message errorlist"><span data-dz-errormessage></span></div>
         </div>`,
         headers: {
