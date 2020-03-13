@@ -10,7 +10,8 @@
   <script defer src="/assets/libs/fontawesome-5.12.1/js/all.js"></script>
   <script src="/assets/libs/axios.min.js"></script>
   <script src="/assets/libs/jquery-3.4.1.min.js"></script>
-  <link rel="stylesheet" href="loader.css">
+  <link rel="stylesheet" href="upload.css">
+  <script src="/assets/dropzone/dropzone.min.js"></script>
   <script src="script.js"></script>
   <script src="/assets/components/footer.js"></script>
 
@@ -35,30 +36,13 @@
         <h2 class="subtitle">
           Give me your files, nyaa~
         </h2>
+        
+        <div style="margin-top: -10px;" id="uploadbtn" class="button is-link"><i class="fas fa-upload"></i>&nbspUpload File</div>
+        <div id="uploadcontainer" style="margin-top: 10px;"></div>
 
-
-        <div class="field" style="display: flex; margin-top: -10px; justify-content: center;">
-          <div class="file is-link">
-            <label class="file-label">
-              <input class="file-input" type="file" id="uploadFile" name="resume">
-              <span class="file-cta">
-                <span class="file-icon">
-                  <i class="fas fa-upload"></i>
-                </span>
-                <span class="file-label">
-                  Upload File
-                </span>
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div id="efs">
-
-        </div>
-
-        <!-- JS Generated content -->
+        <!-- Uploaded files get created under this div -->
         <div style="margin-bottom: 10px;" id="file-list"></div>
+        <!-- Loading bars get created here -->
         <div style="display: flex; justify-content: center;" id="loadingbars"></div>
 
         <footer-area></footer-area>

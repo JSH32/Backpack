@@ -1,3 +1,7 @@
+.errorlist {
+  color: #616161;
+}
+
 .cloader { 
   width: 250px; 
   margin:0 auto;
@@ -28,7 +32,6 @@
   width:0;
   animation:borealisBar 2s linear infinite;
 }
-
 @keyframes borealisBar {
   0% {
     left:0%;

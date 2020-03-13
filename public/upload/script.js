@@ -1,3 +1,15 @@
+// Declare variables
+let infoapi
+
+// Request to get info about api
+axios({
+    method: 'get',
+    url: '/api/info'
+}).then(function (response) {
+    infoapi = response.data
+})
+
+
 // Checking if the token is valid
 if (localStorage.getItem("token") !== null) {
     axios({
@@ -15,72 +27,30 @@ if (localStorage.getItem("token") !== null) {
     window.location.replace("/login");
 }
 
-function uploadfile() {
-    var formData = new FormData();
-    var uploadFile = document.querySelector('#uploadFile');
-    formData.append("uploadFile", uploadFile.files[0]);
-    
-    var filelist = document.getElementById("file-list");
-
-    var loading = document.createElement("center"); 
-    loading.innerHTML = `<div class="cloader"><div class="loaderBar"></div></div>` 
-    loading.id = `loading_bar`
-
-    filelist.appendChild(loading);
-
-    axios.post('/api/files/upload', formData, {
-        headers: {
-            'token': localStorage.getItem("token"),
-            'Content-Type': 'multipart/form-data'
-        }
-    }).then(function (response) {
-        var filereturn = response.data.url // Link response data
-        var filelist = document.getElementById("file-list"); // Div where links will go
-
-        // Generated element
-        var linkgen = document.createElement("a"); 
-        linkgen.innerHTML = `<a href="${filereturn}">${filereturn}</a><br>` 
-
-        // Delete previous error if it exists
-        if ($('#errorup').length > 0) {
-            document.getElementById("errorup").remove();
-        }
-
-        // Create element in list div
-        filelist.appendChild(linkgen);
-            
-        document.getElementById("loading_bar").remove();
-    }).catch(function (error) {
-        // On windows it doesnt send 413 for some reason, so im also catching null responses
-        if (error.response == null || error.response.status == 413) {
-            document.getElementById("loading_bar").remove(); // Remove existing loading bar
-            if ($('#errorup').length > 0) {
-                document.getElementById("errorup").remove();
-            }
-
-            var errorup = document.createElement("div"); 
-            errorup.id = `errorup`
-            errorup.innerHTML = `<center><p>You have exceeded the file limit!</p></center>` 
-        
-            document.getElementById("file-list").appendChild(errorup);
-        } else if (error.response.status == 400) {
-                document.getElementById("loading_bar").remove(); // Remove existing loading bar
-            if ($('#errorup').length > 0) {
-                document.getElementById("errorup").remove();
-            }
-
-            var errorup = document.createElement("div"); 
-            errorup.id = `errorup`
-            errorup.innerHTML = `<center><p>No files have been uploaded!</p></center>` 
-        
-            document.getElementById("file-list").appendChild(errorup);
-            }
-        })
-    
-}
-
+// Uploading with dropzone
 $(document).ready(function () {
-    document.getElementById("uploadFile").onchange = function () {
-        uploadfile()
-    }
+    $("#uploadbtn").dropzone({ 
+        url: "/api/files/upload",
+        paramName: "uploadFile",
+        maxFilesize: infoapi.maxuploadsize,
+        previewsContainer: '#uploadcontainer',
+        previewTemplate: `
+        <div id="tpl">
+            <div class="cloader" id="loading_bar"><div class="loaderBar"></div></div>
+            <div class="dz-error-message errorlist"><span data-dz-errormessage></span></div>
+        </div>`,
+        headers: {
+            'token': localStorage.getItem("token")
+        },
+        init: function() {
+            this.on("success", function(data) {
+                var response = JSON.parse(data.xhr.response)
+                $("#uploadcontainer").append(`<a href="${response.url}">${response.url}</a><br>` )
+                document.getElementById("loading_bar").remove()
+            }),
+            this.on("error", function() {
+                document.getElementById("loading_bar").remove()
+            })
+        }
+    });
 })

@@ -19,7 +19,7 @@ module.exports = ({ db, app }) => {
         const tokenExists = Boolean(await Users.findOne({ token }))
         if(tokenExists) {
             if (req.files == null || Object.keys(req.files).length === 0) {
-                return res.status(400).send('No files were uploaded!');
+                return res.status(400).send('File not uploaded!');
             } else {
                 // The name of the input field
                 let uploadFile = req.files.uploadFile;
