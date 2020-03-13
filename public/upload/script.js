@@ -1,15 +1,6 @@
 // Declare variables
 let infoapi
 
-// Request to get info about api
-axios({
-    method: 'get',
-    url: '/api/info'
-}).then(function (response) {
-    infoapi = response.data
-})
-
-
 // Checking if the token is valid
 if (localStorage.getItem("token") !== null) {
     axios({
@@ -27,8 +18,14 @@ if (localStorage.getItem("token") !== null) {
     window.location.replace("/login");
 }
 
-// Uploading with dropzone
-$(document).ready(function () {
+// Request to get info about api
+axios({
+    method: 'get',
+    url: '/api/info'
+}).then(function (response) {
+    infoapi = response.data
+}).then(function () {
+    // Uploading with dropzone
     $("#uploadbtn").dropzone({ 
         url: "/api/files/upload",
         paramName: "uploadFile",
