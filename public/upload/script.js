@@ -34,7 +34,7 @@ axios({
         timeout: 0,
         previewTemplate: `
         <div id="tpl">
-            <div id="loading_bar" style="max-width: 300px; margin: auto; margin-bottom: 10px;"><progress class="ploader blue" max="100" data-dz-uploadprogress></progress></div>
+            <div id="loading_bar" style="max-width: 250px; margin: auto; margin-bottom: 10px; margin-top: 10px;"><progress class="ploader blue" max="100" data-dz-uploadprogress></progress></div>
             <div class="dz-error-message errorlist"><span data-dz-errormessage></span></div>
         </div>`,
         headers: {

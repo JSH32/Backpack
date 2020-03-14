@@ -3,17 +3,18 @@
 }
 
 .ploader {
+  background-color: #1a1a1a;
   -moz-appearance: none;
   -webkit-appearance: none;
   border: none;
   border-radius: 3px;
   display: block; 
-  height: 1rem;
+  height: .5rem;
   overflow: hidden;
   padding: 0;
   width: 100%;
 }
-  
+
 .ploader::-webkit-progress-bar {
   background-color: #1a1a1a;
 }
