@@ -43,11 +43,10 @@ axios({
         init: function() {
             this.on("success", function(data) {
                 var response = JSON.parse(data.xhr.response)
-                $("#file-list").append(`<a href="${response.url}">${response.url}</a><br>` )
-                this.removeFile(data);
+                return data.previewElement.innerHTML = `<a href="${response.url}">${response.url}</a><br>`
             }),
-            this.on("error", function() {
-                document.getElementById("loading_bar").remove()
+            this.on("error", function(data) {
+                return data.previewElement.innerHTML = `<div class="errorlist">${data.xhr.response}</div>`
             })
         }
     });
