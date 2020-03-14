@@ -31,9 +31,10 @@ axios({
         paramName: "uploadFile",
         maxFilesize: infoapi.maxuploadsize,
         previewsContainer: '#uploadcontainer',
+        timeout: 0,
         previewTemplate: `
         <div id="tpl">
-            <div id="loading_bar" style="max-width: 300px; margin: auto;"><progress class="progress is-link" max="100" data-dz-uploadprogress></progress></div>
+            <div id="loading_bar" style="max-width: 300px; margin: auto; margin-bottom: 10px;"><progress class="ploader blue" max="100" data-dz-uploadprogress></progress></div>
             <div class="dz-error-message errorlist"><span data-dz-errormessage></span></div>
         </div>`,
         headers: {
