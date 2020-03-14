@@ -26,7 +26,7 @@ axios({
     infoapi = response.data
 }).then(function () {
     // Uploading with dropzone
-    $("#uploadbtn").dropzone({ 
+    $("#file-list").dropzone({ 
         url: "/api/files/upload",
         paramName: "uploadFile",
         maxFilesize: infoapi.maxuploadsize,
