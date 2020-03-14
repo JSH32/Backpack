@@ -26,11 +26,11 @@ axios({
     infoapi = response.data
 }).then(function () {
     // Uploading with dropzone
-    $("#file-list").dropzone({ 
+    $("#uploadbtn").dropzone({ 
         url: "/api/files/upload",
         paramName: "uploadFile",
         maxFilesize: infoapi.maxuploadsize,
-        previewsContainer: '#uploadcontainer',
+        previewsContainer: '#previewcontainer',
         timeout: 0,
         previewTemplate: `
         <div id="tpl">
@@ -43,8 +43,8 @@ axios({
         init: function() {
             this.on("success", function(data) {
                 var response = JSON.parse(data.xhr.response)
-                $("#uploadcontainer").append(`<a href="${response.url}">${response.url}</a><br>` )
-                document.getElementById("loading_bar").remove()
+                $("#file-list").append(`<a href="${response.url}">${response.url}</a><br>` )
+                this.removeFile(data);
             }),
             this.on("error", function() {
                 document.getElementById("loading_bar").remove()
