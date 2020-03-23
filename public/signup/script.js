@@ -1,3 +1,7 @@
+// Declare vars
+let infoapi
+
+
 // Checking if the token is valid
 if (localStorage.getItem("token") !== null) {
     axios({
@@ -18,8 +22,8 @@ axios({
     method: 'get',
     url: '/api/info'
 }).then(function (response) {
+    infoapi = response.data
     if (response.data.inviteonly == true) {
-        window.infofromapi = response.data.inviteonly
         $("#regkeyarea").append(`
         <div class="field">
                         <label style="color: #4f4f4f;" class="label">Regkey</label>
@@ -38,7 +42,7 @@ axios({
 // I tried to shorten this as much as possible but i really couldnt :/
 function login() {
     // Sending request with regkey if server is private mode
-    if (window.infofromapi == true) {
+    if (infoapi.inviteonly == true) {
         username = document.getElementById("userfield").value
         password = document.getElementById("passfield").value
         regkey = document.getElementById("regkeyfield").value
@@ -88,8 +92,7 @@ function login() {
                 'username': username,
                 'password': password
             }
-        }).then(function (response) {
-    
+        }).then(function () {
             Swal.fire({
                 title: 'Account created!',
                 text: "Please log in now!",

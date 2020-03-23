@@ -1,3 +1,6 @@
+// Declaring variables
+let infoapi
+
 // Checking if the token is valid
 if (localStorage.getItem("admin_token") !== null) {
     axios({
@@ -7,7 +10,7 @@ if (localStorage.getItem("admin_token") !== null) {
             'token': localStorage.getItem("admin_token")
         }
     
-    }).catch(function (error) {
+    }).catch(function () {
         localStorage.removeItem("admin_token")
         window.location.replace("/admin/login");
     })
@@ -43,17 +46,17 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
-$(document).ready(function() {
-    axios({
-        method: 'get',
-        url: '/api/info'
-    }).then(function (response) {
-        window.uploadURL = response.data.uploadURL
-        if (response.data.inviteonly == true) {
-            $( "#tablinks" ).append(`<button class="button is-link is-outlined" onclick="openTab(event, 'regkey')">Regkeys</button>`);
-        }
-    })
-});
+
+axios({
+    method: 'get',
+    url: '/api/info'
+}).then(function (response) {
+    infoapi = response.data
+    if (response.data.inviteonly == true) {
+        $("#regkeytab").show();
+    }
+})
+
 
 // Get upload list
 function getListUpload() {
@@ -80,7 +83,7 @@ function getListUpload() {
             $("#efs").append(`
             <div id="${index}">
             <th><p style="display: inline; color: #7a7a7a;">${username}</p></th>
-            <th><a href="${window.uploadURL}${file}">${file}</a></th>
+            <th><a href="${infoapi.uploadURL}${file}">${file}</a></th>
             <th><a filename="${file}" id="${index}" style="color: #ff5145;" class="dlfl">Delete</a></th>
             </div>
             `)

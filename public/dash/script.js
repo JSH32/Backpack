@@ -1,3 +1,7 @@
+// Define variables
+let userinfo
+let infoapi
+
 // Checking if the token is valid
 if (localStorage.getItem("token") !== null) {
     axios({
@@ -6,8 +10,7 @@ if (localStorage.getItem("token") !== null) {
         data: {
             'token': localStorage.getItem("token")
         }
-    
-    }).catch(function (error) {
+    }).catch(function () {
         localStorage.removeItem("token")
         window.location.replace("/login");
     })
@@ -49,7 +52,7 @@ axios({
     method: 'get',
     url: '/api/info'
 }).then(function (response) {
-    window.uploadURL = response.data.uploadURL
+    infoapi = response.data
     axios({
         method: 'post',
         url: '/api/files/list',
@@ -61,7 +64,7 @@ axios({
             // create an element
             $("#efs").append(`
             <div class="listitem" id="${index}">
-            <th><a href="${window.uploadURL}${file}">${file}</a></th>
+            <th><a href="${infoapi.uploadURL}${file}">${file}</a></th>
             <th><a filename="${file}" id="${index}" style="color: #ff5145;" class="dl">Delete</a></tf>
             </div>
             `)
@@ -117,28 +120,27 @@ function checkifzero () {
     }
 }
 
-// Setting username upload
-$( document ).ready(function() {
-    axios({
-        method: 'post',
-        url: '/api/user/info',
-        data: {
-            'token': localStorage.getItem("token")
-        }
+// Setting username in upload tab
+axios({
+    method: 'post',
+    url: '/api/user/info',
+    data: {
+        'token': localStorage.getItem("token")
+    }
     
-    }).then(function (response) {
-        window.usrname = response.data.username
-        var totalfiles = response.data.filecount
+}).then(function (response) {
+    userinfo = response.data
+    var totalfiles = response.data.filecount
     
-        $("#file-subtitle").append(`
-            <p>Uploads for user <b>${usrname}</b></p>
-        `)
+    $("#file-subtitle").append(`
+        <p>Uploads for user <b>${userinfo.username}</b></p>
+    `)
 
-        if ($('#filecount').length > 0) {
-            document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
-        }
-    })
-});
+    if ($('#filecount').length > 0) {
+        document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
+    }
+})
+
 
 // Checks filecount and resets value for each delete
 function getFilecount () {
@@ -161,7 +163,7 @@ function getFilecount () {
 };
 
 // I hate this more than words can express
-function downloadString() {
+function downloadSharex() {
     var sharex_dl = 
 `{
     "Name": "nekos.cafe",
@@ -177,11 +179,11 @@ function downloadString() {
     "ThumbnailURL": "$json:url$"
 }`
 
-    var fileType = 'text/plain'
+    let fileType = 'text/plain'
 
-    var blob = new Blob([sharex_dl], { type: fileType });
+    let blob = new Blob([sharex_dl], { type: fileType });
   
-    var a = document.createElement('a');
+    let a = document.createElement('a');
     a.download = 'sharex.sxcu';
     a.href = URL.createObjectURL(blob);
     a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
@@ -204,13 +206,13 @@ function login() {
             'password': password
         }
       }).then(function (response) {
-        var token = response.data // Get user token
+        let token = response.data // Get user token
         localStorage.setItem('token', token); // Set user token in localstorage
         window.location.replace("/upload");
     }).catch(function (error) {
         if (!document.getElementById("errortext")) {
         // Sending error text
-        var errortext = document.createElement("p"); 
+        let errortext = document.createElement("p"); 
         errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
         errortext.id = `errortext`
         errormessage.appendChild(errortext);
@@ -229,9 +231,7 @@ function removeElement(array, index) {
 }
 
 // Set token value from localstorage
-$( document ).ready(function(){
-    document.getElementById("tokenval").innerHTML = `${localStorage.getItem("token")}`
-})
+document.getElementById("tokenval").innerHTML = `${localStorage.getItem("token")}`
 
 // Reset token button
 function resetToken() {
@@ -256,38 +256,25 @@ function reset() {
         method: 'post',
         url: '/api/user/passreset',
         data: {
-            'username': window.usrname,
+            'username': userinfo.username,
             'password': password,
             'newpassword': newpassword
         }
       }).then(function() {
-        
-        if ($('#errortext').length > 0) {
-            document.getElementById("errortext").remove();
+        if ($('#restext').length > 0) {
+            $('#restext').remove();
         }
-        var errortext = document.createElement("p"); 
-        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-link">Password has been reset!</p></div>`
-        errortext.id = `errortext`
-        errormessage.appendChild(errortext);
 
-        // Sending breakline under text
-        var breakline = document.createElement("br")
-        errortext.appendChild(breakline);
-        
+        $("#resbox").append(`<div id="restext" style="margin-top: 5px;"><p class="tag is-link">Password has been reset!</p></div>`);
+
       }).catch(function (error) {
-        if ($('#errortext').length > 0) {
-            document.getElementById("errortext").remove();
+
+        if ($('#restext').length > 0) {
+            $('#restext').remove();
         }
+
         // Sending error text
-        var errortext = document.createElement("p"); 
-        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
-        errortext.id = `errortext`
-        errormessage.appendChild(errortext);
-    
-        // Sending breakline under text
-        var breakline = document.createElement("br")
-        errortext.appendChild(breakline);
-        
+        $("#resbox").append(`<div id="restext" style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`);
     })
 }
 
@@ -317,7 +304,7 @@ $(document).on('click','#purgebutton', function(){
                     'username': username,
                     'password': password
                 }
-            }).then(function (response) {
+            }).then(function () {
                 localStorage.removeItem("token")
                 Swal.fire({
                     title: 'Success',

@@ -10,7 +10,7 @@ if (localStorage.getItem("token") !== null) {
             'token': localStorage.getItem("token")
         }
     
-    }).catch(function (error) {
+    }).catch(function () {
         localStorage.removeItem("token")
         window.location.replace("/login");
     })
@@ -26,7 +26,7 @@ axios({
     infoapi = response.data
 }).then(function () {
     // Uploading with dropzone
-    $("#uploadbtn").dropzone({ 
+    $("#dropzone").dropzone({ 
         url: "/api/files/upload",
         paramName: "uploadFile",
         maxFilesize: infoapi.maxuploadsize,

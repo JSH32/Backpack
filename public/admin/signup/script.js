@@ -9,7 +9,7 @@ if (localStorage.getItem("admin_token") !== null) {
 
     }).then(function () {
         window.location.replace('/admin/dash')
-    }).catch(function (error) {
+    }).catch(function () {
         localStorage.removeItem("admin_token")
     })
 }

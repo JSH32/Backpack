@@ -11,7 +11,6 @@
     <script src="/assets/libs/axios.min.js"></script>
     <script src="/assets/libs/jquery-3.4.1.min.js"></script>
     <script src="pagination.js"></script>
-    <script src="script.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
     </link>
     <script src="/assets/components/footer.js"></script>
@@ -62,7 +61,7 @@
                         <h2 class="subtitle"><b>Token</b></h2>
                         <p style="margin-top: -25px;" id="tokenval"></p>
                         <button class="button is-small is-link is-outlined" onclick="resetToken()">Reset</button>
-                        <button class="button is-small is-link is-outlined" onclick="downloadString()">ShareX</button>
+                        <button class="button is-small is-link is-outlined" onclick="downloadSharex()">ShareX</button>
                     </div>
 
 
@@ -74,7 +73,7 @@
                         <div class="innertabcontent" id="passchange">
                             <p><b>Change Password</b></p>
 
-                            <div id="errormessage"></div>
+                            <div id="resbox"></div>
 
                             <div class="field">
                                 <label style="color: #4f4f4f;" class="label">Password</label>
@@ -123,6 +122,7 @@
         </div>
         </div>
     </section>
+    <script src="script.js"></script>
 </body>
 
 </html>
