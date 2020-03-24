@@ -27,7 +27,7 @@ function logout() {
 // Tabs
 function openTab(evt, tabName) {
     // Declare all variables
-    var i, tabcontent, tablinks;
+    let i, tabcontent, tablinks;
   
     // Get all elements with class="tabcontent" and hide them
     tabcontent = document.getElementsByClassName("tabcontent");
@@ -60,9 +60,9 @@ axios({
 
 // Get upload list
 function getListUpload() {
-    query = document.getElementById("filesearch").value
+    let query = document.getElementById("filesearch").value
     if (query == "") {
-        var query = " "
+        query = " "
     }
 
     // Clear results
@@ -96,22 +96,19 @@ function getListUpload() {
 
         // Send error if no results
         if (response.data.length == 0) {
-            if ($('#errortextupl').length > 0) {
-                document.getElementById("errortextupl").remove();
+            if ($('#uplnotfoundtxt').length > 0) {
+                $("#uplnotfoundtxt").remove();
             }
             // Sending error text
-            var errortextupl = document.createElement("p"); 
-            errortextupl.innerHTML = `<div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div>`
-            errortextupl.id = `errortextupl`
-            errormessageupl.appendChild(errortextupl);    
+            $("uploadnotfound").append(`<p id="uplnotfoundtxt"><div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div></p>`);
         }
     })
 }
 
 // Delete files
 $(document).on('click','.dlfl', function(){
-    var id = $(this).attr('id');
-    var file = $(this).attr('filename');
+    let id = $(this).attr('id');
+    let file = $(this).attr('filename');
     // make delete request with id
     axios({
         method: 'post',
@@ -128,9 +125,9 @@ $(document).on('click','.dlfl', function(){
 
 // Get userlist
 function getListUsers() {
-    query = document.getElementById("usersearch").value
+    let query = document.getElementById("usersearch").value
     if (query == "") {
-        var query = " "
+        query = " "
     }
 
     // Clear results
@@ -163,22 +160,19 @@ function getListUsers() {
 
         // Send error if no results
         if (response.data.length == 0) {
-            if ($('#errortextusr').length > 0) {
-                document.getElementById("errortextusr").remove();
+            if ($('#usrnotfoundtxt').length > 0) {
+                document.getElementById("usrnotfoundtxt").remove();
             }
             // Sending error text
-            var errortextusr = document.createElement("p"); 
-            errortextusr.innerHTML = `<div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div>`
-            errortextusr.id = `errortextusr`
-            errormessageusr.appendChild(errortextusr);    
+            $("#usernotfound").append(`<p id="usrnotfoundtxt"><div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div></p>`);
         }
     })
 }
 
 // Delete users
 $(document).on('click','.dlusr', function(){
-    var id = $(this).attr('id');
-    var user = $(this).attr('username');
+    let id = $(this).attr('id');
+    let user = $(this).attr('username');
     // make delete request with id
     axios({
         method: 'post',

@@ -27,7 +27,7 @@ function logout() {
 // Tabs
 function openTab(evt, tabName) {
     // Declare all variables
-    var i, tabcontent, tablinks;
+    let i, tabcontent, tablinks;
   
     // Get all elements with class="tabcontent" and hide them
     tabcontent = document.getElementsByClassName("tabcontent");
@@ -83,8 +83,8 @@ axios({
 
 // Delete files
 $(document).on('click','.dl', function(){
-    var id = $(this).attr('id');
-    var file = $(this).attr('filename');
+    let id = $(this).attr('id');
+    let file = $(this).attr('filename');
     // make delete request with id
     axios({
         method: 'post',
@@ -94,10 +94,8 @@ $(document).on('click','.dl', function(){
             'file': file
         }
     }).then(function () {
-        // document.getElementById(id).remove(); 
-        removemsg = `<div class="listitem" style="color: #383838;"><th><p>This file has been deleted!</p></th></div>`
-        // Display the remove message actively
-        document.getElementById(id).innerHTML = removemsg
+        // Set to file deleted text
+        document.getElementById(id).innerHTML = `<div class="listitem" style="color: #383838;"><th><p>This file has been deleted!</p></th></div>`
         checkifzero()
         getFilecount()
         // Set the value to removemsg in pagination array to prevent invalid value refreshing
@@ -129,8 +127,8 @@ axios({
     }
     
 }).then(function (response) {
-    userinfo = response.data
-    var totalfiles = response.data.filecount
+    let userinfo = response.data
+    let totalfiles = response.data.filecount
     
     $("#file-subtitle").append(`
         <p>Uploads for user <b>${userinfo.username}</b></p>
@@ -152,7 +150,7 @@ function getFilecount () {
         }
     
     }).then(function (response) {
-        var totalfiles = response.data.filecount
+        let totalfiles = response.data.filecount
 
         if (totalfiles > 0) {
             document.getElementById("filecount").innerHTML = `<p>Total user uploads: ${totalfiles}</p>`
@@ -164,7 +162,7 @@ function getFilecount () {
 
 // I hate this more than words can express
 function downloadSharex() {
-    var sharex_dl = 
+    let sharex_dl = 
 `{
     "Name": "nekos.cafe",
     "DestinationType": "ImageUploader, TextUploader, FileUploader",
@@ -192,42 +190,6 @@ function downloadSharex() {
     a.click();
     document.body.removeChild(a);
     setTimeout(function() { URL.revokeObjectURL(a.href); }, 1500);
-  }
-
-
-function login() {
-    username = document.getElementById("usernamepurge").value
-    password = document.getElementById("passwordpurge").value
-    axios({
-        method: 'post',
-        url: '/api/user/delete',
-        data: {
-            'username': username,
-            'password': password
-        }
-      }).then(function (response) {
-        let token = response.data // Get user token
-        localStorage.setItem('token', token); // Set user token in localstorage
-        window.location.replace("/upload");
-    }).catch(function (error) {
-        if (!document.getElementById("errortext")) {
-        // Sending error text
-        let errortext = document.createElement("p"); 
-        errortext.innerHTML = `<div style="margin-bottom: -20px; margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
-        errortext.id = `errortext`
-        errormessage.appendChild(errortext);
-    
-        // Sending breakline under text
-        var breakline = document.createElement("br")
-        errormessage.appendChild(breakline);
-        }
-    })
-}
-
-function removeElement(array, index) {
-    if (index > -1) {
-        array.splice(index, 1);
-    }
 }
 
 // Set token value from localstorage

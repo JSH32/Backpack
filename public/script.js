@@ -6,6 +6,4 @@ axios({
 })
 
 // Random neko
-$( document ).ready(function() {
-    $("#randomneko").append(`<img style="max-height: 400px;" src="/assets/nekos/${Math.floor(Math.random() * (11 - 1)) + 1}.png">`)
-});
+$("#randomneko").append(`<img style="max-height: 400px;" src="/assets/nekos/${Math.floor(Math.random() * (11 - 1)) + 1}.png">`)

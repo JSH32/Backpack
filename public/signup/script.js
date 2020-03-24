@@ -55,8 +55,8 @@ function login() {
                 'password': password,
                 'regkey': regkey
             }
-        }).then(function (response) {
-    
+        }).then(function () {
+
             Swal.fire({
                 title: 'Account created!',
                 text: "Please log in now!",
@@ -75,10 +75,7 @@ function login() {
                 document.getElementById("errortext").remove();
             }
             // Sending error text
-            var errortext = document.createElement("p");
-            errortext.innerHTML = `<div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
-            errortext.id = `errortext`
-            errormessage.appendChild(errortext);
+            $("#errormessage").append(`<p id="errortext"><div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div></p>`);
         })
     } else {
         // Send request without regkey

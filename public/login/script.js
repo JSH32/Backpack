@@ -9,7 +9,7 @@ if (localStorage.getItem("token") !== null) {
     
     }).then(function () {
         window.location.replace('/upload')
-    }).catch(function (error) {
+    }).catch(function () {
         localStorage.removeItem("token")
     })
 }
@@ -25,18 +25,15 @@ function login() {
             'password': password
         }
       }).then(function (response) {
-        var token = response.data // Get user token
+        let token = response.data // Get user token
         localStorage.setItem('token', token); // Set user token in localstorage
         window.location.replace("/upload");
     }).catch(function (error) {
         if ($('#errortext').length > 0) {
-            document.getElementById("errortext").remove();
+            $("errortext").remove();
         }
         // Sending error text
-        var errortext = document.createElement("p"); 
-        errortext.innerHTML = `<div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
-        errortext.id = `errortext`
-        errormessage.appendChild(errortext);
+        $("#errormessage").append(`<p id="errortext"><div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div></p>`);
         
     })
 }

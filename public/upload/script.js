@@ -42,7 +42,7 @@ axios({
         },
         init: function() {
             this.on("success", function(data) {
-                var response = JSON.parse(data.xhr.response)
+                let response = JSON.parse(data.xhr.response)
                 return data.previewElement.innerHTML = `<a href="${response.url}">${response.url}</a><br>`
             }),
             this.on("error", function(data) {
