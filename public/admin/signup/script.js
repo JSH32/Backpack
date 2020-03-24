@@ -38,8 +38,7 @@ function login() {
             'password': password,
             'adminkey': adminkey
         }
-    }).then(function (response) {
-
+    }).then(function () {
         Swal.fire({
             title: 'Account created!',
             text: "Please log in now!",
@@ -58,9 +57,6 @@ function login() {
             document.getElementById("errortext").remove();
         }
         // Sending error text
-        var errortext = document.createElement("p");
-        errortext.innerHTML = `<div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
-        errortext.id = `errortext`
-        errormessage.appendChild(errortext);
+        $("#errormessage").append(`<div id="errortext" style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`);
     })
 } 
