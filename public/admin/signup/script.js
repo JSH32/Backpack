@@ -6,22 +6,12 @@ if (localStorage.getItem("admin_token") !== null) {
         data: {
             'token': localStorage.getItem("admin_token")
         }
-
     }).then(function () {
         window.location.replace('/admin/dash')
     }).catch(function () {
         localStorage.removeItem("admin_token")
     })
 }
-
-axios({
-    method: 'get',
-    url: '/api/info'
-}).then(function (response) {
-    if (response.data.adminreg == false) {
-        window.location.replace('/')
-    }
-})
 
 // I tried to shorten this as much as possible but i really couldnt :/
 function login() {

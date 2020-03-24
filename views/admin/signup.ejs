@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Required Stuff -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nekos.cafe</title>
+    <link rel="stylesheet" href="/assets/libs/bulma-0.8.0/css/bulma.min.css">
+    <script defer src="/assets/libs/fontawesome-5.12.1/js/all.js"></script>
+    <script src="/assets/libs/axios.min.js"></script>
+    <script src="/assets/libs/jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
+    <link rel="stylesheet" href="/assets/libs/swal-dark.css">
+    <script src="/assets/libs/sweetalert2.min.js"></script>
+
+    <%- include('../partials/meta') %>
+</head>
+
+<body>
+    <section class="hero is-success is-fullheight has-background-black">
+        <div class="hero-body">
+
+
+
+            <div class="container has-text-centered">
+
+                <h1 class="title">
+                    Nekos.cafe
+                </h1>
+                <h2 class="subtitle">
+                    Give me your files, nyaa~
+                </h2>
+
+                <div class="tabcontent">
+
+                    <div style="margin-bottom: 5px;">
+                        <h2 class="subtitle">
+                            <b>Admin Signup</b>
+                        </h2>
+                    </div>
+
+                    <div id="errormessage"></div>
+
+                    <div class="field">
+                        <label style="color: #4f4f4f;" class="label">Username</label>
+                        <div class="control">
+                            <center>
+                                <input class="input" id="userfield"
+                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                    type="text">
+                            </center>
+
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label style="color: #4f4f4f;" class="label">Password</label>
+                        <div class="control">
+                            <center>
+                                <input class="input" type="password" id="passfield"
+                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                    type="text">
+                            </center>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label style="color: #4f4f4f;" class="label">Admin Key</label>
+                        <div class="control">
+                            <center>
+                                <input class="input" type="password" id="adminkey"
+                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
+                                    type="text">
+                            </center>
+                        </div>
+                    </div>
+
+                    <button style="margin-bottom: 10px;" onclick="login()" class="button is-link">Signup</button>
+                </div>
+
+                <%- include('../partials/footer') %>
+
+            </div>
+        </div>
+    </section>
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -125,9 +125,8 @@ axios({
     data: {
         'token': localStorage.getItem("token")
     }
-    
 }).then(function (response) {
-    let userinfo = response.data
+    userinfo = response.data
     let totalfiles = response.data.filecount
     
     $("#file-subtitle").append(`

@@ -10,28 +10,17 @@
     <script defer src="/assets/libs/fontawesome-5.12.1/js/all.js"></script>
     <script src="/assets/libs/axios.min.js"></script>
     <script src="/assets/libs/jquery-3.4.1.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    </link>
-    <script src="/assets/components/footer.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
     <link rel="stylesheet" href="/assets/libs/swal-dark.css">
     <script src="/assets/libs/sweetalert2.min.js"></script>
 
-    <!-- Extra Meta -->
-    <meta name="title" content="nekos.cafe">
-    <meta name="description" content="Give me your files, nyaa~">
-    <meta name="keywords" content="file upload, sharex, upload, files, anime, Neko, nyaa">
-    <meta name="robots" content="index, follow">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="language" content="English">
-    <link rel='icon' href='/assets/images/favicon.png' type='image/x-icon'/ >
-    <meta name="theme-color" content="#3273dc">
+    <%- include('../partials/meta') %>
 </head>
 
 <body>
     <section class="hero is-success is-fullheight has-background-black">
         <div class="hero-body">
             <div class="container has-text-centered">
-                <!-- <img style="max-width: 300px;" src="favicon.png"> -->
                 <h1 class="title">
                     Dashboard
                 </h1>
@@ -42,7 +31,7 @@
                     <div id="tablinks" style="display: flex; justify-content: center;" class="buttons has-addons">
                         <button class="button is-link is-outlined" onclick="openTab(event, 'uploads')">Uploads</button>
                         <button class="button is-link is-outlined" onclick="openTab(event, 'users')">Users</button>
-                        <button id="regkeytab" class="button is-link is-outlined" style="display: none;" onclick="openTab(event, 'regkey')">Regkeys</button>
+                        <% if (inviteonly == true) { %> <button id="regkeytab" class="button is-link is-outlined" onclick="openTab(event, 'regkey')">Regkeys</button> <% } %>
                         <button class="button is-link is-outlined" onclick="logout()">Logout</button>
                     </div>
 
@@ -109,8 +98,9 @@
                             </div>
                         </div>
                     </div>
+                    
 
-                    <footer-area></footer-area>
+                    <%- include('../partials/footer') %>
 
                 </div>
             </div>

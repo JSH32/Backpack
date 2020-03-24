@@ -52,9 +52,6 @@ axios({
     url: '/api/info'
 }).then(function (response) {
     infoapi = response.data
-    if (response.data.inviteonly == true) {
-        $("#regkeytab").show();
-    }
 })
 
 

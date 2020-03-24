@@ -29,10 +29,10 @@ function login() {
         localStorage.setItem('admin_token', token); // Set user token in localstorage
         window.location.replace("/admin/dash");
     }).catch(function (error) {
-        if ($('#errortext').length > 0) {
-            document.getElementById("errortext").remove();
+        if ($("#errortext").length > 0) {
+            $("#errortext").remove();
         }
         // Sending error text
-        $("#errormessage").append(`<p id="errortext"><div style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div></p>`);
+        $("#errormessage").append(`<div id="errortext" style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`);
     })
 }

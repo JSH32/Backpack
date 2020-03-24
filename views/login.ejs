@@ -12,26 +12,13 @@
     <script src="/assets/libs/jquery-3.4.1.min.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
     </link>
-    <link rel="stylesheet" href="/assets/libs/swal-dark.css">
-    <script src="/assets/libs/sweetalert2.min.js"></script>
-    <script src="/assets/components/footer.js"></script>
 
-    <!-- Extra Meta -->
-    <meta name="title" content="nekos.cafe">
-    <meta name="description" content="Give me your files, nyaa~">
-    <meta name="keywords" content="file upload, sharex, upload, files, anime, Neko, nyaa">
-    <meta name="robots" content="index, follow">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="language" content="English">
-    <link rel='icon' href='/assets/images/favicon.png' type='image/x-icon'/ >
-    <meta name="theme-color" content="#3273dc">
+    <%- include('partials/meta') %>
 </head>
 
 <body>
     <section class="hero is-success is-fullheight has-background-black">
         <div class="hero-body">
-
-
 
             <div class="container has-text-centered">
 
@@ -46,7 +33,7 @@
 
                     <div style="margin-bottom: 5px;">
                         <h2 class="subtitle">
-                            <b>Admin Signup</b>
+                            <b>Login</b>
                         </h2>
                     </div>
 
@@ -60,7 +47,6 @@
                                     style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
                                     type="text">
                             </center>
-
                         </div>
                     </div>
 
@@ -75,22 +61,10 @@
                         </div>
                     </div>
 
-                    <div class="field">
-                        <label style="color: #4f4f4f;" class="label">Admin Key</label>
-                        <div class="control">
-                            <center>
-                                <input class="input" type="password" id="adminkey"
-                                    style="max-width: 300px; background-color: #141414; border-color: #3273dc; color: white; text-align: center;"
-                                    type="text">
-                            </center>
-                        </div>
-                    </div>
-
-                    <button style="margin-bottom: 10px;" onclick="login()" class="button is-link">Signup</button>
+                    <button style="margin-bottom: 10px;" onclick="login()" class="button is-link">Login</button>
                 </div>
 
-
-                <footer-area></footer-area>
+                <%- include('partials/footer') %>
 
             </div>
         </div>
