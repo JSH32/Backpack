@@ -9,7 +9,6 @@
   "dependencies": {
     "argon2": "^0.25.1",
     "assert": "^2.0.0",
-    "aws-sdk": "^2.629.0",
     "body-parser": "^1.19.0",
     "chalk": "^3.0.0",
     "cookie-parser": "^1.4.4",
@@ -21,11 +20,8 @@
     "express-fileupload": "^1.1.6",
     "express-session": "^1.17.0",
     "mongodb": "^3.4.1",
-    "morgan": "^1.9.1",
-    "multer": "^1.4.2",
     "prompt": "^1.0.0",
     "shortid": "^2.2.15",
-    "swagger-stats": "^0.95.16",
     "uuid": "^3.3.3"
   }
 }
