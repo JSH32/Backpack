@@ -45,6 +45,6 @@ module.exports = ({ db, app }) => {
     })
 
     app.get('/admin/dash', async(req, rep) => {
-        rep.render('admin/dash', { inviteonly : process.env.INVITEONLY })
+        rep.render('admin/dash', { inviteonly : JSON.parse(process.env.INVITEONLY) })
     })
 }
