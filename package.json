@@ -25,6 +25,7 @@
     "ejs": "^3.0.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.6",
+    "express-minify-html": "^0.12.0",
     "express-session": "^1.17.0",
     "mongodb": "^3.4.1",
     "prompt": "^1.0.0",

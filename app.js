@@ -1,5 +1,3 @@
-require('dotenv').config()
-
 const express = require('express')
 const mongo = require('./lib/mongo')
 const app = express()
@@ -23,4 +21,4 @@ mongo.init().then(db => {
     require('./router')({ db, app }) // Router
 })
 
-app.listen(process.env.PORT)
+app.listen(config.port)
