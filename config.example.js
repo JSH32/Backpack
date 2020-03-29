@@ -3,7 +3,7 @@ module.exports = {
     url: 'http://localhost:8080/',
     inviteOnly: false,
 
-    fileLength: 2, // Length of file names
+    fileLength: 7, // Length of file names
     maxUploadSize: 100, // In MegaBytes
     serveUpload: true, // Should uploads be served by node
     uploadDir: './uploads/', // Directory to store uploads
