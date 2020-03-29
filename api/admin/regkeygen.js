@@ -1,14 +1,13 @@
-const argon = require('argon2')
 const uuid = require('uuid/v4')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/admin/regkeygen', async (req, res) => {
         const { token } = req.body
 
         const Regkeys = db.collection('regkeys')
         const Admins = db.collection('admins')
 
-        if (process.env.INVITEONLY == false) {
+        if (config.inviteOnly == false) {
             return res.status(400).send('Regkeys are disabled!')
         } else if (!token) {
             return res.status(400).send('Token is not defined')

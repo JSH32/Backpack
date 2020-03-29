@@ -19,7 +19,7 @@ if (localStorage.getItem("token") !== null) {
 $("#dropzone").dropzone({ 
     url: "/api/files/upload",
     paramName: "uploadFile",
-    maxFilesize: window.uploadsize,
+    maxFilesize: window.maxUploadSize,
     previewsContainer: '#previewcontainer',
     timeout: 0,
     previewTemplate: `

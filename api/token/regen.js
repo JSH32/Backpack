@@ -1,6 +1,6 @@
 const uuid = require('uuid/v4')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/token/regen', async (req, res) => {
         // Get data from request
         const { token } = req.body 

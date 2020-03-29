@@ -1,4 +1,4 @@
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/admin/list/uploads', async (req, res) => {
         const { token, query } = req.body
         const Admins = db.collection('admins')

@@ -3,6 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const mongo = require('./lib/mongo')
 const app = express()
+const config = require('./config')
 const bodyParser = require('body-parser');
 const minifyHTML = require('express-minify-html');
 
@@ -16,7 +17,7 @@ app.use(minifyHTML({
 
 mongo.init().then(db => {
     // Serve uploaded files
-    if (JSON.parse(process.env.UPLOADS_SERVE) == true) { app.use('/', express.static(process.env.UPLOAD_DIR)) }
+    if (config.serveUpload == true) { app.use('/', express.static(config.uploadDir)) }
 
     app.use('/', express.static('./public')) // Public files
     require('./router')({ db, app }) // Router

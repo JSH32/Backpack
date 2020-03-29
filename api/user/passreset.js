@@ -1,6 +1,6 @@
 const argon = require('argon2')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/user/passreset', async (req, res) =>{
         const { username, password, newpassword } = req.body
 
@@ -27,7 +27,7 @@ module.exports = ({ db, app }) => {
                 const { password_hash } = await Users.findOne({ username })
                 if (await argon.verify(password_hash, password)) {
                     const newpassword_hash = await argon.hash(req.body.newpassword)
-                    Users.updateOne({ username }, {$set: { "password_hash": newpassword_hash }})
+                    Users.updateOne({ username }, {$set: { 'password_hash': newpassword_hash }})
                     res.status(200).send('The password has been reset!')
                 } else {
                     res.status(400).send('The password you entered is incorrect!')

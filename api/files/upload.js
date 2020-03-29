@@ -2,10 +2,10 @@ const fileUpload = require('express-fileupload');
 const cryptoRandomString = require('crypto-random-string');
 const path = require('path');
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
 
     app.use(fileUpload({
-        limits: { fileSize: parseInt(process.env.MAXUPLOADSIZE) * 1024 * 1024 },
+        limits: { fileSize: config.maxUploadSize * 1024 * 1024 },
         abortOnLimit: true,
         createParentPath: true
     }))
@@ -25,36 +25,37 @@ module.exports = ({ db, app }) => {
 
                 // Check if file with same md5 exists to avoid duplicates
                 if (Boolean(await Uploads.findOne({ md5 })) == true) {
-                    const {file} = await Uploads.findOne({ md5 })
+                    const { file } = await Uploads.findOne({ md5 })
                     return res.json({
-                        'url': process.env.URL + file
-                    })
+                        'url': config.url + file
+                })
                 } else {
+                    let randomstring
+                    let file
+
                     // File name generation
                     const extension = path.extname(uploadFile.name);
-                    var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
-                    while (randomstring.includes (".")) {
-                        var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
+                    randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'});
+                    file = (randomstring + extension)
+                    // Reroll filename if similar
+                    while (Boolean(await Uploads.findOne({ file })) || randomstring.includes (".")) {
+                        randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'});
+                        file = (randomstring + extension)
                     }
-                    var file = (randomstring + extension)
-                    // If value found in database then reroll filename
-                    while (Boolean(await Uploads.findOne({ file }))) {
-                        var randomstring = cryptoRandomString({length: parseInt(process.env.FILELENGTH), type: 'url-safe'});
-                        var file = (randomstring + extension)
-                    }
-
+                    
                     // Upload file to server and send response
-                    uploadFile.mv(process.env.UPLOAD_DIR + file).then(async function () {
-                        const { username } = await Users.findOne({ token })
-                        await Uploads.insertOne({ file, username, md5 })
+                    uploadFile.mv(config.uploadDir + file).then(async function () {
+                    const { username } = await Users.findOne({ token })
+                    await Uploads.insertOne({ file, username, md5 })
                         return res.json({
-                            'url': process.env.URL + file
+                            'url': config.url + file
                         })
                     })
+
                 }
             }   
         } else {
             return res.status(400).send('Invalid Token!');
         }
-      });
+      })
 }

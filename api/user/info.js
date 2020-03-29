@@ -1,4 +1,4 @@
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/user/info', async (req, res) => {
         const { token } = req.body
         

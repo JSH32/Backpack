@@ -1,7 +1,8 @@
 const assert = require('assert')
 const fs = require('fs')
+const chalk = require('chalk')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/files/delete', async (req, res) => {
         const { file, token } = req.body
         const Users = db.collection('users')
@@ -10,15 +11,20 @@ module.exports = ({ db, app }) => {
         if(tokenExists) {
             const fileExists = Boolean(await Uploads.findOne({ file }))
                 if (fileExists) {
-                    const datafromtoken = await Users.findOne({ token })
+                    const userData = await Users.findOne({ token })
                     
                     const { username } = await Uploads.findOne({ file })
-                    if (username === datafromtoken.username) {
+                    if (username === userData.username) {
                         Uploads.deleteOne({ file : req.body.file }, function(err, result) {
                             assert.equal(err, null)
                             assert.equal(1, result.result.n)
                         });
-                        fs.unlinkSync(process.env.UPLOAD_DIR + file)
+                        if (fs.existsSync(config.uploadDir + file)) {
+                            fs.unlinkSync(config.uploadDir + file)
+                        } else {
+                            console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
+                        }
+                        
                         res.status(200).send(file + ' has been deleted!')
                     } else {
                         res.status(400).send('That file does not belong to you!')

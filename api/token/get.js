@@ -1,6 +1,6 @@
 const argon = require('argon2')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/token/get', async (req, res) =>{
         const { username, password } = req.body
 

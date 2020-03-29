@@ -1,47 +1,47 @@
-require('dotenv').config()
+const config = require('./config')
 
 module.exports = ({ db, app }) => {
 
     // * API
     
     // User endpoints
-    require('./api/user/signup')({ db, app })
-    require('./api/user/info')({ db, app })
-    require('./api/user/passreset')({ db, app })
-    require('./api/user/delete')({ db, app })
+    require('./api/user/signup')({ db, app, config })
+    require('./api/user/info')({ db, app, config })
+    require('./api/user/passreset')({ db, app, config })
+    require('./api/user/delete')({ db, app, config })
 
     // Token endpoints
-    require('./api/token/get')({ db, app })
-    require('./api/token/valid')({ db, app })
-    require('./api/token/regen')({ db, app })
+    require('./api/token/get')({ db, app, config })
+    require('./api/token/valid')({ db, app, config })
+    require('./api/token/regen')({ db, app, config })
 
     // File endpoints
-    require('./api/files/upload')({ db, app })
-    require('./api/files/listfiles')({ db, app })
-    require('./api/files/delete')({ db, app })
+    require('./api/files/upload')({ db, app, config })
+    require('./api/files/listfiles')({ db, app, config })
+    require('./api/files/delete')({ db, app, config })
 
     // Other endpoints
-    require('./api/info')({ db, app })
+    require('./api/info')({ db, app, config })
 
     // Admin endpoints
-    require('./api/admin/token/get')({ db, app })
-    require('./api/admin/token/valid')({ db, app })
-    require('./api/admin/delete/file')({ db, app })
-    require('./api/admin/delete/user')({ db, app })
-    require('./api/admin/list/users')({ db, app })
-    require('./api/admin/list/uploads')({ db, app })
+    require('./api/admin/token/get')({ db, app, config })
+    require('./api/admin/token/valid')({ db, app, config })
+    require('./api/admin/delete/file')({ db, app, config })
+    require('./api/admin/delete/user')({ db, app, config })
+    require('./api/admin/list/users')({ db, app, config })
+    require('./api/admin/list/uploads')({ db, app, config })
 
     // Admin signup endpoint, usually disabled
-    if (JSON.parse(process.env.ADMINREGISTER) == true) { require('./api/admin/signup')({ db, app }) }
+    if (config.admin.register == true) { require('./api/admin/signup')({ db, app }) }
 
     // Regkey generator, usually enabled
-    if (JSON.parse(process.env.INVITEONLY) == true) { require('./api/admin/regkeygen')({ db, app }) }
+    if (config.inviteOnly == true) { require('./api/admin/regkeygen')({ db, app }) }
 
     // * FRONTEND
 
     // User Frontend
     app.get('/signup', async(req, rep) => {
-        rep.renderMin('signup', { inviteonly : process.env.INVITEONLY })
+        rep.renderMin('signup', { inviteOnly : config.inviteOnly })
     })
 
     app.get('/', async(req, rep) => {
@@ -61,7 +61,7 @@ module.exports = ({ db, app }) => {
     })
 
     app.get('/upload', async(req, rep) => {
-        rep.renderMin('upload', { maxfilesize : process.env.MAXUPLOADSIZE })
+        rep.renderMin('upload', { maxUploadSize : config.maxUploadSize })
     })
 
     // Admin frontend
@@ -70,20 +70,20 @@ module.exports = ({ db, app }) => {
     })
 
     // Admin frontend
-    app.get('/admin/signup', async(req, rep, res) => {
-        if(JSON.parse(process.env.ADMINREGISTER) == true) {
+    app.get('/admin/signup', async(req, rep) => {
+        if(config.admin.register == true) {
             rep.renderMin('admin/signup')
         } else {
-            res.redirect('/');
+            rep.renderMin('404')
         }
     })
 
     app.get('/admin/login', async(req, rep) => {
-        rep.renderMin('admin/login', { maxfilesize : process.env.MAXUPLOADSIZE })
+        rep.renderMin('admin/login')
     })
 
     app.get('/admin/dash', async(req, rep) => {
-        rep.renderMin('admin/dash', { inviteonly : JSON.parse(process.env.INVITEONLY) })
+        rep.renderMin('admin/dash', { inviteOnly : config.inviteOnly })
     })
 
     // 404 Page

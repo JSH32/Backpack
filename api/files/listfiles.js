@@ -1,4 +1,4 @@
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/files/list', async (req, res) => {
         const { token } = req.body
         const Users = db.collection('users')

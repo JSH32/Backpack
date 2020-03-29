@@ -1,5 +1,5 @@
 node_modules
 uploads
-.env
+config.js
 yarn.lock
 package-lock.json

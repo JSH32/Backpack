@@ -1,7 +1,7 @@
 const argon = require('argon2')
 const uuid = require('uuid/v4')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/user/signup', async (req, res) => {
         const { username, password, regkey } = req.body
 
@@ -12,7 +12,7 @@ module.exports = ({ db, app }) => {
             return res.status(400).send('Username is not defined')
         } else if (!password) {
             return res.status(400).send('Password is not defined')
-        } else if (JSON.parse(process.env.INVITEONLY) == true) {
+        } else if (config.inviteOnly == true) {
             if (!regkey) {
                 return res.status(400).send('Regkey is not defined')
             }
@@ -31,7 +31,7 @@ module.exports = ({ db, app }) => {
             res.status(400).send('Password too short (minimum 6 characters)')
         } else if (password.length > 256) {
             res.status(400).send('Password too long (maximum 256 characters)')
-        } else if (JSON.parse(process.env.INVITEONLY) == true) {
+        } else if (config.inviteOnly == true) {
             if (await Regkeys.findOne({ regkey })) {
                 const password_hash = await argon.hash(password)
     
@@ -50,7 +50,7 @@ module.exports = ({ db, app }) => {
             } else {
                 res.status(400).send('Invalid regkey')
             }
-        } else if (JSON.parse(process.env.INVITEONLY) == false) {
+        } else if (config.inviteOnly == false) {
             const password_hash = await argon.hash(password)
     
             var token = await uuid()
@@ -63,6 +63,8 @@ module.exports = ({ db, app }) => {
             await Users.insertOne({ username, password_hash, token })
     
             res.status(200).send('Success!')
-        } 
+        } else {
+            res.status(400).send('Error!')
+        }
     })
 }  

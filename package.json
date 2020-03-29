@@ -2,13 +2,20 @@
   "name": "nekos.cafe",
   "version": "1.0.0",
   "description": "A simple filehost 💾",
-  "main": "index.js",
+  "main": "app.js",
   "repository": "https://github.com/Riku32/nekos.cafe",
   "author": "Riku32",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Riku32/nekos.cafe/issues"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
     "argon2": "^0.25.1",
     "assert": "^2.0.0",
+    "aws-sdk": "^2.648.0",
     "body-parser": "^1.19.0",
     "chalk": "^3.0.0",
     "cookie-parser": "^1.4.4",

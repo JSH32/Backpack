@@ -1,7 +1,8 @@
 const argon = require('argon2')
 const fs = require('fs')
+const chalk = require('chalk')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/user/delete', async (req, res) =>{
         const { username, password } = req.body
 
@@ -19,7 +20,11 @@ module.exports = ({ db, app }) => {
                     var { file } = await Uploads.findOne({ username })
                     await Uploads.deleteOne({ file })
                     var uploadexist = Boolean(await Uploads.findOne({ username }))
-                    fs.unlinkSync(process.env.UPLOAD_DIR + file)
+                    if (fs.existsSync(config.uploadDir + file)) {
+                        fs.unlinkSync(config.uploadDir + file)
+                    } else {
+                        console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
+                    }
                 }
 
                 await Users.deleteOne({ username })
