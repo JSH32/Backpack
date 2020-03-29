@@ -1,6 +1,3 @@
-const express = require('express');
-const app = express();
-
 module.exports = ({ db, app }) => {
     app.post('/api/user/info', async (req, res) => {
         const { token } = req.body

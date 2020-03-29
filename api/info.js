@@ -1,5 +1,3 @@
-const express = require('express');
-
 module.exports = ({ db, app }) => {
     app.get('/api/info', async (req, res) => {
         const Uploads = db.collection('uploads')

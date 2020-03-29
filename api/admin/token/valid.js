@@ -1,6 +1,3 @@
-const argon = require('argon2')
-const uuid = require('uuid/v4')
-
 module.exports = ({ db, app }) => {
     app.post('/api/admin/token/valid', async (req, res) =>{
         const { token } = req.body

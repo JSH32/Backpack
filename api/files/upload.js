@@ -1,8 +1,6 @@
-const express = require('express');
 const fileUpload = require('express-fileupload');
 const cryptoRandomString = require('crypto-random-string');
 const path = require('path');
-const app = express();
 
 module.exports = ({ db, app }) => {
 

@@ -1,5 +1,4 @@
 const argon = require('argon2')
-const uuid = require('uuid/v4')
 
 module.exports = ({ db, app }) => {
     app.post('/api/token/get', async (req, res) =>{

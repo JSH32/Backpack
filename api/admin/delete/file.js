@@ -1,6 +1,3 @@
-const express = require('express');
-const app = express();
-const argon = require('argon2')
 const assert = require('assert')
 const fs = require('fs')
 

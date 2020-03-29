@@ -1,4 +1,3 @@
-const argon = require('argon2')
 const fs = require('fs')
 
 module.exports = ({ db, app }) => {

@@ -1,6 +1,3 @@
-const express = require('express');
-const argon = require('argon2');
-
 module.exports = ({ db, app }) => {
     app.post('/api/admin/list/users', async (req, res) => {
         const { token, query } = req.body

@@ -1,5 +1,3 @@
-const express = require('express');
-
 module.exports = ({ db, app }) => {
     app.post('/api/files/list', async (req, res) => {
         const { token } = req.body

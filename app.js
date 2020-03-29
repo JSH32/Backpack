@@ -1,60 +1,25 @@
 require('dotenv').config()
 
 const express = require('express')
-const mongo = require('./api/mongo')
+const mongo = require('./lib/mongo')
 const app = express()
 const bodyParser = require('body-parser');
-const path = require('path');
+const minifyHTML = require('express-minify-html');
 
 app.use(express.json())
 app.use(bodyParser.json());
 app.set('view engine', 'ejs');
+app.use(minifyHTML({
+    exception_url: false,
+    htmlMinifier: { removeComments: true, collapseWhitespace: true, collapseBooleanAttributes: true, removeAttributeQuotes: true, removeEmptyAttributes: true, minifyJS: true }
+}));
 
 mongo.init().then(db => {
-    // Serving upload directory
-    if (JSON.parse(process.env.UPLOADS_SERVE) == true) {app.use('/', express.static(process.env.UPLOAD_DIR))}
+    // Serve uploaded files
+    if (JSON.parse(process.env.UPLOADS_SERVE) == true) { app.use('/', express.static(process.env.UPLOAD_DIR)) }
 
-    // Frontend
-    require('./router')({ db, app }) // EJS Router
     app.use('/', express.static('./public')) // Public files
-
-    // User endpoints
-    require('./api/user/signup')({ db, app })
-    require('./api/user/info')({ db, app })
-    require('./api/user/passreset')({ db, app })
-    require('./api/user/delete')({ db, app })
-
-    // Token endpoints
-    require('./api/token/get')({ db, app })
-    require('./api/token/valid')({ db, app })
-    require('./api/token/regen')({ db, app })
-
-    // File endpoints
-    require('./api/files/upload')({ db, app })
-    require('./api/files/listfiles')({ db, app })
-    require('./api/files/delete')({ db, app })
-
-    // Other endpoints
-    require('./api/info')({ db, app })
-
-    // Admin endpoints
-    require('./api/admin/token/get')({ db, app })
-    require('./api/admin/token/valid')({ db, app })
-    require('./api/admin/delete/file')({ db, app })
-    require('./api/admin/delete/user')({ db, app })
-    require('./api/admin/list/users')({ db, app })
-    require('./api/admin/list/uploads')({ db, app })
-
-    // Admin signup endpoint, usually disabled
-    if (JSON.parse(process.env.ADMINREGISTER) == true) { require('./api/admin/signup')({ db, app }) }
-
-    // Regkey generator, usually enabled
-    if (JSON.parse(process.env.INVITEONLY) == true) { require('./api/admin/regkeygen')({ db, app }) }
-
-    // Error pages
-    app.use(function(req, res) {
-        res.sendFile(path.join(__dirname, '/public/error_pages/404.html'), 404) // 404
-    });
+    require('./router')({ db, app }) // Router
 })
 
 app.listen(process.env.PORT)
