@@ -16,7 +16,7 @@ module.exports = ({ db, app, config }) => {
         const Uploads = db.collection('uploads')
         const tokenExists = Boolean(await Users.findOne({ token }))
         if(tokenExists) {
-            if (req.files == null || Object.keys(req.files).length === 0) {
+            if (req.files.uploadFile == null || Object.keys(req.files.uploadFile).length === 0) {
                 return res.status(400).send('File not uploaded!')
             } else {
                 // The name of the input field
@@ -28,7 +28,7 @@ module.exports = ({ db, app, config }) => {
                     const { file } = await Uploads.findOne({ md5 })
                     return res.json({
                         'url': config.url + file
-                })
+                    })
                 } else {
                     let randomstring
                     let file
