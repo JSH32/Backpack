@@ -1,6 +1,6 @@
-const fileUpload = require('express-fileupload');
-const cryptoRandomString = require('crypto-random-string');
-const path = require('path');
+const fileUpload = require('express-fileupload')
+const cryptoRandomString = require('crypto-random-string')
+const path = require('path')
 
 module.exports = ({ db, app, config }) => {
 
@@ -17,7 +17,7 @@ module.exports = ({ db, app, config }) => {
         const tokenExists = Boolean(await Users.findOne({ token }))
         if(tokenExists) {
             if (req.files == null || Object.keys(req.files).length === 0) {
-                return res.status(400).send('File not uploaded!');
+                return res.status(400).send('File not uploaded!')
             } else {
                 // The name of the input field
                 let uploadFile = req.files.uploadFile;
@@ -35,11 +35,11 @@ module.exports = ({ db, app, config }) => {
 
                     // File name generation
                     const extension = path.extname(uploadFile.name);
-                    randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'});
+                    randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'})
                     file = (randomstring + extension)
                     // Reroll filename if similar
                     while (Boolean(await Uploads.findOne({ file })) || randomstring.includes (".")) {
-                        randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'});
+                        randomstring = cryptoRandomString({length: config.fileLength, type: 'url-safe'})
                         file = (randomstring + extension)
                     }
                     

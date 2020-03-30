@@ -1,12 +1,12 @@
 const argon = require('argon2')
 const uuid = require('uuid/v4')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, config }) => {
     app.post('/api/admin/signup', async (req, res) => {
         const { username, password, adminkey } = req.body
 
         const Admins = db.collection('admins')
-
+    
         if (!username) {
             return res.status(400).send('Username is not defined')
         } else if (!password) {
@@ -27,7 +27,7 @@ module.exports = ({ db, app }) => {
             res.status(400).send('Password too short (minimum 6 characters)')
         } else if (password.length > 256) {
             res.status(400).send('Password too long (maximum 256 characters)')
-        } else if (req.body.adminkey == process.env.ADMINKEY) {
+        } else if (req.body.adminkey == config.admin.key) {
             const password_hash = await argon.hash(password)
     
             var token = await uuid()

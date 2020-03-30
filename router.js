@@ -32,10 +32,10 @@ module.exports = ({ db, app }) => {
     require('./api/admin/list/uploads')({ db, app, config })
 
     // Admin signup endpoint, usually disabled
-    if (config.admin.register == true) { require('./api/admin/signup')({ db, app }) }
+    if (config.admin.register == true) { require('./api/admin/signup')({ db, app, config }) }
 
     // Regkey generator, usually enabled
-    if (config.inviteOnly == true) { require('./api/admin/regkeygen')({ db, app }) }
+    if (config.inviteOnly == true) { require('./api/admin/regkeygen')({ db, app, config }) }
 
     // * FRONTEND
 
