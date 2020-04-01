@@ -2,7 +2,7 @@ const assert = require('assert')
 const fs = require('fs')
 const chalk = require('chalk')
 
-module.exports = ({ db, app, config }) => {
+module.exports = ({ db, app, config, s3 }) => {
     app.post('/api/admin/delete/file', async (req, res) => {
         const { file, token } = req.body
         const Admins = db.collection('admins')
@@ -15,10 +15,22 @@ module.exports = ({ db, app, config }) => {
                             assert.equal(err, null)
                             assert.equal(1, result.result.n)
                         });
-                        if (fs.existsSync(config.uploadDir + file)) {
-                            fs.unlinkSync(config.uploadDir + file)
+                        if (config.s3.enable) {
+                            const params = { 
+                                Bucket: config.s3.bucket, 
+                                Key: file 
+                            }
+                            s3.deleteObject(params, function(err) {
+                                if (err) {
+                                    console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but there was an issue!`))
+                                }
+                            })
                         } else {
-                            console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
+                            if (fs.existsSync(config.uploadDir + file)) {
+                                fs.unlinkSync(config.uploadDir + file)
+                            } else {
+                                console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
+                            }
                         }
                         res.status(200).send(file + ' has been deleted!')   
                 } else {

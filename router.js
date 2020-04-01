@@ -1,6 +1,6 @@
 const config = require('./config')
 
-module.exports = ({ db, app }) => {
+module.exports = ({ db, app, s3 }) => {
 
     // * API
     
@@ -16,9 +16,9 @@ module.exports = ({ db, app }) => {
     require('./api/token/regen')({ db, app, config })
 
     // File endpoints
-    require('./api/files/upload')({ db, app, config })
+    require('./api/files/upload')({ db, app, config, s3 })
     require('./api/files/listfiles')({ db, app, config })
-    require('./api/files/delete')({ db, app, config })
+    require('./api/files/delete')({ db, app, config, s3 })
 
     // Other endpoints
     require('./api/info')({ db, app, config })
@@ -26,8 +26,8 @@ module.exports = ({ db, app }) => {
     // Admin endpoints
     require('./api/admin/token/get')({ db, app, config })
     require('./api/admin/token/valid')({ db, app, config })
-    require('./api/admin/delete/file')({ db, app, config })
-    require('./api/admin/delete/user')({ db, app, config })
+    require('./api/admin/delete/file')({ db, app, config, s3 })
+    require('./api/admin/delete/user')({ db, app, config, s3 })
     require('./api/admin/list/users')({ db, app, config })
     require('./api/admin/list/uploads')({ db, app, config })
 

@@ -9,10 +9,10 @@ if (localStorage.getItem("token") !== null) {
     
     }).catch(function () {
         localStorage.removeItem("token")
-        window.location.replace("/login");
+        window.location.replace("/login")
     })
 } else {
-    window.location.replace("/login");
+    window.location.replace("/login")
 }
 
 // Uploading with dropzone
@@ -43,4 +43,4 @@ $("#dropzone").dropzone({
             }
         })
     }
-});
+})
