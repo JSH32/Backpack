@@ -7,11 +7,13 @@ module.exports = ({ db, app, config }) => {
  
         const Users = db.collection('users')
 
-        const dbtoken = await Users.findOne({ token })
 
         if (Boolean(await Users.findOne({ token }))) {
-            if (dbtoken.token = token) {
-
+            const { username } = await Users.findOne({ token })
+            const { lockdown } = await Users.findOne({ username })
+            if (lockdown) {
+                res.status(400).send('Token does not exist!')
+            } else {
                 var newtoken = await uuid()
 
                 // Regen token if exists
@@ -24,10 +26,7 @@ module.exports = ({ db, app, config }) => {
                         token: newtoken 
                     } 
                 })
-                
                 res.status(200).send('Token has been regenerated!')
-            } else {
-                res.status(400).send('Token does not exist!')
             }
         } else {
             res.status(400).send('Token does not exist!')

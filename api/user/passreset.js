@@ -17,23 +17,25 @@ module.exports = ({ db, app, config }) => {
         const userExists = Boolean(await Users.findOne({ username }))
 
         if (userExists) {
-
-
-            if (newpassword.length < 6) {
-                res.status(400).send('Password too short (minimum 6 characters)')
-            } else if (newpassword.length > 256) {
-                res.status(400).send('Password too long (maximum 256 characters)')
+            const { lockdown } = await Users.findOne({ username })
+            if (lockdown) {
+                res.status(400).send('The password you entered is incorrect!')
             } else {
-                const { password_hash } = await Users.findOne({ username })
-                if (await argon.verify(password_hash, password)) {
-                    const newpassword_hash = await argon.hash(req.body.newpassword)
-                    Users.updateOne({ username }, {$set: { 'password_hash': newpassword_hash }})
-                    res.status(200).send('The password has been reset!')
+                if (newpassword.length < 6) {
+                    res.status(400).send('Password too short (minimum 6 characters)')
+                } else if (newpassword.length > 256) {
+                    res.status(400).send('Password too long (maximum 256 characters)')
                 } else {
-                    res.status(400).send('The password you entered is incorrect!')
+                    const { password_hash } = await Users.findOne({ username })
+                    if (await argon.verify(password_hash, password)) {
+                        const newpassword_hash = await argon.hash(req.body.newpassword)
+                        Users.updateOne({ username }, {$set: { 'password_hash': newpassword_hash }})
+                        res.status(200).send('The password has been reset!')
+                    } else {
+                        res.status(400).send('The password you entered is incorrect!')
+                    }
                 }
             }
-
         } else {
             res.status(400).send('The password you entered is incorrect!')
         }

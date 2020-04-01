@@ -8,13 +8,19 @@ module.exports = ({ db, app, config, s3 }) => {
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')
         const tokenExists = Boolean(await Users.findOne({ token }))
+    
         if(tokenExists) {
-            const fileExists = Boolean(await Uploads.findOne({ file }))
+            const { username } = await Users.findOne({ token })
+            const { lockdown } = await Users.findOne({ username })
+            if (lockdown) {
+                res.status(400).send('Invalid token!')
+            } else {
+                const fileExists = Boolean(await Uploads.findOne({ file }))
                 if (fileExists) {
                     const userData = await Users.findOne({ token })
                     
-                    const { username } = await Uploads.findOne({ file })
-                    if (username === userData.username) {
+                    const fileInfo = await Uploads.findOne({ file })
+                    if (fileInfo.username === userData.username) {
                         Uploads.deleteOne({ file : req.body.file }, function(err, result) {
                             assert.equal(err, null)
                             assert.equal(1, result.result.n)
@@ -43,8 +49,9 @@ module.exports = ({ db, app, config, s3 }) => {
                 } else {
                     res.status(400).send('File does not exist!')
             }
+            }
         } else {
-            res.status(400).send('The username/password you entered is incorrect!');
+            res.status(400).send('Invalid token!');
         }
       });
 }

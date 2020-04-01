@@ -32,17 +32,18 @@ module.exports = ({ db, app, config }) => {
         } else if (password.length > 256) {
             res.status(400).send('Password too long (maximum 256 characters)')
         } else if (config.inviteOnly == true) {
-            if (await Regkeys.findOne({ regkey })) {
+            if (regExists) {
                 const password_hash = await argon.hash(password)
     
                 var token = await uuid()
-            
+                var lockdown = false
+
                 // Regen token if exists
                 while (Boolean(await Users.findOne({ token }))) {
                     var token = uuid()
                 }
 
-                await Users.insertOne({ username, password_hash, token })
+                await Users.insertOne({ username, password_hash, token, lockdown })
     
                 await Regkeys.deleteOne({ regkey })
     
@@ -54,13 +55,14 @@ module.exports = ({ db, app, config }) => {
             const password_hash = await argon.hash(password)
     
             var token = await uuid()
+            var lockdown = false
             
             // Regen token if exists
             while (Boolean(await Users.findOne({ token }))) {
                 var token = uuid()
             }
     
-            await Users.insertOne({ username, password_hash, token })
+            await Users.insertOne({ username, password_hash, token, lockdown })
     
             res.status(200).send('Success!')
         } else {

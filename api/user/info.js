@@ -9,13 +9,18 @@ module.exports = ({ db, app, config }) => {
 
         if (tokenExists) {
             const { username } = await Users.findOne({ token })
+            const { lockdown } = await Users.findOne({ username })
             
-            var filecount = await Uploads.countDocuments({ username })
+            if (lockdown) {
+                res.status(400).send('Invalid token!')
+            } else {
+                var filecount = await Uploads.countDocuments({ username })
     
-            res.json({ 
-                'username': username,
-                'filecount': filecount
-            })
+                res.json({ 
+                    'username': username,
+                    'filecount': filecount
+                })
+            }
         } else {
             res.status(400).send('Invalid token!')
         }

@@ -91,13 +91,13 @@ function getListUpload() {
             document.getElementById("errortextupl").remove();
         }
 
+        // uplErr
+
         // Send error if no results
         if (response.data.length == 0) {
-            if ($('#uplnotfoundtxt').length > 0) {
-                $("#uplnotfoundtxt").remove();
-            }
-            // Sending error text
-            $("uploadnotfound").append(`<p id="uplnotfoundtxt"><div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div></p>`);
+            document.getElementById("uplErr").style.display = "block";
+        } else {
+            document.getElementById("uplErr").style.display = "none";
         }
     })
 }
@@ -140,28 +140,23 @@ function getListUsers() {
             'query': query
         }
     }).then(function (response) {
-        response.data.map( (username, index) => {
+        response.data.map( ({username, lockdown}, index) => {
             // create an element
-            $("#efsusr").append(`
-            <div id="${index}">
-            <th><p style="display: inline; color: #7a7a7a;">${username}</p></th>
-            <th><a username="${username}" id="${index}" style="color: #ff5145;" class="dlusr">Delete</a></th>
-            </div>
-            `)
+            if (lockdown == true) {
+                $("#efsusr").append(`<div class="listitem" style="color: #383838;"><th><p>${username} is being deleted</p></th></div>`)
+            } else {
+                $("#efsusr").append(`
+                <div id="${index}">
+                <th><p style="display: inline; color: #7a7a7a;">${username}</p></th>
+                <th><a username="${username}" id="${index}" style="color: #ff5145;" class="dlusr">Delete</a></th>
+                </div>`)
+            }
         })
 
-        // Delete previous error since it works
-        if ($('#errortextusr').length > 0) {
-            document.getElementById("errortextusr").remove();
-        }
-
-        // Send error if no results
         if (response.data.length == 0) {
-            if ($('#usrnotfoundtxt').length > 0) {
-                document.getElementById("usrnotfoundtxt").remove();
-            }
-            // Sending error text
-            $("#usernotfound").append(`<p id="usrnotfoundtxt"><div id="errorbox" style="margin-bottom: 20px; margin-top: -20px;"><p class="tag is-danger">No search results found!</p></div></p>`);
+            document.getElementById("usrErr").style.display = "block";
+        } else {
+            document.getElementById("usrErr").style.display = "none";
         }
     })
 }
@@ -170,6 +165,10 @@ function getListUsers() {
 $(document).on('click','.dlusr', function(){
     let id = $(this).attr('id');
     let user = $(this).attr('username');
+    Swal.fire(
+        'Scheduled for deletion',
+        'This might take a while'
+    )
     // make delete request with id
     axios({
         method: 'post',
@@ -179,7 +178,7 @@ $(document).on('click','.dlusr', function(){
             'username': user
         }
     }).then(function () {
-        removemsg = `<div class="listitem" style="color: #383838;"><th><p>This user has been deleted!</p></th></div>`
+        removemsg = `<div class="listitem" style="color: #383838;"><th><p>${user} is being deleted</p></th></div>`
         document.getElementById(id).innerHTML = removemsg
     })
 })

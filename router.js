@@ -8,7 +8,7 @@ module.exports = ({ db, app, s3 }) => {
     require('./api/user/signup')({ db, app, config })
     require('./api/user/info')({ db, app, config })
     require('./api/user/passreset')({ db, app, config })
-    require('./api/user/delete')({ db, app, config })
+    require('./api/user/delete')({ db, app, config, s3 })
 
     // Token endpoints
     require('./api/token/get')({ db, app, config })

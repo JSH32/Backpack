@@ -9,12 +9,17 @@ module.exports = ({ db, app, config }) => {
         const userExists = Boolean(await Users.findOne({ username }))
 
         if (userExists) {
-            const { password_hash } = await Users.findOne({ username })
-            if (await argon.verify(password_hash, password)) {
-                const { token } = await Users.findOne({ username })
-                res.status(200).send(token)
-            } else {
+            const { lockdown } = await Users.findOne({ username })
+            if (lockdown) {
                 res.status(400).send('The username/password you entered is incorrect!')
+            } else {
+                const { password_hash } = await Users.findOne({ username })
+                if (await argon.verify(password_hash, password)) {
+                    const { token } = await Users.findOne({ username })
+                    res.status(200).send(token)
+                } else {
+                    res.status(400).send('The username/password you entered is incorrect!')
+                }
             }
         } else {
             res.status(400).send('The username/password you entered is incorrect!')

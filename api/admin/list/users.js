@@ -14,12 +14,12 @@ module.exports = ({ db, app, config }) => {
 
         if (tokenExists) {
             if (query == " ") {
-                const results = ( await Users.find({}).sort({_id:-1}).toArray() ).map( ({ username }) => username )
+                const results = ( await Users.find({}).sort({_id:-1}).toArray() ).map( username  => { return {username: username.username, lockdown: username.lockdown} } )
 
                 res.status(200).json(results)
             } else {
-                const results = ( await Users.find({ "username": query }).sort({_id:-1}).toArray() ).map( ({ username }) => username )
-
+                const results = ( await Users.find({ "username": query }).sort({_id:-1}).toArray() ).map( username => { return {username: username.username, lockdown: username.lockdown} } )
+                
                 res.status(200).json(results)
             }
         } else {
