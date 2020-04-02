@@ -1,13 +1,13 @@
 {
-  "name": "nekos.cafe",
+  "name": "kawaii.sh",
   "version": "1.0.0",
-  "description": "A simple filehost 💾",
+  "description": "A very cute filehost 💾",
   "main": "app.js",
-  "repository": "https://github.com/Riku32/nekos.cafe",
+  "repository": "https://github.com/Riku32/kawaii.sh",
   "author": "Riku32",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Riku32/nekos.cafe/issues"
+    "url": "https://github.com/Riku32/kawaii.sh/issues"
   },
   "scripts": {
     "start": "node app.js"

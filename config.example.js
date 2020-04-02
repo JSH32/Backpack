@@ -10,7 +10,7 @@ module.exports = {
 
     database: {
         mongoUrl: 'mongodb://localhost:27017',
-        dbName: 'nekos'
+        dbName: 'kawaii'
     },
 
     admin: {

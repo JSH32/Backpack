@@ -1,5 +1,6 @@
 // Please kill me now
 // This does pagination
+// 4/1/20 Renamed to kawaii.sh, too lazy to rename the plugin though
 (function($){
 $.fn.nekoPaginate = function (options) {
     var defaults = {

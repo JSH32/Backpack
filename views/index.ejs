@@ -5,7 +5,7 @@
     <!-- Required Stuff -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nekos.cafe</title>
+    <title>kawaii.sh</title>
     <link rel="stylesheet" href="/assets/libs/bulma-0.8.0/css/bulma.min.css">
     <script defer src="/assets/libs/fontawesome-5.12.1/js/all.js"></script>
     <script src="/assets/libs/axios.min.js"></script></script>
@@ -18,15 +18,10 @@
   <section class="hero is-success is-fullheight has-background-black">
     <div class="hero-body">
       <div class="container has-text-centered">
-        <div id="randomneko">
-          <img style="max-height: 400px;" src="/assets/nekos/<%= Math.floor(Math.random() * (11 - 1)) + 1 %>.png">
+        <div id="randomMascot">
+          <img style="max-height: 400px;" src="/assets/mascots/<%= Math.floor(Math.random() * (16 - 1)) + 1 %>.png">
         </div>
-        <h1 class="title">
-          Nekos.cafe
-        </h1>
-        <h2 class="subtitle">
-          Give me your files, nyaa
-        </h2>
+        <%- include('partials/tag') %>
         <div style="display: flex; justify-content: center; margin-top: -10px;"
           class="field is-grouped is-grouped-multiline">
           <div class="control">

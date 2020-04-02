@@ -163,7 +163,7 @@ function getFilecount () {
 function downloadSharex() {
     let sharex_dl = 
 `{
-    "Name": "nekos.cafe",
+    "Name": "kawaii.sh",
     "DestinationType": "ImageUploader, TextUploader, FileUploader",
     "RequestMethod": "POST",
     "RequestURL": "${window.location.origin}/api/files/upload",
