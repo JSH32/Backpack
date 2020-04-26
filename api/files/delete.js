@@ -5,6 +5,11 @@ const chalk = require('chalk')
 module.exports = ({ db, app, config, s3 }) => {
     app.post('/api/files/delete', async (req, res) => {
         const { file, token } = req.body
+        
+        if (!file && !token) {
+            return res.status(400).send('Invalid data!')
+        }
+        
         const Users = db.collection('users')
         const Uploads = db.collection('uploads')
         const tokenExists = Boolean(await Users.findOne({ token }))
@@ -20,7 +25,7 @@ module.exports = ({ db, app, config, s3 }) => {
                     const userData = await Users.findOne({ token })
                     
                     const fileInfo = await Uploads.findOne({ file })
-                    if (fileInfo.username === userData.username) {
+                    if (fileInfo.username == userData.username) {
                         Uploads.deleteOne({ file : req.body.file }, function(err, result) {
                             assert.equal(err, null)
                             assert.equal(1, result.result.n)
