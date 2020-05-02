@@ -1,59 +1,50 @@
 const argon = require('argon2')
 const fs = require('fs')
 const chalk = require('chalk')
+const auth = require('../../lib/middleware/auth')
 
 module.exports = ({ db, app, config, s3 }) => {
-    app.post('/api/user/delete', async (req, res) =>{
-        const { username, password } = req.body
+  const endpoint = "/api/user/delete"
 
-        const Users = db.collection('users')
+  app.use(endpoint, auth(db, { authMethod: "password" }))
 
-        const userExists = Boolean(await Users.findOne({ username }))
+  app.post(endpoint, async (req, res) => {
+    const { username } = req.body
 
-        if (userExists) {
-            const { lockdown } = await Users.findOne({ username })
-            const { password_hash } = await Users.findOne({ username })
-            if (await argon.verify(password_hash, password)) {
-                if (lockdown) {
-                    res.status(400).send('The username/password you entered is incorrect!')
-                } else {
-                    const Uploads = db.collection('uploads')
+    const Users = db.collection('users')
+    const Uploads = db.collection('uploads')
 
-                    Users.updateOne({ username }, {$set: { 'lockdown': true }})
-                    res.status(200).send('This user has been scheduled for deletion')
-    
-                    var uploadExists = Boolean(await Uploads.findOne({ username }))
-                    while (uploadExists) {
-                        var { file } = await Uploads.findOne({ username })
-                        await Uploads.deleteOne({ file })
-                        if (config.s3.enable) {
-                            const params = { 
-                                Bucket: config.s3.bucket, 
-                                Key: file 
-                            }
-                            s3.deleteObject(params, function(err) {
-                                if (err) {
-                                    console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but there was an issue!`))
-                                }
-                            })
-                        } else {
-                            if (fs.existsSync(config.uploadDir + file)) {
-                                fs.unlinkSync(config.uploadDir + file)
-                            } else {
-                                console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
-                            }
-                        }
-                        var uploadExists = Boolean(await Uploads.findOne({ username }))
-                    }
-    
-                    await Users.deleteOne({ username })                
-                }
-            } else {
-                res.status(400).send('The username/password you entered is incorrect!')
-            }
-        } else {
-            res.status(400).send('The username/password you entered is incorrect!')
+    // Put user in lockdown mode
+    await Users.updateOne({ username }, { $set: { lockdown: true } })
+    res.status(200).send('This user has been scheduled for deletion')
+
+    let uploadExists = Boolean(await Uploads.findOne({ username }))
+
+    while (uploadExists) {
+      let { file } = await Uploads.findOne({ username })
+      await Uploads.deleteOne({ file })
+
+      if (config.s3.enable) {
+        const params = {
+          Bucket: config.s3.bucket,
+          Key: file
         }
-    })
-    
-}  
+        s3.deleteObject(params, function (err) {
+          if (err) {
+            console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but there was an issue!`))
+          }
+        })
+      } else {
+        // No S3 Enabled
+        if (fs.existsSync(config.uploadDir + file)) {
+          fs.unlinkSync(config.uploadDir + file)
+        } else {
+          console.log(chalk.yellow(`[WARN] ${config.uploadDir + file} was requested to be deleted but didn't exist!`))
+        }
+      }
+
+      uploadExists = Boolean(await Uploads.findOne({ username }))
+    }
+    await Users.deleteOne({ username })
+  })
+}

@@ -1,37 +1,29 @@
 const uuid = require('uuid/v4')
+const auth = require('../../lib/middleware/auth')
 
 module.exports = ({ db, app, config }) => {
-    app.post('/api/admin/regkeygen', async (req, res) => {
-        const { token } = req.body
+  let endpoint = "/api/admin/regkeygen"
 
-        const Regkeys = db.collection('regkeys')
-        const Admins = db.collection('admins')
+  app.use(endpoint, auth(db, { authMethod: "token", database: "admins" }))
 
-        if (config.inviteOnly == false) {
-            return res.status(400).send('Regkeys are disabled!')
-        } else if (!token) {
-            return res.status(400).send('Token is not defined')
-        }
+  app.post(endpoint, async (req, res) => {
 
-        if (Boolean(await Admins.findOne({ token }))) {
-            // Create regkey
-            var regkey = await uuid()
+    const Regkeys = db.collection('regkeys')
 
-            // Regen regkey if exists
-            while (Boolean(await Regkeys.findOne({ regkey }))) {
-                var regkey = uuid()
-            }
+    let regkey = await uuid()
 
-            // Insert regkey to db
-            await Regkeys.insertOne({ regkey })
+    // Regenerate regkey if exists in db
+    while ((await Regkeys.findOne({ regkey }))) {
+      regkey = uuid()
+    }
 
-            // Send regkey back
-            res.json({
-                'regkey': regkey
-            })
-        } else {
-            res.status(400).send('Invalid Token!')
-        }
-    
+    // Insert regkey to db
+    await Regkeys.insertOne({ regkey })
+
+    // Send regkey back
+    res.json({
+      regkey: regkey
     })
-}  
+    
+  })
+}

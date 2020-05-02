@@ -1,29 +1,24 @@
+const auth = require('../../../lib/middleware/auth')
+
 module.exports = ({ db, app, config }) => {
-    app.post('/api/admin/list/users', async (req, res) => {
-        const { token, query } = req.body
-        const Admins = db.collection('admins')
-        const Users = db.collection('users')
+  const endpoint = "/api/admin/list/users"
 
-        const tokenExists = Boolean(await Admins.findOne({ token }))
+  app.use(endpoint, auth(db, { authMethod: "token", database: "admins" }))
 
-        if (!token) {
-            return res.status(400).send('Token is not defined')
-        } else if (!query) {
-            return res.status(400).send('Query is not defined')
-        }
+  app.post(endpoint, async (req, res) => {
+    const { query } = req.body
+    const Users = db.collection('users')
 
-        if (tokenExists) {
-            if (query == " ") {
-                const results = ( await Users.find({}).sort({_id:-1}).toArray() ).map( username  => { return {username: username.username, lockdown: username.lockdown} } )
-
-                res.status(200).json(results)
-            } else {
-                const results = ( await Users.find({ "username": query }).sort({_id:-1}).toArray() ).map( username => { return {username: username.username, lockdown: username.lockdown} } )
-                
-                res.status(200).json(results)
-            }
-        } else {
-            res.status(400).send('Invalid token!')
-        } 
+    if (!query) {
+      return res.status(400).send('Query is not defined')
     }
-)}
+
+    if (query == ' ') {
+      const results = (await Users.find({}).sort({_id:-1}).toArray() ).map( username  => { return {username: username.username, lockdown: username.lockdown} })
+      res.status(200).json(results)
+    } else {
+      const results = (await Users.find({ "username": query }).sort({_id:-1}).toArray() ).map( username => { return {username: username.username, lockdown: username.lockdown} })
+      res.status(200).json(results)
+    }
+  })
+}

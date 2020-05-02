@@ -1,28 +1,19 @@
+const auth = require('../../lib/middleware/auth')
+
 module.exports = ({ db, app, config }) => {
-    app.post('/api/user/info', async (req, res) => {
-        const { token } = req.body
-        
-        const Uploads = db.collection('uploads')
-        const Users = db.collection('users')
+  const endpoint = "/api/user/info"
 
-        const tokenExists = Boolean(await Users.findOne({ token }))
+  app.use(endpoint, auth(db, { authMethod: "token" }))
 
-        if (tokenExists) {
-            const { username } = await Users.findOne({ token })
-            const { lockdown } = await Users.findOne({ username })
-            
-            if (lockdown) {
-                res.status(400).send('Invalid token!')
-            } else {
-                var filecount = await Uploads.countDocuments({ username })
-    
-                res.json({ 
-                    'username': username,
-                    'filecount': filecount
-                })
-            }
-        } else {
-            res.status(400).send('Invalid token!')
-        }
-    });
+  app.post(endpoint, async (req, res) => {
+    const userDat = await db.collection("users").findOne({ token: req.body.token })
+    const filecount = await db.collection("uploads").countDocuments({ username: userDat.username })
+
+    // Send user info
+    res.status(200).json({
+      username: userDat.username,
+      filecount: filecount
+    })
+
+  })
 }

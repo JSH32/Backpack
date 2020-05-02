@@ -1,29 +1,24 @@
+const auth = require('../../../lib/middleware/auth')
+
 module.exports = ({ db, app, config }) => {
-    app.post('/api/admin/list/uploads', async (req, res) => {
-        const { token, query } = req.body
-        const Admins = db.collection('admins')
-        const Uploads = db.collection('uploads')
+  const endpoint = "/api/admin/list/uploads"
 
-        const tokenExists = Boolean(await Admins.findOne({ token }))
+  app.use(endpoint, auth(db, { authMethod: "token", database: "admins" }))
 
-        if (!token) {
-            return res.status(400).send('Token is not defined')
-        } else if (!query) {
-            return res.status(400).send('Query is not defined')
-        }
+  app.post(endpoint, async (req, res) => {
+    const { query } = req.body
+    const Uploads = db.collection('uploads')
 
-        if (tokenExists) {
-            if (query == " ") {
-                const results = ( await Uploads.find({}).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} } )
-
-                res.status(200).json(results)
-            } else {
-                const results = ( await Uploads.find({ "file": query }).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} } )
-
-                res.status(200).json(results)
-            }
-        } else {
-            res.status(400).send('Invalid token!')
-        } 
+    if (!query) {
+      return res.status(400).send('Query is not defined')
     }
-)}
+
+    if (query == ' ') {
+      const results = (await Uploads.find({}).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} })
+      res.status(200).json(results)
+    } else {
+      const results = (await Uploads.find({ "file": query }).sort({_id:-1}).toArray() ).map( file => { return {file: file.file, username: file.username} })
+      res.status(200).json(results)
+    }
+  })
+}

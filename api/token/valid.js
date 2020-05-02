@@ -1,22 +1,11 @@
+const auth = require('../../lib/middleware/auth')
+
 module.exports = ({ db, app, config }) => {
-    app.post('/api/token/valid', async (req, res) =>{
-        const { token } = req.body
+  let endpoint = "/api/token/valid"
 
-        const Users = db.collection('users')
+  app.use(endpoint, auth(db, { authMethod: "token" }))
 
-        const tokenExists = Boolean(await Users.findOne({ token }))
-
-        if (tokenExists) {
-            const { username } = await Users.findOne({ token })
-            const { lockdown } = await Users.findOne({ username })
-
-            if (lockdown) {
-                res.status(400).send('This token is invalid!')
-            } else {
-                res.status(200).send('This token is valid!')
-            }
-        } else {
-            res.status(400).send('This token is invalid!')
-        }
-    })
+  app.post(endpoint, async (req, res) => {
+    res.status(200).send('This token is valid!')
+  })
 }
