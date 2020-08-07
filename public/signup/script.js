@@ -29,7 +29,7 @@ function login() {
   password = document.getElementById("passfield").value;
   regkey = document.getElementById("regkeyfield").value;
 
-  const dataObject = { username: username, password: password };
+  const dataObject = { username, password };
 
   // Sending request with regkey if server is private mode
   if (infoapi.inviteonly === true) {
