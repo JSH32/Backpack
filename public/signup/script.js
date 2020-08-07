@@ -58,7 +58,9 @@ function login() {
       }
       // Sending error text
       $("#errormessage").append(
-        `<div id="errortext" style="margin-top: 5px;"><p class="tag is-danger">${error.response.data}</p></div>`
+        `<div id = "errortext" style = "margin-top: 5px;">
+                <p class = "tag is-danger">
+                    ${error.response.data}</ p></ div>`
       );
     });
 }
