@@ -40,7 +40,7 @@ function login () {
   
   // Sending request with regkey if server is private mode
   if (infoapi.inviteonly === true) {
-    dataObject["regkey"] = regkey
+    dataObject.regkey = regkey;
   }
   
     // Send default request without regkey
