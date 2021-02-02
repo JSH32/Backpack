@@ -1,2 +1,2 @@
-# kawaii.sh
-Filehost api/website made with NodeJS and MongoDB. Only for the most elite connoisseur 💾
+# Kawaii.sh
+Filehost api/website made with Rust, React, and Postgres
