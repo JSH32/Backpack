@@ -1,0 +1,16 @@
+[package]
+name = "kawaii.sh"
+version = "0.1.0"
+authors = ["Riku <riku@kawaii.sh>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = "0.4.6"
+sqlx = { version = "0.4.2", features = [ "runtime-async-std-native-tls", "postgres" ] }
+async-std = { version = "1.9", features = [ "attributes" ] }
+rocket_contrib = "0.4.6"
+serde = "1.0.123"
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
