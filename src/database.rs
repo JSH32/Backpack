@@ -17,7 +17,7 @@ impl Database {
         }
     }
     /// Creates a user from a user creation form
-    pub async fn create_user(&mut self, form: &models::user::UserCreateForm) -> Result<(), sqlx::Error> {
+    pub async fn create_user(&self, form: &models::user::UserCreateForm) -> Result<(), sqlx::Error> {
         sqlx::query("INSERT INTO users (email, username, password) VALUES ($1, $2, $3)")
             .bind(&form.email)
             .bind(&form.username)
@@ -28,7 +28,7 @@ impl Database {
         Ok(())
     }
     /// Gets user info from database by email
-    pub async fn get_user_by_email(&mut self, email: &str) -> Result<models::user::UserData, sqlx::Error> {
+    pub async fn get_user_by_email(&self, email: &str) -> Result<models::user::UserData, sqlx::Error> {
         sqlx::query("SELECT id, email, username FROM users WHERE email = $1")
             .bind(email)
             .try_map(|row: sqlx::postgres::PgRow| {
@@ -42,7 +42,7 @@ impl Database {
             .await
     }
     /// Gets user info from database by id
-    pub async fn get_user_by_id(&mut self, id: u32) -> Result<models::user::UserData, sqlx::Error> {
+    pub async fn get_user_by_id(&self, id: u32) -> Result<models::user::UserData, sqlx::Error> {
         sqlx::query("SELECT id, email, username FROM users WHERE id = $1")
             .bind(id)
             .try_map(|row: sqlx::postgres::PgRow| {

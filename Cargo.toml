@@ -7,9 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.4.6"
 sqlx = { version = "0.4.2", features = [ "runtime-async-std-native-tls", "postgres" ] }
-async-std = { version = "1.9", features = [ "attributes" ] }
-rocket_contrib = "0.4.6"
 serde = "1.0.123"
 dotenv = "0.15.0"
+actix-web = "3"
+rust-argon2 = "0.8.3"
+rusoto_s3 = "0.46.0"
+rusoto_core = "0.46.0"
+infer = "0.3.4"
