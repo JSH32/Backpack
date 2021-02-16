@@ -30,7 +30,7 @@ pub fn new_error(code: StatusCode, message: &str) -> Value {
     serde_json::to_value(&error).unwrap()
 }
 
-/// Create new error message response
+/// Create new internal server error response
 pub fn new_internal_server_error() -> HttpResponse {
     HttpResponse::InternalServerError()
         .json(new_error(StatusCode::INTERNAL_SERVER_ERROR, "There was a problem processing your request"))

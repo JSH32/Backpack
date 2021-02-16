@@ -5,6 +5,7 @@ pub struct UserData {
     pub id: i32,
     pub username: String,
     pub email: String,
+    pub verified: bool
 }
 
 #[derive(Deserialize)]

@@ -35,7 +35,8 @@ impl Database {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
-                    username: row.get("username")
+                    username: row.get("username"),
+                    verified: row.get("verified")
                 })
             })
             .fetch_one(&self.pool)
@@ -49,7 +50,8 @@ impl Database {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
-                    username: row.get("username")
+                    username: row.get("username"),
+                    verified: row.get("verified")
                 })
             })
             .fetch_one(&self.pool)
@@ -63,7 +65,8 @@ impl Database {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
-                    username: row.get("username")
+                    username: row.get("username"),
+                    verified: row.get("verified")
                 })
             })
             .fetch_one(&self.pool)
