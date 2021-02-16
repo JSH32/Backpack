@@ -1387,10 +1387,12 @@ dependencies = [
  "actix-web",
  "dotenv",
  "infer",
+ "rand 0.8.3",
  "rusoto_core",
  "rusoto_s3",
  "rust-argon2",
  "serde",
+ "serde_json",
  "sqlx",
 ]
 

@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize)]
 pub struct UserData {
-    pub id: u32,
+    pub id: i32,
     pub username: String,
     pub email: String,
 }
