@@ -1,6 +1,8 @@
 use actix_web::*;
 use http::StatusCode;
 use storage::Storage;
+use hmac::{Hmac, NewMac};
+use rand::Rng;
 
 extern crate dotenv;
 extern crate argon2;
@@ -21,7 +23,8 @@ async fn main() -> std::io::Result<()> {
 
     let api_state = web::Data::new(state::State {
         database: database,
-        storage: storage
+        storage: storage,
+        jwt_key: Hmac::new_varkey(&rand::thread_rng().gen::<[u8; 32]>()).expect("Could not generate JWT key")
     });
 
     HttpServer::new(move || {
@@ -30,12 +33,12 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/v1/")
                     .service(routes::user::get_routes())
+                    .service(routes::auth::get_routes())
             )
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
-                HttpResponse::BadRequest()
-                    .json(models::new_error(StatusCode::BAD_REQUEST, "Invalid data provided!"))
-                    .into()
+                Error::from(models::Response::new_message(
+                    StatusCode::BAD_REQUEST, true, "Invalid data provided!"))
             }))
     })
     .bind(("0.0.0.0", config.port))?

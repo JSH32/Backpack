@@ -11,7 +11,7 @@ impl Storage {
     pub fn new(bucket: &str, access_key: &str, secret_key: &str, s3_region: Region) -> Self {
         let credential_provider = credential::StaticProvider::new_minimal(access_key.to_string(), secret_key.to_string());
         Self {
-            client: S3Client::new_with(HttpClient::new().unwrap(), credential_provider, s3_region),
+            client: S3Client::new_with(HttpClient::new().expect("S3 dispatcher could not be created"), credential_provider, s3_region),
             bucket: bucket.into()
         }
     }

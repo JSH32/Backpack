@@ -1,37 +1,71 @@
 pub mod user;
+pub mod auth;
 
-use actix_web::{HttpResponse, http::StatusCode};
-use serde_json::{Map, Value, json};
+use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
+use futures::future::{Ready, ok};
+use serde_json::Value;
+use serde::Serialize;
 
-/// Create new success data response
-pub fn new_data(code: StatusCode, data: Value) -> Value {
-    let mut success = Map::new();
-    success.insert("code".to_string(), json!(code.as_u16()));
-    success.insert("error".to_string(), json!(false));
-    success.insert("data".to_string(), data);
-    serde_json::to_value(&success).unwrap()
+/// Standard response spec for API
+#[derive(Serialize)]
+pub struct Response {
+    code: u16,
+    error: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<Value>
 }
 
-/// Create new success message response
-pub fn new_message(code: StatusCode, message: &str) -> Value {
-    let mut success = Map::new();
-    success.insert("code".to_string(), json!(code.as_u16()));
-    success.insert("error".to_string(), json!(false));
-    success.insert("message".to_string(), json!(message));
-    serde_json::to_value(&success).unwrap()
+impl Response {
+    // Create new message response
+    pub fn new_message(code: StatusCode, error: bool, message: &str) -> Self {
+        Response {
+            code: code.as_u16(),
+            error: error,
+            message: Some(message.to_string()),
+            data: None
+        }
+    }
+    // Create new data response
+    pub fn new_data(code: StatusCode, error: bool, data: Value) -> Self {
+        Response {
+            code: code.as_u16(),
+            error: error,
+            message: None,
+            data: Some(data)
+        }
+    }
+    /// Create new internal server error response
+    pub fn internal_server_error() -> Self {
+        Response::new_message(StatusCode::INTERNAL_SERVER_ERROR, true, "There was a problem processing your request")
+    }
 }
 
-/// Create new error message response
-pub fn new_error(code: StatusCode, message: &str) -> Value {
-    let mut error = Map::new();
-    error.insert("code".to_string(), json!(code.as_u16()));
-    error.insert("error".to_string(), json!(true));
-    error.insert("message".to_string(), json!(message));
-    serde_json::to_value(&error).unwrap()
+/// Convert to actix HttpResponse type
+impl From<Response> for HttpResponse {
+    fn from(response: Response) -> Self {
+        HttpResponse::build(StatusCode::from_u16(response.code).unwrap())
+            .json(response)
+    }
 }
 
-/// Create new internal server error response
-pub fn new_internal_server_error() -> HttpResponse {
-    HttpResponse::InternalServerError()
-        .json(new_error(StatusCode::INTERNAL_SERVER_ERROR, "There was a problem processing your request"))
+/// Convert to actix Error type
+impl From<Response> for Error {
+    fn from(response: Response) -> Self {
+        HttpResponse::from(response).into()
+    }
+}
+
+/// Responder to convert data to valid simple HTTP response
+impl Responder for Response {
+    type Error = Error;
+    type Future = Ready<Result<HttpResponse, Error>>;
+
+    /// Get HTTP response from response
+    fn respond_to(self, _: &HttpRequest) -> Self::Future {
+        ok(HttpResponse::from(self))
+    }
 }

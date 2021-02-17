@@ -29,14 +29,15 @@ impl Database {
     }
     /// Gets user info from database by email
     pub async fn get_user_by_email(&self, email: &str) -> Result<models::user::UserData, sqlx::Error> {
-        sqlx::query("SELECT id, email, username FROM users WHERE email = $1")
+        sqlx::query("SELECT id, email, username, password, verified FROM users WHERE email = $1")
             .bind(email)
             .try_map(|row: sqlx::postgres::PgRow| {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
                     username: row.get("username"),
-                    verified: row.get("verified")
+                    verified: row.get("verified"),
+                    password: row.get("password")
                 })
             })
             .fetch_one(&self.pool)
@@ -44,14 +45,15 @@ impl Database {
     }
     /// Gets user info from database by id
     pub async fn get_user_by_id(&self, id: u32) -> Result<models::user::UserData, sqlx::Error> {
-        sqlx::query("SELECT id, email, username FROM users WHERE id = $1")
+        sqlx::query("SELECT id, email, username, password, verified FROM users WHERE id = $1")
             .bind(id)
             .try_map(|row: sqlx::postgres::PgRow| {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
                     username: row.get("username"),
-                    verified: row.get("verified")
+                    verified: row.get("verified"),
+                    password: row.get("password")
                 })
             })
             .fetch_one(&self.pool)
@@ -59,14 +61,15 @@ impl Database {
     }
     /// Gets user info from database by username
     pub async fn get_user_by_username(&self, username: &str) -> Result<models::user::UserData, sqlx::Error> {
-        sqlx::query("SELECT id, email, username FROM users WHERE username = $1")
+        sqlx::query("SELECT id, email, username, password, verified FROM users WHERE username = $1")
             .bind(username)
             .try_map(|row: sqlx::postgres::PgRow| {
                 Ok(models::user::UserData {
                     id: row.get("id"),
                     email: row.get("email"),
                     username: row.get("username"),
-                    verified: row.get("verified")
+                    verified: row.get("verified"),
+                    password: row.get("password")
                 })
             })
             .fetch_one(&self.pool)
