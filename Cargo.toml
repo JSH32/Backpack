@@ -4,8 +4,6 @@ version = "0.1.0"
 authors = ["Riku <riku@kawaii.sh>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 sqlx = { version = "0.4.2", features = [ "runtime-async-std-native-tls", "postgres" ] }
 serde = "1.0.123"

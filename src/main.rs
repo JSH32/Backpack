@@ -37,8 +37,7 @@ async fn main() -> std::io::Result<()> {
             )
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
-                Error::from(models::Response::new_message(
-                    StatusCode::BAD_REQUEST, true, "Invalid data provided!"))
+                Error::from(models::MessageResponse::bad_request())
             }))
     })
     .bind(("0.0.0.0", config.port))?
