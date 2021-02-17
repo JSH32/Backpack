@@ -2,7 +2,7 @@ use argon2;
 use http::StatusCode;
 use rand::Rng;
 
-use crate::{models::auth::UserID, state::State};
+use crate::state::State;
 use crate::models::user::*;
 use crate::models::*;
 
@@ -15,8 +15,8 @@ pub fn get_routes() -> Scope {
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, user_id: UserID) -> Response {
-    match state.database.get_user_by_id(user_id.0 as u32).await {
+async fn info(state: web::Data<State>, user: UserData) -> Response {
+    match state.database.get_user_by_id(user.id as u32).await {
         Ok(user_data) => Response::new_data(StatusCode::OK, false, serde_json::to_value(user_data).unwrap()),
         Err(_) => Response::internal_server_error()
     }
