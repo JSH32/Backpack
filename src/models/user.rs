@@ -7,14 +7,13 @@ pub struct UserCreateForm {
     pub password: String
 }
 
-#[derive(Serialize, Deserialize, sqlx::Type)]
-#[sqlx(rename = "role")]
-#[sqlx(rename_all = "lowercase")]
-#[serde(rename_all(serialize  = "lowercase"))]
-#[serde(rename_all(deserialize  = "UPPERCASE"))]
+/// User role in database
+#[derive(Serialize, Deserialize, sqlx::Type, PartialEq, PartialOrd)]
+#[sqlx(rename = "role", rename_all = "lowercase")]
+#[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
 pub enum UserRole {
-    USER,
-    ADMIN
+    User,
+    Admin
 }
 
 #[derive(Serialize)]

@@ -1,11 +1,11 @@
 use actix_web::*;
-use http::StatusCode;
 use storage::Storage;
 use hmac::{Hmac, NewMac};
 use rand::Rng;
 
 extern crate dotenv;
 extern crate argon2;
+#[macro_use] extern crate macro_rules_attribute;
 
 mod database;
 mod models;

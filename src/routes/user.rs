@@ -1,5 +1,4 @@
 use argon2;
-use auth::{Auth, AuthJWT};
 use http::StatusCode;
 use rand::Rng;
 
@@ -16,7 +15,7 @@ pub fn get_routes() -> Scope {
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: AuthJWT) -> impl Responder {
+async fn info(state: web::Data<State>, auth: auth::User) -> impl Responder {
     match state.database.get_user_by_id(auth.0.id as u32).await {
         Ok(user_data) => HttpResponse::Ok().json(user_data),
         Err(_) => MessageResponse::internal_server_error().http_response()
