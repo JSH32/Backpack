@@ -1,13 +1,10 @@
-use std::pin::Pin;
-
-use serde::{Deserialize, Serialize};
-use actix_web::{Error, FromRequest, HttpMessage, HttpRequest, dev::Payload, web::Data};
-use futures::{Future};
+use serde::{Deserialize};
+use actix_web::{Error, HttpMessage, HttpRequest, web::Data};
 use jwt::{VerifyWithKey, RegisteredClaims};
 
 use crate::state::State;
-use super::{MessageResponse};
-use super::user::{UserData, UserRole};
+use super::MessageResponse;
+use super::user::UserData;
 
 #[derive(Deserialize)]
 pub struct BasicAuthForm {
@@ -19,25 +16,25 @@ pub struct BasicAuthForm {
 /// This implementation will allow the specified role or lower access level roles to access a resource
 macro_rules! define_auth {
     ($name:ident, $role_enum:expr) => {
-        #[doc = "Authentication middleware for this role. This will work for roles at a lower access level"]
-        pub struct $name(pub UserData);
+        #[doc = "Authentication middleware for this role. This will also work for roles at a lower access level"]
+        pub struct $name(pub $crate::models::user::UserData);
 
-        impl FromRequest for $name {
-            type Error = Error;
-            type Future = Pin<Box<dyn Future<Output = Result<$name, Error>>>>;
+        impl actix_web::FromRequest for $name {
+            type Error = actix_web::Error;
+            type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<$name, actix_web::Error>>>>;
             type Config = ();
 
-            fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+            fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
                 let req = req.clone();
 
                 Box::pin(async move {
-                    let user_data = match get_auth_data(req).await {
+                    let user_data = match $crate::models::auth::get_auth_data(req).await {
                         Ok(user_data) => user_data,
                         Err(err) => return Err(err)
                     };
 
                     if user_data.role < $role_enum {
-                        return Err(Error::from(MessageResponse::unauthorized_error()))
+                        return Err(actix_web::Error::from($crate::models::MessageResponse::unauthorized_error()))
                     }
 
                     Ok($name(user_data))
@@ -81,5 +78,9 @@ async fn get_auth_data(req: HttpRequest) -> Result<UserData, actix_web::Error> {
 }
 
 // Auth middleware defines
-define_auth!(User, UserRole::User);
-define_auth!(Admin, UserRole::Admin);
+pub mod middleware {
+    use crate::models::user::UserRole;
+
+    define_auth!(User, UserRole::User);
+    define_auth!(Admin, UserRole::Admin);
+}
