@@ -5,7 +5,6 @@ use rand::Rng;
 
 extern crate dotenv;
 extern crate argon2;
-#[macro_use] extern crate macro_rules_attribute;
 
 mod database;
 mod models;
@@ -13,6 +12,7 @@ mod config;
 mod state;
 mod routes;
 mod storage;
+mod util;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

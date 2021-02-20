@@ -51,6 +51,16 @@ impl Database {
             .fetch_one(&self.pool)
             .await
     }
+    /// Change a password for a user id
+    pub async fn change_password(&self, id: u32, password: &str) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
+            .bind(password)
+            .bind(password)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
 }
 
 /// sqlx function to Map a user row to UserData

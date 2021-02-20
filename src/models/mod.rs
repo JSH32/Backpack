@@ -1,6 +1,8 @@
 pub mod user;
 pub mod auth;
 
+pub use self::{user::*, auth::*};
+
 use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
 use futures::future::{Ready, ok};
 use serde::Serialize;
