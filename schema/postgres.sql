@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users
     email    VARCHAR(320)          NOT NULL,
     username VARCHAR(32)           NOT NULL,
     password VARCHAR(128)          NOT NULL,
-    verified boolean DEFAULT false NOT NULL
+    verified boolean DEFAULT false NOT NULL,
     role     role    DEFAULT 'user'::role
 );
 
