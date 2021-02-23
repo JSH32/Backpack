@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users
     email    VARCHAR(320)          NOT NULL,
     username VARCHAR(32)           NOT NULL,
     password VARCHAR(128)          NOT NULL,
-    verified boolean DEFAULT false NOT NULL,
+    verified BOOLEAN DEFAULT false NOT NULL,
     role     role    DEFAULT 'user'::role
 );
 
@@ -30,3 +30,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_id_uindex
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_uindex
     ON users (username);
+
+-- Api token table
+CREATE TABLE IF NOT EXISTS api_token
+(
+    id          SERIAL      NOT NULL,
+    user_id     INTEGER     NOT NULL,
+    name        VARCHAR(32) NOT NULL,
+    description TEXT        NOT NULL,
+    token       VARCHAR(32) NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS api_token_id_uindex
+    ON api_token (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS api_token_token_uindex
+    ON api_token (token);

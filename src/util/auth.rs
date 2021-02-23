@@ -1,5 +1,7 @@
 use actix_web::{Error, HttpMessage, HttpRequest, web::Data};
-use jwt::{VerifyWithKey, RegisteredClaims};
+use hmac::Hmac;
+use jwt::{VerifyWithKey, SignWithKey, RegisteredClaims};
+use sha2::Sha256;
 
 use crate::state::State;
 use crate::models::MessageResponse;
@@ -76,4 +78,16 @@ pub mod middleware {
 
     define_auth!(User, UserRole::User);
     define_auth!(Admin, UserRole::Admin);
+}
+
+// Sign a JWT token and get a string
+pub fn create_jwt_string(id: i32, issuer: &str, timestamp: i64, key: &Hmac<Sha256>) -> Result<String, jwt::Error> {
+    let claims = RegisteredClaims {
+        issuer: Some(issuer.into()),
+        subject: Some(id.to_string().into()),
+        expiration: Some(timestamp as u64),
+        ..Default::default()
+    };
+
+    claims.sign_with_key(key)
 }

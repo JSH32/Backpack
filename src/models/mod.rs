@@ -1,7 +1,8 @@
 pub mod user;
 pub mod auth;
+pub mod token;
 
-pub use self::{user::*, auth::*};
+pub use self::{user::*, auth::*, token::*};
 
 use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
 use futures::future::{Ready, ok};

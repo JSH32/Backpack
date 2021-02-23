@@ -1,29 +1,14 @@
 use actix_web::*;
 use actix_web::http::StatusCode;
-use hmac::{Hmac};
-use jwt::{RegisteredClaims, SignWithKey};
 use models::*;
-use sha2::Sha256;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
 
-use crate::{models::{self, auth::BasicAuthForm}, state::State};
+use crate::{models::{self, auth::BasicAuthForm}, util::auth::*, state::State};
 
 pub fn get_routes() -> Scope {
     web::scope("/auth/")
         .service(basic)
-}
-
-// Sign a JWT token and get a string
-fn create_jwt_string(id: i32, issuer: &str, timestamp: i64, key: &Hmac<Sha256>) -> Result<String, jwt::Error> {
-    let claims = RegisteredClaims {
-        issuer: Some(issuer.into()),
-        subject: Some(id.to_string().into()),
-        expiration: Some(timestamp as u64),
-        ..Default::default()
-    };
-
-    claims.sign_with_key(key)
 }
 
 /// Login with email and password
