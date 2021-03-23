@@ -6,7 +6,7 @@ pub use self::{user::*, auth::*, token::*};
 
 use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
 use futures::future::{Ready, ok};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 /// Standard message response
 #[derive(Serialize)]
@@ -15,6 +15,11 @@ pub struct MessageResponse {
     code: StatusCode,
 
     message: String,
+}
+
+#[derive(Deserialize)]
+pub struct IDQuery {
+    pub id: u16
 }
 
 impl MessageResponse {

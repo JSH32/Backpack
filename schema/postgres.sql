@@ -32,17 +32,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_username_uindex
     ON users (username);
 
 -- Api token table
-CREATE TABLE IF NOT EXISTS api_token
+CREATE TABLE IF NOT EXISTS tokens
 (
     id          SERIAL      NOT NULL,
     user_id     INTEGER     NOT NULL,
+    token       VARCHAR(32) NOT NULL,
     name        VARCHAR(32) NOT NULL,
-    description TEXT        NOT NULL,
-    token       VARCHAR(32) NOT NULL
+    description TEXT        NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS api_token_id_uindex
-    ON api_token (id);
+CREATE UNIQUE INDEX IF NOT EXISTS tokens_id_uindex
+    ON tokens (id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS api_token_token_uindex
-    ON api_token (token);
+CREATE UNIQUE INDEX IF NOT EXISTS tokens_token_uindex
+    ON tokens (token);

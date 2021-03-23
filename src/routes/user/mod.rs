@@ -1,3 +1,5 @@
+mod token;
+
 use argon2;
 use http::StatusCode;
 
@@ -13,6 +15,7 @@ pub fn get_routes() -> Scope {
         .service(create)
         .service(info)
         .service(password)
+        .service(token::get_routes())
 }
 
 #[get("info")]

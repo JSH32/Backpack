@@ -63,7 +63,7 @@ impl Database {
     }
     /// Create a new token
     pub async fn create_token(&self, user_id: u32, name: &str, description: &str, token: &str) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO api_token (user_id, name, description, token) VALUES ($1, $2, $3, $4)")
+        sqlx::query("INSERT INTO token (user_id, name, description, token) VALUES ($1, $2, $3, $4)")
             .bind(user_id)
             .bind(name)
             .bind(description)
@@ -75,7 +75,7 @@ impl Database {
     }
     /// Delete a token by its id
     pub async fn delete_token_by_id(&self, token_id: u32) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM api_token WHERE id = $1")
+        sqlx::query("DELETE FROM token WHERE id = $1")
             .bind(token_id)
             .execute(&self.pool)
             .await?;
@@ -84,7 +84,7 @@ impl Database {
     }
     /// Get a token by its id
     pub async fn get_token_by_id(&self, token_id: u32) -> Result<models::token::TokenData, sqlx::Error> {
-        sqlx::query("SELECT name, description, token FROM api_token WHERE id = $1")
+        sqlx::query("SELECT name, description, token FROM token WHERE id = $1")
             .bind(token_id)
             .try_map(token_map)
             .fetch_one(&self.pool)

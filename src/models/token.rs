@@ -1,8 +1,8 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TokenData {
-    pub name: String,
     pub description: String,
+    pub name: String,
     pub token: String
 }
