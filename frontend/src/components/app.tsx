@@ -1,7 +1,22 @@
-import * as React from "react";
+import * as React from "react"
+
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+} from "react-router-dom"
+
+import { Home } from "routes/home"
+import { Header } from "./header"
 
 export const App = () => (
-  <h1>
-    Kawaii.sh
-  </h1>
+  <div>
+    <Header/>
+    <Router>
+      <div>
+        <Route path="/home" component={Home}/>
+        <Route path="/" component={Home}/>
+      </div>
+    </Router>
+  </div>
 );
