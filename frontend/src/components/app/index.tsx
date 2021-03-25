@@ -2,14 +2,16 @@ import * as React from "react"
 
 import {
   BrowserRouter as Router,
-  Switch,
   Route,
 } from "react-router-dom"
 
 import { Home } from "routes/home"
-import { Header } from "./header"
+import { Header } from "components/header"
 
-export const App = () => (
+// Global stylesheet
+import "./style.css"
+
+export const App: React.FunctionComponent = () => (
   <div>
     <Header/>
     <Router>

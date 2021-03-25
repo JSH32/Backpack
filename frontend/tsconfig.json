@@ -14,5 +14,4 @@
     "include": [
         "src"
     ],
-    "baseUrl": "./src"
 }

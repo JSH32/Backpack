@@ -4,10 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "webpack serve --open",
-    "build": "webpack"
+    "start": "snowpack dev",
+    "build": "snowpack build"
   },
   "devDependencies": {
+    "@snowpack/plugin-dotenv": "^2.0.5",
+    "@snowpack/plugin-react-refresh": "^2.4.1",
+    "@snowpack/plugin-typescript": "^1.2.1",
     "@types/node-sass": "^4.11.1",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
@@ -21,6 +24,7 @@
     "react-router-dom": "^5.2.0",
     "sass": "^1.32.8",
     "sass-loader": "^11.0.1",
+    "snowpack": "^3.1.2",
     "style-loader": "^2.0.0",
     "ts-loader": "^8.0.18",
     "typescript": "^4.2.3",
