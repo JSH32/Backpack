@@ -2,7 +2,7 @@ import * as React from "react"
 
 import {
   BrowserRouter as Router,
-  Route,
+  Route
 } from "react-router-dom"
 
 import { Home } from "routes/home"

@@ -10,8 +10,8 @@ import {
 
 const theme = createMuiTheme({
   palette: {
-    type: "dark",
-  },
+    type: "dark"
+  }
 })
 
 ReactDOM.render(

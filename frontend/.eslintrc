@@ -6,7 +6,9 @@
     ],
     "rules": {
         "semi": ["error", "never"],
-        "quotes": ["error", "double"]
+        "quotes": ["error", "double"],
+        "comma-dangle": ["error"],
+        "@typescript-eslint/explicit-module-boundary-types": ["error"]
     },
     "ignorePatterns": [
         "snowpack.config.js"
