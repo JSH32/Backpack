@@ -21,4 +21,4 @@ export const App: React.FunctionComponent = () => (
       </div>
     </Router>
   </div>
-);
+)
