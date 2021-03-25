@@ -8,9 +8,11 @@
         "semi": ["error", "never"],
         "quotes": ["error", "double"],
         "comma-dangle": ["error"],
-        "@typescript-eslint/explicit-module-boundary-types": ["error"]
+        "@typescript-eslint/explicit-module-boundary-types": ["error"],
+        "@typescript-eslint/no-explicit-any": "off"
     },
     "ignorePatterns": [
-        "snowpack.config.js"
+        "snowpack.config.js",
+        "build/"
     ]
 }

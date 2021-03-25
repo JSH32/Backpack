@@ -9,7 +9,7 @@
         "sourceMap": true,
         "target": "es5",
         "moduleResolution": "node",
-        "baseUrl": "./src",
+        "baseUrl": "./src"
     },
     "include": [
         "src"
