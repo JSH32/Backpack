@@ -1,0 +1,66 @@
+// Background graphic
+body::before {
+    content: "";
+    opacity: .4; 
+    z-index: -1;
+    position: absolute;
+    width: 100%; 
+    height: 100%;
+    background-image: url(../../assets/ryuko.png);
+    background-size: 50vh;
+    background-repeat: no-repeat;
+    background-position: 90% 100%;
+}
+
+#header {
+    #title {
+        font-size: 50px;
+        font-weight: normal;
+    }
+
+    #subtitle {
+        font-size: 25px;
+        margin-top: -35px;
+    }
+}
+
+#bottom-footer {
+    column-gap: 10px;
+    position: absolute;
+    margin: 5px;
+    bottom: 0;
+}
+
+#counter {
+    margin-top: -35px;
+
+    > * {
+        display: inline-block;
+        font-size: 25px;
+    }
+
+    // Image positioning
+    svg {
+        margin-bottom: -3px;
+        margin-left: 5px;
+    }
+}
+
+@media (max-width: 800px) {
+    body::before {
+        background-position: 50% 100%;
+        opacity: .2;
+    }
+
+    #bottom-footer {
+        text-align: center;
+        margin: auto;
+        width: 100%;
+    }
+}
+
+@media (min-width: 800px) {
+    #bottom-footer {
+        display: flex;
+    }
+}

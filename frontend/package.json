@@ -11,6 +11,7 @@
     "@snowpack/plugin-dotenv": "^2.0.5",
     "@snowpack/plugin-react-refresh": "^2.4.1",
     "@snowpack/plugin-run-script": "^2.3.0",
+    "@snowpack/plugin-sass": "^1.4.0",
     "@snowpack/plugin-typescript": "^1.2.1",
     "@types/node-sass": "^4.11.1",
     "@types/react": "^17.0.3",
@@ -28,10 +29,13 @@
     "sass": "^1.32.8",
     "sass-loader": "^11.0.1",
     "snowpack": "^3.1.2",
+    "snowpack-plugin-relative-css-urls": "^1.1.1",
     "style-loader": "^2.0.0",
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@material-ui/core": "^4.11.3"
+    "@material-ui/core": "^4.11.3",
+    "@material-ui/icons": "^4.11.2",
+    "axios": "^0.21.1"
   }
 }

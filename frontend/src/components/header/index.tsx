@@ -10,7 +10,7 @@ export const Header: React.FunctionComponent = () => {
     return <div>
         <AppBar position="fixed" color="transparent" elevation={0}>
             <Toolbar>
-                <Typography className="title">
+                <Typography id="bar-title">
                     KAWAII.SH
                 </Typography>
                 <Button>Login</Button>

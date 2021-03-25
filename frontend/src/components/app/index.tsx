@@ -16,7 +16,6 @@ export const App: React.FunctionComponent = () => (
     <Header/>
     <Router>
       <div>
-        <Route path="/home" component={Home}/>
         <Route path="/" component={Home}/>
       </div>
     </Router>
