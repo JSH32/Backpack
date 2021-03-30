@@ -3,13 +3,15 @@ import * as React from "react"
 import { Button } from "@material-ui/core"
 import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile"
 
-import { getUserData } from "api"
+//import { logout, passwordLogin } from "api"
 
 import "./style.scss"
 
 export const Home: React.FunctionComponent = () => {
     // File counter
-    const [count, setCount] = React.useState(0)
+    //const [count, setCount] = React.useState(0)
+
+  //  loginTest()
 
     return (
         <div>
@@ -19,7 +21,7 @@ export const Home: React.FunctionComponent = () => {
                     <p id="subtitle">A filevault service for all your needs</p>
                 </div>
                 <div id="counter">
-                    <h2>{count}</h2>
+                    <h2>5</h2>
                     <InsertDriveFileIcon/>
                 </div>
             </div>
@@ -31,3 +33,10 @@ export const Home: React.FunctionComponent = () => {
         </div>
     )
 }
+
+// const loginTest = () => {
+//     logout()
+//     // passwordLogin("email@email.com", "password")
+//     //     .then(console.log)
+//     //     .catch(console.log)
+// }

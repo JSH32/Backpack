@@ -5,7 +5,7 @@ authors = ["Riku <riku@kawaii.sh>"]
 edition = "2018"
 
 [dependencies]
-sqlx = { version = "0.4.2", features = [ "runtime-async-std-native-tls", "postgres" ] }
+sqlx = { version = "0.5.1", features = [ "runtime-async-std-native-tls", "postgres" ] }
 serde = "1.0.123"
 serde_json = { version = "1.0.59", features = [ "preserve_order" ] }
 dotenv = "0.15.0"
@@ -21,4 +21,3 @@ sha2 = "0.9"
 futures = "0.3.12"
 time = "0.2.25"
 chrono = "0.4"
-macro_rules_attribute = "0.0.1"

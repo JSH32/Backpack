@@ -34,11 +34,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_username_uindex
 -- Api token table
 CREATE TABLE IF NOT EXISTS tokens
 (
-    id          SERIAL      NOT NULL,
-    user_id     INTEGER     NOT NULL,
-    token       VARCHAR(32) NOT NULL,
-    name        VARCHAR(32) NOT NULL,
-    description TEXT        NOT NULL
+    id          SERIAL       NOT NULL,
+    user_id     INTEGER      NOT NULL,
+    token       VARCHAR(128) NOT NULL,
+    name        VARCHAR(32)  NOT NULL,
+    description TEXT         NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS tokens_id_uindex

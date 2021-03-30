@@ -1,14 +1,16 @@
 use actix_web::*;
 use actix_web::http::StatusCode;
-use models::*;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
 
-use crate::{models::{self, auth::BasicAuthForm}, util::auth::*, state::State};
+use crate::state::State;
+use crate::util::auth::{create_jwt_string, middleware};
+use crate::models::{MessageResponse, auth::BasicAuthForm};
 
 pub fn get_routes() -> Scope {
     web::scope("/auth/")
         .service(basic)
+        .service(logout)
 }
 
 /// Login with email and password
@@ -49,5 +51,21 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
             .expires(OffsetDateTime::from_unix_timestamp(expire_time))
             .finish()
         )
-        .json(MessageResponse::new(StatusCode::OK, "You have logged in"))
+        .json(user_data)
+}
+
+/// Remove httponly cookie
+#[post("logout")]
+async fn logout(_: middleware::User) -> impl Responder {
+    HttpResponse::Ok()
+        .cookie(
+            http::Cookie::build("auth-token", "")
+            .secure(false)
+            .http_only(true)
+            .path("/")
+            // Token expires instantly when issued, will remove the cookie
+            .expires(OffsetDateTime::from_unix_timestamp(Utc::now().timestamp()))
+            .finish()
+        )
+        .json(MessageResponse::new(StatusCode::OK, "Successfully logged out"))
 }

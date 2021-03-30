@@ -1,3 +1,7 @@
+/**
+ * Web client for kawaii.sh API, only to be used with frontend
+ */
+
 import axios from "axios"
 
 const BASE_URL = "/api/v1"
@@ -12,6 +16,14 @@ interface UserData {
     email: string,
     verified: boolean,
     role: UserRole
+}
+
+export const logout = async (): Promise<void> => {
+    try {
+        await axios.post(`${BASE_URL}/auth/logout`)
+    } catch (error) {
+        throw new Error(error.response.data.message)
+    }
 }
 
 export const passwordLogin = async (email: string, password: string): Promise<UserData> => {

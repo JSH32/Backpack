@@ -1,4 +1,4 @@
-use crate::{models};
+use crate::{models::{self, TokenData}};
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
@@ -36,7 +36,7 @@ impl Database {
             .await
     }
     /// Gets user info from database by id
-    pub async fn get_user_by_id(&self, id: u32) -> Result<models::user::UserData, sqlx::Error> {
+    pub async fn get_user_by_id(&self, id: i32) -> Result<models::user::UserData, sqlx::Error> {
         sqlx::query("SELECT id, email, username, password, verified, role FROM users WHERE id = $1")
             .bind(id)
             .try_map(user_map)
@@ -52,7 +52,7 @@ impl Database {
             .await
     }
     /// Change a password for a user id
-    pub async fn change_password(&self, id: u32, password: &str) -> Result<(), sqlx::Error> {
+    pub async fn change_password(&self, id: i32, password: &str) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
             .bind(password)
             .bind(password)
@@ -62,20 +62,19 @@ impl Database {
         Ok(())
     }
     /// Create a new token
-    pub async fn create_token(&self, user_id: u32, name: &str, description: &str, token: &str) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO token (user_id, name, description, token) VALUES ($1, $2, $3, $4)")
+    pub async fn create_token(&self, user_id: i32, name: &str, description: &Option<String>, token: &str) -> Result<TokenData, sqlx::Error> {
+        sqlx::query("INSERT INTO tokens (user_id, name, description, token) VALUES ($1, $2, $3, $4) RETURNING id, user_id, name, description, token")
             .bind(user_id)
             .bind(name)
             .bind(description)
             .bind(token)
-            .execute(&self.pool)
-            .await?;
-
-        Ok(())
+            .try_map(token_map)
+            .fetch_one(&self.pool)
+            .await
     }
     /// Delete a token by its id
-    pub async fn delete_token_by_id(&self, token_id: u32) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM token WHERE id = $1")
+    pub async fn delete_token_by_id(&self, token_id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM tokens WHERE id = $1")
             .bind(token_id)
             .execute(&self.pool)
             .await?;
@@ -83,47 +82,42 @@ impl Database {
         Ok(())
     }
     /// Get a token by its id
-    pub async fn get_token_by_id(&self, token_id: u32) -> Result<models::token::TokenData, sqlx::Error> {
-        sqlx::query("SELECT name, description, token FROM token WHERE id = $1")
+    pub async fn get_token_by_id(&self, token_id: i32) -> Result<models::token::TokenData, sqlx::Error> {
+        sqlx::query("SELECT name, description, token FROM tokens WHERE id = $1")
             .bind(token_id)
             .try_map(token_map)
             .fetch_one(&self.pool)
             .await
     }
     /// Get all tokens for a user from their id
-    pub async fn get_all_tokens(&self, user_id: u32) -> Result<Vec<models::token::TokenData>, sqlx::Error> {
-        sqlx::query("SELECT name, description, token FROM api_token WHERE user_id = $1")
+    pub async fn get_all_tokens(&self, user_id: i32) -> Result<Vec<models::token::TokenData>, sqlx::Error> {
+        sqlx::query("SELECT name, description, id, user_id FROM tokens WHERE user_id = $1")
             .bind(user_id)
             .try_map(token_map)
             .fetch_all(&self.pool)
             .await
     }
     /// Get the amount of tokens a user has
-    pub async fn get_token_count(&self, user_id: u32)-> Result<i32, sqlx::Error> {
-        let row: (i32,) = sqlx::query_as("SELECT COUNT(*) FROM api_token WHERE user_id = $1")
+    pub async fn get_token_count(&self, user_id: i32)-> Result<i32, sqlx::Error> {
+        let row: (i32,) = sqlx::query_as("SELECT COUNT(*) FROM tokens WHERE user_id = $1")
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?;
         
         Ok(row.0)
     }
-    /// Check if a token already exists in the database.
-    /// Return (name_exists, token_exists)
-    pub async fn check_token_exist(&self, token: &str, name: &str) -> Result<(bool, bool), sqlx::Error> {
-        let rows = sqlx::query("SELECT EXISTS(SELECT 1 FROM api_token WHERE name = $1) UNION ALL SELECT EXISTS(SELECT 1 FROM api_token WHERE token = $2)")
+    /// Check if a token of that name already exists in the database
+    pub async fn check_token_exist(&self, user_id: i32, name: &str) -> Result<bool, sqlx::Error> {
+        let row: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM tokens WHERE name = $1)")
             .bind(name)
-            .bind(token)
-            .try_map(|row: sqlx::postgres::PgRow| -> Result<bool, sqlx::Error> {
-                Ok(row.get("count"))
-            })
-            .fetch_all(&self.pool)
+            .fetch_one(&self.pool)
             .await?;
-            
-        Ok((rows[0], rows[1]))
+
+        Ok(row.0)
     }
 }
 
-/// sqlx function to Map a user row to UserData
+/// sqlx function to map a user row to UserData
 fn user_map(row: sqlx::postgres::PgRow) -> Result<models::user::UserData, sqlx::Error> {
     Ok(models::user::UserData {
         id: row.get("id"),
@@ -135,11 +129,16 @@ fn user_map(row: sqlx::postgres::PgRow) -> Result<models::user::UserData, sqlx::
     })
 }
 
-/// sqlx function to Map an api token row to TokenData
+/// sqlx function to map an api token row to TokenData
 fn token_map(row: sqlx::postgres::PgRow) -> Result<models::token::TokenData, sqlx::Error> {
     Ok(models::token::TokenData {
         name: row.get("name"),
         description: row.get("description"),
-        token: row.get("token"),
+        token: match row.try_get("token") {
+            Ok(val) => Some(val),
+            Err(_) => None
+        },
+        id: row.get("id"),
+        user_id: row.get("user_id")
     })
 }

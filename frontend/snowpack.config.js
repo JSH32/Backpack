@@ -2,13 +2,25 @@
 // See all supported options: https://www.snowpack.dev/reference/configuration
 
 /** @type {import("snowpack").SnowpackUserConfig } */
+
+const httpProxy = require('http-proxy')
+const proxy = httpProxy.createServer({target: 'http://localhost:8081'})
+
 module.exports = {
   mount: {
     public: { url: "/", static: true },
     src: { url: "/dist" },
   },
   "routes": [
-    {"match": "routes", "src": ".*", "dest": "/index.html"}
+    {
+      src: '/api/.*',
+      dest: (req, res) => proxy.web(req, res)
+    },
+    {
+      "match": "routes", 
+      "src": ".*", 
+      "dest": "/index.html"
+    }
   ],
   plugins: [
     "@snowpack/plugin-react-refresh",
@@ -26,6 +38,7 @@ module.exports = {
   alias: {
     "components": "./src/components",
     "routes": "./src/routes",
-    "assets": "./src/assets"
+    "assets": "./src/assets",
+    "api": "./src/api.ts"
   }
 }

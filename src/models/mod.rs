@@ -1,10 +1,11 @@
 pub mod user;
 pub mod auth;
 pub mod token;
+pub mod file;
 
 pub use self::{user::*, auth::*, token::*};
 
-use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
+use actix_web::{Error, HttpRequest, HttpResponse, Responder, dev::HttpResponseBuilder, http::StatusCode};
 use futures::future::{Ready, ok};
 use serde::{Serialize, Deserialize};
 
@@ -15,11 +16,6 @@ pub struct MessageResponse {
     code: StatusCode,
 
     message: String,
-}
-
-#[derive(Deserialize)]
-pub struct IDQuery {
-    pub id: u16
 }
 
 impl MessageResponse {

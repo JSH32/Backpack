@@ -20,7 +20,7 @@ pub fn get_routes() -> Scope {
 
 #[get("info")]
 async fn info(state: web::Data<State>, auth: auth::middleware::User) -> impl Responder {
-    match state.database.get_user_by_id(auth.0.id as u32).await {
+    match state.database.get_user_by_id(auth.0.id).await {
         Ok(user_data) => HttpResponse::Ok().json(user_data),
         Err(_) => MessageResponse::internal_server_error().http_response()
     }
@@ -28,7 +28,7 @@ async fn info(state: web::Data<State>, auth: auth::middleware::User) -> impl Res
 
 #[post("password")]
 async fn password(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<PasswordChangeForm>) -> impl Responder {
-    let user = match state.database.get_user_by_id(auth.0.id as u32).await {
+    let user = match state.database.get_user_by_id(auth.0.id).await {
         Ok(data) => data,
         Err(_) => return MessageResponse::internal_server_error()
     };
@@ -49,7 +49,7 @@ async fn password(state: web::Data<State>, auth: auth::middleware::User, form: w
         Err(err) => return err
     };
 
-    match state.database.change_password(auth.0.id as u32, &new_hash).await {
+    match state.database.change_password(auth.0.id, &new_hash).await {
         Ok(_) => MessageResponse::new(StatusCode::OK, "Password changed successfully"),
         Err(_) => MessageResponse::internal_server_error()
     }

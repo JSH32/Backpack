@@ -1,7 +1,7 @@
 use actix_web::*;
 use storage::Storage;
 use hmac::{Hmac, NewMac};
-use rand::Rng;
+use rand::{Rng, rngs::OsRng, distributions::Alphanumeric};
 
 extern crate dotenv;
 extern crate argon2;
