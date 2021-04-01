@@ -1,7 +1,7 @@
 use actix_web::*;
-use storage::Storage;
 use hmac::{Hmac, NewMac};
 use rand::{Rng, rngs::OsRng, distributions::Alphanumeric};
+use storage::s3::S3Provider;
 
 extern crate dotenv;
 extern crate argon2;
@@ -19,11 +19,11 @@ async fn main() -> std::io::Result<()> {
     let config = config::Config::new();
 
     let database = database::Database::new(16, &config.database_url).await;
-    let storage = Storage::new(&config.s3_bucket, &config.s3_access_key, &config.s3_secret_key, config.s3_region);
+    let storage = S3Provider::new("test", &config.s3_bucket, &config.s3_access_key, &config.s3_secret_key, config.s3_region);
 
     let api_state = web::Data::new(state::State {
         database: database,
-        storage: storage,
+        storage: Box::new(storage),
         jwt_key: Hmac::new_varkey(&rand::thread_rng().gen::<[u8; 32]>()).expect("Could not generate JWT key")
     });
 

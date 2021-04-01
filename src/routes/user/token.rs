@@ -29,7 +29,7 @@ async fn info(state: web::Data<State>, auth: auth::middleware::User) -> impl Res
 async fn create(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<TokenCreateForm>) -> impl Responder {
     // Check if token count is over 10
     match state.database.get_token_count(auth.0.id).await {
-        Ok(count ) => {
+        Ok(count) => {
             if count > 10 {
                 return MessageResponse::new(StatusCode::BAD_REQUEST, "The token limit per user is 10").http_response()
             }
