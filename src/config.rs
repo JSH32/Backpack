@@ -4,6 +4,7 @@ use std::env;
 
 pub struct Config {
     pub port: u16,
+    pub storage_url: String,
     pub database_url: String,
     pub s3_access_key: String,
     pub s3_secret_key: String,
@@ -16,6 +17,7 @@ impl Config {
         dotenv().ok();
         Config {
             port: env::var("PORT").unwrap().parse::<u16>().unwrap(),
+            storage_url: env::var("STORAGE_BASEURL").unwrap(),
             database_url: env::var("DATABASE_URL").unwrap(),
             s3_access_key: env::var("S3_ACCESS_KEY").unwrap(),
             s3_secret_key: env::var("S3_SECRET_KEY").unwrap(),
