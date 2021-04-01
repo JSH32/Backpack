@@ -4,6 +4,6 @@ use sha2::Sha256;
 
 pub struct State {
     pub database: Database,
-    pub storage: Box<dyn StorageProvider + Sync + Send>,
+    pub storage: Box<dyn StorageProvider>,
     pub jwt_key: Hmac<Sha256>
 }
