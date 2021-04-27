@@ -1,5 +1,5 @@
 <p align="center">
- <img height="150" src="https://raw.githubusercontent.com/Riku32/kawaii.sh/rewrite/.github/branding/banner.png">
+    <img height="150" src="https://raw.githubusercontent.com/Riku32/kawaii.sh/rewrite/.github/branding/banner.png">
 </p>
 
 ## Kawaii.sh

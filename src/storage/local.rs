@@ -1,16 +1,18 @@
+use std::path::PathBuf;
+
 use super::StorageProvider;
 
 use async_trait::async_trait;
 use tokio::io::AsyncWriteExt;
 
 pub struct LocalProvider {
-    path: String
+    path: PathBuf
 }
 
 impl LocalProvider {
-    pub fn new(path: &str) -> Self {
+    pub fn new(path: PathBuf) -> Self {
         LocalProvider {
-            path: path.to_string()
+            path: path
         }
     }
 }
@@ -18,10 +20,13 @@ impl LocalProvider {
 #[async_trait]
 impl StorageProvider for LocalProvider {
     async fn put_object(&self, name: &str, data: Vec<u8>) -> Result<(), String> {
+        let mut path = self.path.clone();
+        path.push(name);
+
         let mut file = match tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
-            .open(format!("{}/{}", self.path, &name))
+            .open(path)
             .await {
                 Err(err) => return Err(err.to_string()),
                 Ok(file) => file
@@ -34,7 +39,10 @@ impl StorageProvider for LocalProvider {
     }
 
     async fn delete_object(&self, name: &str) -> Result<(), String> {
-        match tokio::fs::remove_file(format!("{}/{}", self.path, &name)).await {
+        let mut path = self.path.clone();
+        path.push(name);
+
+        match tokio::fs::remove_file(path).await {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string())
         }
