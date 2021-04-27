@@ -1,4 +1,6 @@
-<img height="100" src="https://raw.githubusercontent.com/Riku32/kawaii.sh/rewrite/.github/branding/banner.png">
+<p align="center">
+ <img height="150" src="https://raw.githubusercontent.com/Riku32/kawaii.sh/rewrite/.github/branding/banner.png">
+</p>
 
 ## Kawaii.sh
 Kawaii.sh is an open source file sharing tool that can be deployed easily to any docker environment. It aims to be extendable, easy to use, and support many storage providers.
