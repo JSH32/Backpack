@@ -86,3 +86,8 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
 
     MessageResponse::new(StatusCode::OK, "User has successfully been created")
 }
+
+// #[post("delete")]
+// async fn delete(state: web::Data<State>, form: web::Json<UserDeleteForm>) -> impl Responder {
+
+// }

@@ -51,6 +51,15 @@ impl Database {
             .fetch_one(&self.pool)
             .await
     }
+    /// Delete a user and all their tokens
+    pub async fn delete_user(&self, id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM users WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
     /// Change a password for a user id
     pub async fn change_password(&self, id: i32, password: &str) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE users SET password = $1 WHERE id = $2")

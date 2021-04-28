@@ -31,14 +31,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_id_uindex
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_uindex
     ON users (username);
 
--- Api token table
+-- API token table for applications
 CREATE TABLE IF NOT EXISTS tokens
 (
     id          SERIAL       NOT NULL,
     user_id     INTEGER      NOT NULL,
     token       VARCHAR(128) NOT NULL,
     name        VARCHAR(32)  NOT NULL,
-    description TEXT         NULL
+    description TEXT         NULL,
+
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS tokens_id_uindex

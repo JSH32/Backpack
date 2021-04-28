@@ -8,6 +8,11 @@ pub struct UserCreateForm {
 }
 
 #[derive(Deserialize)]
+pub struct UserDeleteForm {
+    pub password: String
+}
+
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PasswordChangeForm {
     pub current_password: String,
@@ -16,7 +21,7 @@ pub struct PasswordChangeForm {
 
 /// User role in database
 #[derive(Serialize, Deserialize, sqlx::Type, PartialEq, PartialOrd)]
-#[sqlx(rename = "role", rename_all = "lowercase")]
+#[sqlx(type_name = "role", rename_all = "lowercase")]
 #[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
 pub enum UserRole {
     User,

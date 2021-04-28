@@ -1,9 +1,10 @@
-use actix_web::*;
+use actix_web::{*, middleware::Logger};
 use config::StorageConfig;
 use hmac::{Hmac, NewMac};
 use rand::Rng;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 
+extern crate env_logger;
 extern crate dotenv;
 extern crate argon2;
 
@@ -17,6 +18,10 @@ mod util;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Setup actix log
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+
     let config = config::Config::new();
 
     let database = database::Database::new(16, &config.database_url).await;
@@ -33,6 +38,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new() 
+            .wrap(Logger::default())
             .app_data(api_state.clone())
             .service(
                 web::scope("/api/v1/")
