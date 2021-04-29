@@ -1,11 +1,26 @@
 use actix_web::{Error, HttpMessage, HttpRequest, web::Data};
-use hmac::Hmac;
-use jwt::{VerifyWithKey, SignWithKey, RegisteredClaims};
-use sha2::Sha256;
+use chrono::Utc;
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use serde::{Serialize, Deserialize};
 
 use crate::state::State;
 use crate::models::MessageResponse;
 use crate::models::user::UserData;
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JWTClaims {
+    pub iss: String, // Issuer
+    pub iat: i64, // Issued at
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exp: Option<i64>, // Expire
+
+    pub user_id: i32, // ID user refers to
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token_id: Option<i32> // Token ID, if the token was a forever token
+}
 
 /// Generate auth middleware for a UserRole.
 /// This implementation will allow the specified role or lower access level roles to access a resource
@@ -50,26 +65,30 @@ async fn get_auth_data(req: HttpRequest) -> Result<UserData, actix_web::Error> {
     };
 
     // Try to verify token
-    let claim: RegisteredClaims = match jwt_token.value().verify_with_key(&state.jwt_key) {
-        Ok(claim) => claim,
-        // Token verification failed
+    let claims = match decode::<JWTClaims>(jwt_token.value(), &DecodingKey::from_secret(state.jwt_key.as_ref()), &Validation::default()) {
+        Ok(claims) => claims.claims,
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
 
-    let user_id = match claim.subject {
-        Some(data) => {
-            match data.parse() {
-                Ok(parsed) => parsed,
-                Err(_) => return Err(Error::from(MessageResponse::internal_server_error()))
-            }
-        },
-        None => return Err(Error::from(MessageResponse::internal_server_error()))
+    let user = match state.database.get_user_by_id(claims.user_id).await {
+        Ok(data) => data,
+        Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
 
-    match state.database.get_user_by_id(user_id).await {
-        Ok(data) => Ok(data),
-        Err(_) => return Err(Error::from(MessageResponse::internal_server_error()))
+    // Check if it is perm JWT token
+    if let Some(token_id) = claims.token_id {
+        match state.database.get_token_by_id(token_id).await {
+            Ok(token_data) => {
+                // Check if perm JWT token belongs to user
+                if token_data.user_id != user.id {
+                    return Err(Error::from(MessageResponse::unauthorized_error()))
+                }
+            }
+            Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
+        };
     }
+
+    Ok(user)
 }
 
 // Auth middleware defines
@@ -81,13 +100,14 @@ pub mod middleware {
 }
 
 // Sign a JWT token and get a string
-pub fn create_jwt_string(id: i32, issuer: &str, timestamp: i64, key: &Hmac<Sha256>) -> Result<String, jwt::Error> {
-    let claims = RegisteredClaims {
-        issuer: Some(issuer.into()),
-        subject: Some(id.to_string().into()),
-        expiration: Some(timestamp as u64),
-        ..Default::default()
+pub fn create_jwt_string(user_id: i32, token_id: Option<i32>, issuer: &str, expiration: Option<i64>, key: &str) -> Result<String, jsonwebtoken::errors::Error> {
+    let claims = JWTClaims {
+        iss: issuer.into(),
+        exp: expiration,
+        iat: Utc::now().timestamp(),
+        user_id: user_id,
+        token_id: token_id
     };
 
-    claims.sign_with_key(key)
+    encode(&Header::default(), &claims, &EncodingKey::from_secret(key.as_ref()))
 }

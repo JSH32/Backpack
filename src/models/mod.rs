@@ -1,13 +1,13 @@
 pub mod user;
 pub mod auth;
-pub mod token;
 pub mod file;
+pub mod token;
 
-pub use self::{user::*, auth::*, token::*};
+pub use self::{user::*, auth::*};
 
-use actix_web::{Error, HttpRequest, HttpResponse, Responder, dev::HttpResponseBuilder, http::StatusCode};
+use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
 use futures::future::{Ready, ok};
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 
 /// Standard message response
 #[derive(Serialize)]

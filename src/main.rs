@@ -1,6 +1,5 @@
 use actix_web::{*, middleware::Logger};
 use config::StorageConfig;
-use hmac::{Hmac, NewMac};
 use rand::Rng;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 
@@ -33,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     let api_state = web::Data::new(state::State {
         database: database,
         storage: storage,
-        jwt_key: Hmac::new_varkey(&rand::thread_rng().gen::<[u8; 32]>()).expect("Could not generate JWT key")
+        jwt_key: config.jwt_key
     });
 
     HttpServer::new(move || {

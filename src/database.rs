@@ -1,4 +1,4 @@
-use crate::{models::{self, TokenData}};
+use crate::models;
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
@@ -70,17 +70,6 @@ impl Database {
 
         Ok(())
     }
-    /// Create a new token
-    pub async fn create_token(&self, user_id: i32, name: &str, description: &Option<String>, token: &str) -> Result<TokenData, sqlx::Error> {
-        sqlx::query("INSERT INTO tokens (user_id, name, description, token) VALUES ($1, $2, $3, $4) RETURNING id, user_id, name, description, token")
-            .bind(user_id)
-            .bind(name)
-            .bind(description)
-            .bind(token)
-            .try_map(token_map)
-            .fetch_one(&self.pool)
-            .await
-    }
     /// Delete a token by its id
     pub async fn delete_token_by_id(&self, token_id: i32) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM tokens WHERE id = $1")
@@ -92,7 +81,7 @@ impl Database {
     }
     /// Get a token by its id
     pub async fn get_token_by_id(&self, token_id: i32) -> Result<models::token::TokenData, sqlx::Error> {
-        sqlx::query("SELECT name, description, token FROM tokens WHERE id = $1")
+        sqlx::query("SELECT id, name, user_id FROM tokens WHERE id = $1")
             .bind(token_id)
             .try_map(token_map)
             .fetch_one(&self.pool)
@@ -100,28 +89,38 @@ impl Database {
     }
     /// Get all tokens for a user from their id
     pub async fn get_all_tokens(&self, user_id: i32) -> Result<Vec<models::token::TokenData>, sqlx::Error> {
-        sqlx::query("SELECT name, description, id, user_id FROM tokens WHERE user_id = $1")
+        sqlx::query("SELECT id, name, user_id FROM tokens WHERE user_id = $1")
             .bind(user_id)
             .try_map(token_map)
             .fetch_all(&self.pool)
             .await
     }
+    /// Create a new token
+    pub async fn create_token(&self, user_id: i32, name: &str) -> Result<models::token::TokenData, sqlx::Error> {
+        sqlx::query("INSERT INTO tokens (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name")
+            .bind(user_id)
+            .bind(name)
+            .try_map(token_map)
+            .fetch_one(&self.pool)
+            .await
+    }
+    /// Check if a token of that name already exists in the database
+    pub async fn token_exist(&self, user_id: i32, name: &str) -> Result<bool, sqlx::Error> {
+        let row: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM tokens WHERE name = $1 AND user_id = $2)")
+            .bind(name)
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(row.0)
+    }
     /// Get the amount of tokens a user has
-    pub async fn get_token_count(&self, user_id: i32)-> Result<i32, sqlx::Error> {
-        let row: (i32,) = sqlx::query_as("SELECT COUNT(*) FROM tokens WHERE user_id = $1")
+    pub async fn token_count(&self, user_id: i32)-> Result<i64, sqlx::Error> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM tokens WHERE user_id = $1")
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?;
         
-        Ok(row.0)
-    }
-    /// Check if a token of that name already exists in the database
-    pub async fn check_token_exist(&self, user_id: i32, name: &str) -> Result<bool, sqlx::Error> {
-        let row: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM tokens WHERE name = $1)")
-            .bind(name)
-            .fetch_one(&self.pool)
-            .await?;
-
         Ok(row.0)
     }
 }
@@ -138,16 +137,11 @@ fn user_map(row: sqlx::postgres::PgRow) -> Result<models::user::UserData, sqlx::
     })
 }
 
-/// sqlx function to map an api token row to TokenData
 fn token_map(row: sqlx::postgres::PgRow) -> Result<models::token::TokenData, sqlx::Error> {
     Ok(models::token::TokenData {
-        name: row.get("name"),
-        description: row.get("description"),
-        token: match row.try_get("token") {
-            Ok(val) => Some(val),
-            Err(_) => None
-        },
         id: row.get("id"),
-        user_id: row.get("user_id")
+        name: row.get("name"),
+        user_id: row.get("user_id"),
+        token: None
     })
 }

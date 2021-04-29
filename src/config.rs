@@ -6,6 +6,7 @@ pub struct Config {
     pub port: u16,
     pub storage_url: String,
     pub database_url: String,
+    pub jwt_key: String,
     pub storage_provider: StorageConfig,
 }
 
@@ -36,6 +37,7 @@ impl Config {
             port: env::var("PORT").unwrap().parse::<u16>().unwrap(),
             storage_url: env::var("STORAGE_BASEURL").unwrap(),
             database_url: env::var("DATABASE_URL").unwrap(),
+            jwt_key: env::var("JWT_KEY").unwrap(),
             storage_provider: {
                 match env::var("STORAGE_PROVIDER").unwrap().as_str() {
                     "local" => StorageConfig::Local(LocalConfig {

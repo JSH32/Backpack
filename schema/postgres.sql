@@ -36,15 +36,10 @@ CREATE TABLE IF NOT EXISTS tokens
 (
     id          SERIAL       NOT NULL,
     user_id     INTEGER      NOT NULL,
-    token       VARCHAR(128) NOT NULL,
     name        VARCHAR(32)  NOT NULL,
-    description TEXT         NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS tokens_id_uindex
     ON tokens (id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS tokens_token_uindex
-    ON tokens (token);
