@@ -1,4 +1,4 @@
-use crate::{models::{IDQuery, MessageResponse, application::*}, state::State, util::auth::{Auth, auth_role, create_jwt_string}};
+use crate::{models::{IDQuery, MessageResponse, UserRole, application::*}, state::State, util::auth::{Auth, create_jwt_string}};
 
 use actix_web::*;
 use actix_web::http::StatusCode;
@@ -8,10 +8,11 @@ pub fn get_routes() -> Scope {
         .service(list)
         .service(info)
         .service(create)
+        .service(delete)
 }
 
 #[get("list")]
-async fn list(state: web::Data<State>, auth: Auth<auth_role::User, false>) -> impl Responder {
+async fn list(state: web::Data<State>, auth: Auth<{UserRole::User}, false>) -> impl Responder {
     match state.database.get_all_applications(auth.user.id).await {
         Ok(list) => HttpResponse::Ok().json(list),
         Err(_) => MessageResponse::internal_server_error().http_response()
@@ -19,7 +20,7 @@ async fn list(state: web::Data<State>, auth: Auth<auth_role::User, false>) -> im
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: Auth<auth_role::User, false>, info: web::Query<IDQuery>) -> impl Responder {
+async fn info(state: web::Data<State>, auth: Auth<{UserRole::User}, false>, info: web::Query<IDQuery>) -> impl Responder {
     match state.database.get_application_by_id(info.id).await {
         Ok(data) => {
             if data.user_id != auth.user.id {
@@ -33,8 +34,8 @@ async fn info(state: web::Data<State>, auth: Auth<auth_role::User, false>, info:
 }
 
 #[post("create")]
-async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, form: web::Json<ApplicationCreateForm>) -> impl Responder {
-    // Check if application count is over 10
+async fn create(state: web::Data<State>, auth: Auth<{UserRole::User}, false>, form: web::Json<ApplicationCreateForm>) -> impl Responder {
+    // Check if application count is over 5
     match state.database.application_count(auth.user.id).await {
         Ok(count) => {
             if count > 5 {
@@ -78,7 +79,21 @@ async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, for
     }
 }
 
-// #[get("delete")]
-// async fn delete(state: web::Data<State>, auth: auth::middleware::User, data: web::Json<IDQuery>) -> impl Responder {
-//     HttpResponse::new(StatusCode::NOT_IMPLEMENTED)
-// }
+#[get("delete")]
+async fn delete(state: web::Data<State>, auth: Auth<{UserRole::User}, false>, data: web::Json<IDQuery>) -> impl Responder {
+    let application_id = match state.database.get_application_by_id(data.id).await {
+        Ok(application_data) => {
+            if application_data.user_id != auth.user.id {
+                return MessageResponse::unauthorized_error();
+            }
+            application_data.id
+        },
+        Err(_) => return MessageResponse::unauthorized_error()
+    };
+
+    if let Err(_) = state.database.delete_application_by_id(application_id).await {
+        return MessageResponse::internal_server_error();
+    }
+
+    MessageResponse::new(StatusCode::OK, "Application was successfully deleted")
+}

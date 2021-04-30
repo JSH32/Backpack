@@ -1,7 +1,7 @@
 use argon2;
 use http::StatusCode;
 
-use crate::{state::State, util::auth::{Auth, auth_role}};
+use crate::{state::State, util::auth::Auth};
 use crate::models::*;
 use crate::util;
 
@@ -15,7 +15,7 @@ pub fn get_routes() -> Scope {
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: Auth<auth_role::User, true>) -> impl Responder {
+async fn info(state: web::Data<State>, auth: Auth<{UserRole::User}, true>) -> impl Responder {
     match state.database.get_user_by_id(auth.user.id).await {
         Ok(user_data) => HttpResponse::Ok().json(user_data),
         Err(_) => MessageResponse::internal_server_error().http_response()
@@ -23,7 +23,7 @@ async fn info(state: web::Data<State>, auth: Auth<auth_role::User, true>) -> imp
 }
 
 #[post("password")]
-async fn password(state: web::Data<State>, auth: Auth<auth_role::User, false>, form: web::Json<PasswordChangeForm>) -> impl Responder {
+async fn password(state: web::Data<State>, auth: Auth<{UserRole::User}, false>, form: web::Json<PasswordChangeForm>) -> impl Responder {
     // Check if password is valid to password hash
     let matches = match argon2::verify_encoded(&auth.user.password, form.current_password.as_bytes()) {
         Ok(matches) => matches,

@@ -1,8 +1,8 @@
 #![feature(macro_attributes_in_derive_output)]
+#![feature(const_generics)]
 
 use actix_web::{*, middleware::Logger};
 use config::StorageConfig;
-use rand::Rng;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 
 extern crate env_logger;

@@ -3,7 +3,7 @@ use actix_web::http::StatusCode;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
 
-use crate::{state::State, util::auth::{Auth, auth_role}};
+use crate::{models::UserRole, state::State, util::auth::Auth};
 use crate::util::auth::create_jwt_string;
 use crate::models::{MessageResponse, auth::BasicAuthForm};
 
@@ -56,7 +56,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
 
 /// Remove httponly cookie
 #[post("logout")]
-async fn logout(_: Auth<auth_role::User, false>) -> impl Responder {
+async fn logout(_: Auth<{UserRole::User}, false>) -> impl Responder {
     HttpResponse::Ok()
         .cookie(
             http::Cookie::build("auth-token", "")

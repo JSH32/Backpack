@@ -22,14 +22,13 @@ struct JWTClaims {
     application_id: Option<i32> // Application ID, if the token was an application token
 }
 
-pub struct Auth<R: Role, const ALLOW_APPLICATION: bool> {
+pub struct Auth<const R: UserRole, const ALLOW_APPLICATION: bool> {
     pub user: UserData,
-    _r: std::marker::PhantomData<R>
 }
 
-impl<R, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLICATION> where R: Role {
+impl<const ROLE: UserRole, const ALLOW_APPLICATION: bool> FromRequest for Auth<ROLE, ALLOW_APPLICATION> {
     type Error = Error;
-    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, ALLOW_APPLICATION>, Error>>>>;
+    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<ROLE, ALLOW_APPLICATION>, Error>>>>;
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
@@ -45,39 +44,15 @@ impl<R, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLICATION
                 return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
             }
 
-            if !R::authorized(&user_data.role) {
+            if user_data.role < ROLE {
                 return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
             }
 
             Ok(Auth {
                 user: user_data, 
-                _r: std::marker::PhantomData
             })
         })
     }
-}
-
-pub trait Role {
-    const LEVEL: UserRole;
-
-    fn authorized(user_role: &UserRole) -> bool {
-        user_role >= &Self::LEVEL
-    }
-}
-
-macro_rules! define_role {
-    ($name:ident, $variant:expr) => {
-        pub struct $name;
-        impl $crate::util::auth::Role for $name { const LEVEL: $crate::models::user::UserRole = $variant; }
-    };
-}
-
-// Define all auth roles
-pub mod auth_role {
-    use crate::models::user::UserRole;
-
-    define_role!(User, UserRole::User);
-    define_role!(Admin, UserRole::Admin);
 }
 
 /// Get data from user based on request
