@@ -1,13 +1,19 @@
 pub mod user;
 pub mod auth;
 pub mod file;
-pub mod token;
+pub mod application;
 
 pub use self::{user::*, auth::*};
 
 use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
 use futures::future::{Ready, ok};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+
+/// Query for any data with an ID
+#[derive(Deserialize)]
+pub struct IDQuery {
+    pub id: i32
+}
 
 /// Standard message response
 #[derive(Serialize)]

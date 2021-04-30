@@ -1,4 +1,4 @@
-use crate::models;
+use crate::models::{self, application::ApplicationData};
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
@@ -64,49 +64,49 @@ impl Database {
     pub async fn change_password(&self, id: i32, password: &str) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
             .bind(password)
-            .bind(password)
+            .bind(id)
             .execute(&self.pool)
             .await?;
 
         Ok(())
     }
-    /// Delete a token by its id
-    pub async fn delete_token_by_id(&self, token_id: i32) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM tokens WHERE id = $1")
-            .bind(token_id)
+    /// Delete an application by its id
+    pub async fn delete_application_by_id(&self, application_id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM applications WHERE id = $1")
+            .bind(application_id)
             .execute(&self.pool)
             .await?;
 
         Ok(())
     }
-    /// Get a token by its id
-    pub async fn get_token_by_id(&self, token_id: i32) -> Result<models::token::TokenData, sqlx::Error> {
-        sqlx::query("SELECT id, name, user_id FROM tokens WHERE id = $1")
-            .bind(token_id)
-            .try_map(token_map)
+    /// Get an application by its id
+    pub async fn get_application_by_id(&self, application_id: i32) -> Result<ApplicationData, sqlx::Error> {
+        sqlx::query("SELECT id, name, user_id FROM applications WHERE id = $1")
+            .bind(application_id)
+            .try_map(application_map)
             .fetch_one(&self.pool)
             .await
     }
-    /// Get all tokens for a user from their id
-    pub async fn get_all_tokens(&self, user_id: i32) -> Result<Vec<models::token::TokenData>, sqlx::Error> {
-        sqlx::query("SELECT id, name, user_id FROM tokens WHERE user_id = $1")
+    /// Get all applications for a user from their id
+    pub async fn get_all_applications(&self, user_id: i32) -> Result<Vec<ApplicationData>, sqlx::Error> {
+        sqlx::query("SELECT id, name, user_id FROM applications WHERE user_id = $1")
             .bind(user_id)
-            .try_map(token_map)
+            .try_map(application_map)
             .fetch_all(&self.pool)
             .await
     }
-    /// Create a new token
-    pub async fn create_token(&self, user_id: i32, name: &str) -> Result<models::token::TokenData, sqlx::Error> {
-        sqlx::query("INSERT INTO tokens (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name")
+    /// Create a new application
+    pub async fn create_application(&self, user_id: i32, name: &str) -> Result<ApplicationData, sqlx::Error> {
+        sqlx::query("INSERT INTO applications (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name")
             .bind(user_id)
             .bind(name)
-            .try_map(token_map)
+            .try_map(application_map)
             .fetch_one(&self.pool)
             .await
     }
-    /// Check if a token of that name already exists in the database
-    pub async fn token_exist(&self, user_id: i32, name: &str) -> Result<bool, sqlx::Error> {
-        let row: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM tokens WHERE name = $1 AND user_id = $2)")
+    /// Check if a token of that name already exists for a user
+    pub async fn application_exist(&self, user_id: i32, name: &str) -> Result<bool, sqlx::Error> {
+        let row: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM applications WHERE name = $1 AND user_id = $2)")
             .bind(name)
             .bind(user_id)
             .fetch_one(&self.pool)
@@ -114,9 +114,9 @@ impl Database {
 
         Ok(row.0)
     }
-    /// Get the amount of tokens a user has
-    pub async fn token_count(&self, user_id: i32)-> Result<i64, sqlx::Error> {
-        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM tokens WHERE user_id = $1")
+    /// Get the amount of applications a user has
+    pub async fn application_count(&self, user_id: i32)-> Result<i64, sqlx::Error> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM applications WHERE user_id = $1")
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?;
@@ -137,8 +137,8 @@ fn user_map(row: sqlx::postgres::PgRow) -> Result<models::user::UserData, sqlx::
     })
 }
 
-fn token_map(row: sqlx::postgres::PgRow) -> Result<models::token::TokenData, sqlx::Error> {
-    Ok(models::token::TokenData {
+fn application_map(row: sqlx::postgres::PgRow) -> Result<ApplicationData, sqlx::Error> {
+    Ok(ApplicationData {
         id: row.get("id"),
         name: row.get("name"),
         user_id: row.get("user_id"),

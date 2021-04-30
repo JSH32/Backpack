@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TokenData {
+pub struct ApplicationData {
     pub id: i32,
     pub name: String,
     
@@ -15,11 +15,6 @@ pub struct TokenData {
 }
 
 #[derive(Deserialize)]
-pub struct TokenCreateForm {
+pub struct ApplicationCreateForm {
     pub name: String
-}
-
-#[derive(Deserialize)]
-pub struct TokenQuery {
-    pub id: i32
 }

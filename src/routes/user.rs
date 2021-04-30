@@ -1,10 +1,7 @@
-mod token;
-
 use argon2;
 use http::StatusCode;
 
-use crate::state::State;
-use crate::util::auth;
+use crate::{state::State, util::auth::{Auth, auth_role}};
 use crate::models::*;
 use crate::util;
 
@@ -15,26 +12,20 @@ pub fn get_routes() -> Scope {
         .service(create)
         .service(info)
         .service(password)
-        .service(token::get_routes())
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: auth::middleware::User) -> impl Responder {
-    match state.database.get_user_by_id(auth.0.id).await {
+async fn info(state: web::Data<State>, auth: Auth<auth_role::User, true>) -> impl Responder {
+    match state.database.get_user_by_id(auth.user.id).await {
         Ok(user_data) => HttpResponse::Ok().json(user_data),
         Err(_) => MessageResponse::internal_server_error().http_response()
     }
 }
 
 #[post("password")]
-async fn password(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<PasswordChangeForm>) -> impl Responder {
-    let user = match state.database.get_user_by_id(auth.0.id).await {
-        Ok(data) => data,
-        Err(_) => return MessageResponse::internal_server_error()
-    };
-
+async fn password(state: web::Data<State>, auth: Auth<auth_role::User, false>, form: web::Json<PasswordChangeForm>) -> impl Responder {
     // Check if password is valid to password hash
-    let matches = match argon2::verify_encoded(&user.password, form.current_password.as_bytes()) {
+    let matches = match argon2::verify_encoded(&auth.user.password, form.current_password.as_bytes()) {
         Ok(matches) => matches,
         Err(_) => return MessageResponse::internal_server_error()
     };
@@ -49,7 +40,7 @@ async fn password(state: web::Data<State>, auth: auth::middleware::User, form: w
         Err(err) => return err
     };
 
-    match state.database.change_password(auth.0.id, &new_hash).await {
+    match state.database.change_password(auth.user.id, &new_hash).await {
         Ok(_) => MessageResponse::new(StatusCode::OK, "Password changed successfully"),
         Err(_) => MessageResponse::internal_server_error()
     }
@@ -88,6 +79,9 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
 }
 
 // #[post("delete")]
-// async fn delete(state: web::Data<State>, form: web::Json<UserDeleteForm>) -> impl Responder {
-
+// async fn delete(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<UserDeleteForm>) -> impl Responder {
+//     let matches = match argon2::verify_encoded(&auth.0.password, form.current_password.as_bytes()) {
+//         Ok(matches) => matches,
+//         Err(_) => return MessageResponse::internal_server_error()
+//     };
 // }

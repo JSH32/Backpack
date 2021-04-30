@@ -1,3 +1,5 @@
+#![feature(macro_attributes_in_derive_output)]
+
 use actix_web::{*, middleware::Logger};
 use config::StorageConfig;
 use rand::Rng;
@@ -43,6 +45,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/v1/")
                     .service(routes::user::get_routes())
                     .service(routes::auth::get_routes())
+                    .service(routes::application::get_routes())
             )
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {

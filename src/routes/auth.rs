@@ -3,8 +3,8 @@ use actix_web::http::StatusCode;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
 
-use crate::state::State;
-use crate::util::auth::{create_jwt_string, middleware};
+use crate::{state::State, util::auth::{Auth, auth_role}};
+use crate::util::auth::create_jwt_string;
 use crate::models::{MessageResponse, auth::BasicAuthForm};
 
 pub fn get_routes() -> Scope {
@@ -56,14 +56,14 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
 
 /// Remove httponly cookie
 #[post("logout")]
-async fn logout(_: middleware::User) -> impl Responder {
+async fn logout(_: Auth<auth_role::User, false>) -> impl Responder {
     HttpResponse::Ok()
         .cookie(
             http::Cookie::build("auth-token", "")
             .secure(false)
             .http_only(true)
             .path("/")
-            // Token expires instantly when issued, will remove the cookie
+            // Cookie expires instantly when issued, will remove the cookie
             .expires(OffsetDateTime::from_unix_timestamp(Utc::now().timestamp()))
             .finish()
         )

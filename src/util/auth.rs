@@ -1,61 +1,87 @@
-use actix_web::{Error, HttpMessage, HttpRequest, web::Data};
+use actix_web::{Error, FromRequest, HttpMessage, HttpRequest, web::Data};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Serialize, Deserialize};
 
-use crate::state::State;
+use crate::{models::UserRole, state::State};
 use crate::models::MessageResponse;
 use crate::models::user::UserData;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct JWTClaims {
-    pub iss: String, // Issuer
-    pub iat: i64, // Issued at
+struct JWTClaims {
+    iss: String, // Issuer
+    iat: i64, // Issued at
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub exp: Option<i64>, // Expire
+    exp: Option<i64>, // Expire
 
-    pub user_id: i32, // ID user refers to
+    user_id: i32, // User ID the token refers to
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub token_id: Option<i32> // Token ID, if the token was a forever token
+    application_id: Option<i32> // Application ID, if the token was an application token
 }
 
-/// Generate auth middleware for a UserRole.
-/// This implementation will allow the specified role or lower access level roles to access a resource
-macro_rules! define_auth {
-    ($name:ident, $role_enum:expr) => {
-        // Authentication middleware for this role. This will also work for roles at a lower access level
-        pub struct $name(pub $crate::models::user::UserData);
+pub struct Auth<R: Role, const ALLOW_APPLICATION: bool> {
+    pub user: UserData,
+    _r: std::marker::PhantomData<R>
+}
 
-        impl actix_web::FromRequest for $name {
-            type Error = actix_web::Error;
-            type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<$name, actix_web::Error>>>>;
-            type Config = ();
+impl<R, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLICATION> where R: Role {
+    type Error = Error;
+    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, ALLOW_APPLICATION>, Error>>>>;
+    type Config = ();
 
-            fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
-                let req = req.clone();
+    fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
+        let req = req.clone();
 
-                Box::pin(async move {
-                    let user_data = match $crate::util::auth::get_auth_data(req).await {
-                        Ok(user_data) => user_data,
-                        Err(err) => return Err(err)
-                    };
+        Box::pin(async move {
+            let (user_data, is_application) = match get_auth_data(req).await {
+                Ok(user_data) => user_data,
+                Err(err) => return Err(err)
+            };
 
-                    if user_data.role < $role_enum {
-                        return Err(actix_web::Error::from($crate::models::MessageResponse::unauthorized_error()))
-                    }
-
-                    Ok($name(user_data))
-                })
+            if is_application && !ALLOW_APPLICATION {
+                return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
             }
-        }
+
+            if !R::authorized(&user_data.role) {
+                return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
+            }
+
+            Ok(Auth {
+                user: user_data, 
+                _r: std::marker::PhantomData
+            })
+        })
     }
 }
 
+pub trait Role {
+    const LEVEL: UserRole;
+
+    fn authorized(user_role: &UserRole) -> bool {
+        user_role >= &Self::LEVEL
+    }
+}
+
+macro_rules! define_role {
+    ($name:ident, $variant:expr) => {
+        pub struct $name;
+        impl $crate::util::auth::Role for $name { const LEVEL: $crate::models::user::UserRole = $variant; }
+    };
+}
+
+// Define all auth roles
+pub mod auth_role {
+    use crate::models::user::UserRole;
+
+    define_role!(User, UserRole::User);
+    define_role!(Admin, UserRole::Admin);
+}
+
 /// Get data from user based on request
-async fn get_auth_data(req: HttpRequest) -> Result<UserData, actix_web::Error> {
+async fn get_auth_data(req: HttpRequest) -> Result<(UserData, bool), actix_web::Error> {
     let state = req.app_data::<Data<State>>().expect("State was not found");
 
     let jwt_token = match req.cookie("auth-token") {
@@ -75,12 +101,16 @@ async fn get_auth_data(req: HttpRequest) -> Result<UserData, actix_web::Error> {
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
 
+    let mut is_application = false;
+
     // Check if it is perm JWT token
-    if let Some(token_id) = claims.token_id {
-        match state.database.get_token_by_id(token_id).await {
-            Ok(token_data) => {
+    if let Some(application_id) = claims.application_id {
+        match state.database.get_application_by_id(application_id).await {
+            Ok(application_data) => {
+                is_application = true;
+
                 // Check if perm JWT token belongs to user
-                if token_data.user_id != user.id {
+                if application_data.user_id != user.id {
                     return Err(Error::from(MessageResponse::unauthorized_error()))
                 }
             }
@@ -88,25 +118,17 @@ async fn get_auth_data(req: HttpRequest) -> Result<UserData, actix_web::Error> {
         };
     }
 
-    Ok(user)
-}
-
-// Auth middleware defines
-pub mod middleware {
-    use crate::models::user::UserRole;
-
-    define_auth!(User, UserRole::User);
-    define_auth!(Admin, UserRole::Admin);
+    Ok((user, is_application))
 }
 
 // Sign a JWT token and get a string
-pub fn create_jwt_string(user_id: i32, token_id: Option<i32>, issuer: &str, expiration: Option<i64>, key: &str) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn create_jwt_string(user_id: i32, application_id: Option<i32>, issuer: &str, expiration: Option<i64>, key: &str) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = JWTClaims {
         iss: issuer.into(),
         exp: expiration,
         iat: Utc::now().timestamp(),
         user_id: user_id,
-        token_id: token_id
+        application_id: application_id
     };
 
     encode(&Header::default(), &claims, &EncodingKey::from_secret(key.as_ref()))

@@ -1,3 +1,4 @@
+use macro_rules_attribute::macro_rules_derive;
 use serde::{Serialize, Deserialize};
 
 #[derive(Deserialize)]
@@ -19,7 +20,7 @@ pub struct PasswordChangeForm {
     pub new_password: String
 }
 
-/// User role in database
+/// User access level
 #[derive(Serialize, Deserialize, sqlx::Type, PartialEq, PartialOrd)]
 #[sqlx(type_name = "role", rename_all = "lowercase")]
 #[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
