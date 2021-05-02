@@ -14,12 +14,12 @@ $do$;
 -- Users table
 CREATE TABLE IF NOT EXISTS users
 (
-    id       SERIAL                NOT NULL,
-    email    VARCHAR(320)          NOT NULL,
-    username VARCHAR(32)           NOT NULL,
-    password VARCHAR(128)          NOT NULL,
-    verified BOOLEAN DEFAULT false NOT NULL,
-    role     role    DEFAULT 'user'::role
+    id       SERIAL                        NOT NULL,
+    email    VARCHAR(320)                  NOT NULL,
+    username VARCHAR(32)                   NOT NULL,
+    password VARCHAR(128)                  NOT NULL,
+    verified BOOLEAN DEFAULT false         NOT NULL,
+    role     role    DEFAULT 'user'::role  NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_uindex
