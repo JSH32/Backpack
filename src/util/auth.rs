@@ -25,7 +25,7 @@ struct JWTClaims {
 /// TODO: Replace the use of this entirely with const_generics when possible
 /// Not currently possible due to a rust compiler bug in the nightly build
 ///
-/// https://github.com/rust-lang/rust/issues/84737#issuecomment-830260245
+/// https://github.com/rust-lang/rust/issues/84737
 pub trait Role {
     const LEVEL: UserRole;
 
