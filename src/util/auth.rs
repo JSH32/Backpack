@@ -22,13 +22,41 @@ struct JWTClaims {
     application_id: Option<i32> // Application ID, if the token was an application token
 }
 
-pub struct Auth<const R: UserRole, const ALLOW_APPLICATION: bool> {
-    pub user: UserData,
+/// TODO: Replace the use of this entirely with const_generics when possible
+/// Not currently possible due to a rust compiler bug in the nightly build
+///
+/// https://github.com/rust-lang/rust/issues/84737#issuecomment-830260245
+pub trait Role {
+    const LEVEL: UserRole;
+
+    fn authorized(user_role: &UserRole) -> bool {
+        user_role >= &Self::LEVEL
+    }
 }
 
-impl<const ROLE: UserRole, const ALLOW_APPLICATION: bool> FromRequest for Auth<ROLE, ALLOW_APPLICATION> {
+macro_rules! define_role {
+    ($name:ident, $variant:expr) => {
+        pub struct $name;
+        impl $crate::util::auth::Role for $name { const LEVEL: $crate::models::user::UserRole = $variant; }
+    };
+}
+
+// Define all auth roles
+pub mod auth_role {
+    use crate::models::user::UserRole;
+
+    define_role!(User, UserRole::User);
+    define_role!(Admin, UserRole::Admin);
+}
+
+pub struct Auth<R: Role, const ALLOW_APPLICATION: bool> {
+    pub user: UserData,
+    _r: std::marker::PhantomData<R>
+}
+
+impl<R: Role, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLICATION> {
     type Error = Error;
-    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<ROLE, ALLOW_APPLICATION>, Error>>>>;
+    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, ALLOW_APPLICATION>, Error>>>>;
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
@@ -44,12 +72,13 @@ impl<const ROLE: UserRole, const ALLOW_APPLICATION: bool> FromRequest for Auth<R
                 return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
             }
 
-            if user_data.role < ROLE {
+            if user_data.role < R::LEVEL {
                 return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
             }
 
             Ok(Auth {
-                user: user_data, 
+                user: user_data,
+                _r: std::marker::PhantomData
             })
         })
     }
@@ -89,6 +118,7 @@ async fn get_auth_data(req: HttpRequest) -> Result<(UserData, bool), actix_web::
                     return Err(Error::from(MessageResponse::unauthorized_error()))
                 }
             }
+            // Application has been deleted so it's ID does not exist anymore, invalid token
             Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
         };
     }

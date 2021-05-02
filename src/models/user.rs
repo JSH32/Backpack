@@ -1,4 +1,3 @@
-use macro_rules_attribute::macro_rules_derive;
 use serde::{Serialize, Deserialize};
 
 #[derive(Deserialize)]

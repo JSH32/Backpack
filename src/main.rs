@@ -1,5 +1,4 @@
 #![feature(macro_attributes_in_derive_output)]
-#![feature(const_generics)]
 
 use actix_web::{*, middleware::Logger};
 use config::StorageConfig;
