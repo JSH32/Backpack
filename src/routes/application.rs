@@ -1,4 +1,4 @@
-use crate::{models::{IDQuery, MessageResponse, UserRole, application::*}, state::State, util::auth::{Auth, auth_role, create_jwt_string}};
+use crate::{models::{IDQuery, MessageResponse, application::*}, state::State, util::auth::{Auth, auth_role, create_jwt_string}};
 
 use actix_web::*;
 use actix_web::http::StatusCode;

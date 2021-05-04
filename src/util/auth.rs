@@ -26,13 +26,7 @@ struct JWTClaims {
 /// Not currently possible due to a rust compiler bug in the nightly build
 ///
 /// https://github.com/rust-lang/rust/issues/84737
-pub trait Role {
-    const LEVEL: UserRole;
-
-    fn authorized(user_role: &UserRole) -> bool {
-        user_role >= &Self::LEVEL
-    }
-}
+pub trait Role { const LEVEL: UserRole; }
 
 macro_rules! define_role {
     ($name:ident, $variant:expr) => {
