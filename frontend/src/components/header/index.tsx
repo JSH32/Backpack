@@ -11,7 +11,7 @@ export const Header: React.FunctionComponent = () => {
         <AppBar position="fixed" color="transparent" elevation={0}>
             <Toolbar>
                 <Typography id="bar-title">
-                    KAWAII.SH
+                    ANOLIS
                 </Typography>
                 <Button>Login</Button>
             </Toolbar>

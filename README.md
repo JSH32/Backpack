@@ -1,12 +1,10 @@
-<p align="center">
-    <img height="150" src="https://raw.githubusercontent.com/Riku32/kawaii.sh/rewrite/.github/branding/banner.png">
-</p>
+<img height="150" src="https://raw.githubusercontent.com/Riku32/anolis/rewrite/.github/branding/banner.png">
 
-## Kawaii.sh
-Kawaii.sh is an open source file sharing tool that can be deployed easily to any docker environment. It aims to be extendable, easy to use, and support many storage providers.
+## Anolis
+Anolis is an open source file uploading and sharing tool that can be deployed easily to any docker environment. It aims to be extendable, easy to use, and support many storage providers.
 
 ### Providers
-We aim to support many storage providers for kawaii.sh. This will allow you to have a choice in the storage medium you desire for storing your files. Currently supported file providers are listed below.
+We aim to support many storage providers for anolis. This will allow you to have a choice in the storage medium you desire for storing your files. Currently supported file providers are listed below.
 
  - Local storage
  - S3 Protocol

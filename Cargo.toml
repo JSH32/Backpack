@@ -1,5 +1,5 @@
 [package]
-name = "kawaii"
+name = "anolis"
 version = "0.1.0"
 authors = ["Riku <riku@kawaii.sh>"]
 edition = "2018"

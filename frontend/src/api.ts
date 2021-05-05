@@ -1,5 +1,5 @@
 /**
- * Web client for kawaii.sh API, only to be used with frontend
+ * Web client for anolis API, only to be used with frontend
  */
 
 import axios from "axios"
