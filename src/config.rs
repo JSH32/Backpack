@@ -43,7 +43,7 @@ impl Config {
                     "local" => StorageConfig::Local(LocalConfig {
                         path: Path::new(env::var("LOCAL_PATH").unwrap().as_str()).to_path_buf(),
                         serve: match env::var("LOCAL_SERVE").ok() {
-                            Some(v) => v.parse().unwrap_or(false),
+                            Some(v) => v.parse().expect("LOCAL_SERVE must be true or false"),
                             None => false
                         }
                     }),
