@@ -1,4 +1,4 @@
-<img height="150" src="https://raw.githubusercontent.com/Riku32/anolis/rewrite/.github/branding/banner.png">
+<img height="200" src="https://raw.githubusercontent.com/Riku32/anolis/rewrite/.github/branding/banner.png">
 
 ## Anolis
 Anolis is an open source file uploading and sharing tool that can be deployed easily to any docker environment. It aims to be extendable, easy to use, and support many storage providers.
