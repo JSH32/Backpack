@@ -10,7 +10,10 @@ import {
 
 const theme = createMuiTheme({
   palette: {
-    type: "dark"
+    type: "dark",
+    primary: {
+      main: import.meta.env.SNOWPACK_PUBLIC_COLOR
+    }
   }
 })
 

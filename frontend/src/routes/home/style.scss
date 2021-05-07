@@ -6,12 +6,12 @@
 
     #subtitle {
         font-size: 25px;
-        margin-top: -35px;
+        margin-top: 5px;
     }
 }
 
 #counter {
-    margin-top: 5px;
+    margin-top: -30px;
 
     > * {
         display: inline-block;
@@ -25,6 +25,33 @@
     }
 }
 
+#bottom-footer {
+    column-gap: 10px;
+    position: absolute;
+    margin: 5px;
+    bottom: 0;
+}
+
+@media (max-width: 800px) {
+    // body::before {
+    //     background-position: 50% 100%;
+    //     opacity: .2;
+    // }
+
+    #bottom-footer {
+        text-align: center;
+        margin: auto;
+        margin-bottom: 5px;
+        width: 100%;
+    }
+}
+
+@media (min-width: 800px) {
+    #bottom-footer {
+        display: flex;
+    }
+}
+
 // // Background graphic
 // body::before {
 //     content: "";
@@ -33,35 +60,8 @@
 //     position: absolute;
 //     width: 100%; 
 //     height: 100%;
-//     background-image: url(../../assets/ryuko.png);
+//     background-image: url(../../assets/graphic.png);
 //     background-size: 50vh;
 //     background-repeat: no-repeat;
 //     background-position: 90% 100%;
-// }
-
-// #bottom-footer {
-//     column-gap: 10px;
-//     position: absolute;
-//     margin: 5px;
-//     bottom: 0;
-// }
-
-// @media (max-width: 800px) {
-//     body::before {
-//         background-position: 50% 100%;
-//         opacity: .2;
-//     }
-
-//     #bottom-footer {
-//         text-align: center;
-//         margin: auto;
-//         margin-bottom: 5px;
-//         width: 100%;
-//     }
-// }
-
-// @media (min-width: 800px) {
-//     #bottom-footer {
-//         display: flex;
-//     }
 // }

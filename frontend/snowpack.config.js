@@ -39,6 +39,6 @@ module.exports = {
     "components": "./src/components",
     "routes": "./src/routes",
     "assets": "./src/assets",
-    "api": "./src/api.ts"
+    "api": "./src/api.ts",
   }
 }

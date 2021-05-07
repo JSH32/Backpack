@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { Button } from "@material-ui/core"
+import { Button, Typography } from "@material-ui/core"
 import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile"
 
 import "./style.scss"
@@ -13,7 +13,7 @@ export const Home: React.FunctionComponent = () => {
         <div>
             <div className="center">
                 <div id="header">
-                    <h1 id="title">ANOLIS</h1>
+                    <Typography variant="h1" color="primary" id="title" >ANOLIS</Typography>
                     <p id="subtitle">A filevault service for all your needs</p>
                 </div>
                 <div id="counter">
@@ -22,7 +22,7 @@ export const Home: React.FunctionComponent = () => {
                 </div>
             </div>
             <div id="bottom-footer">
-                <Button>GITHUB</Button>
+                <Button href="https://github.com/Riku32/Anolis">GITHUB</Button>
                 <Button>PRIVACY POLICY</Button>
                 <Button>TERMS OF SERVICE</Button>
             </div>

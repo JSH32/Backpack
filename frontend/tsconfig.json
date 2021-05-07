@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "jsx": "react",
-        "module": "commonjs",
+        "module": "es2020",
         "noImplicitAny": true,
         "outDir": "./build/",
         "preserveConstEnums": true,

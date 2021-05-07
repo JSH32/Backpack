@@ -4,7 +4,7 @@ import Toolbar from "@material-ui/core/Toolbar"
 import Typography from "@material-ui/core/Typography"
 import Button from "@material-ui/core/Button"
 
-import "./style.css"
+import "./style.scss"
 
 export const Header: React.FunctionComponent = () => {
     return <div>

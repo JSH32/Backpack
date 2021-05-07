@@ -9,7 +9,7 @@ import { Home } from "routes/home"
 import { Header } from "components/header"
 
 // Global stylesheet
-import "./style.css"
+import "./style.scss"
 
 export const App: React.FunctionComponent = () => (
   <div>
