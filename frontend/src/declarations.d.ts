@@ -3,7 +3,7 @@ declare module "*.png"
 declare module "*.jpg"
 
 // SVG
-declare module '*.svg' {
+declare module "*.svg" {
     const ref: React.FC
     export default ref
 }

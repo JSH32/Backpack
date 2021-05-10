@@ -1,54 +1,43 @@
-#login-container {
-    height: 25em;
-    width: 30em;
+form#sign-in {
+    padding: 1em;
+    width: 25em;
     text-align: center;
-    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    background-color: rgba(255, 255, 255, 0.04);
 
-    #seperator {
+    h2 {
+        margin: 0.5em 0;
+    }
+
+    input {
+        border: 1px solid rgb(255, 255, 255, 0.3);
+        background-color: transparent;
+        font-size: 1em;
+        border-radius: 0.3em;
+        padding: 0.5em;
+        color: white;
+    }
+
+    .separator {
         display: grid;
         grid-template-columns: 1fr 2em 1fr;
-        gap: 0.5em;
         color: white;
-        opacity: 50%;
+        align-items: center;
+        opacity: 30%;
+        text-transform: uppercase;
+        margin: 0.5em 0;
+
+        span {
+            font-size: 0.9em;
+        }
 
         hr {
             width: 100%;
-            margin: auto 0;
             border: none;
-            height: 2px;
-            background-color: currentColor;
+            height: 1px;
+            background-color: white;
         }
-    }
-
-    #button-box {
-        margin-top: 20px;
-        display: flex;
-        gap: 0.7em;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .icon {
-        height: 20px;
-    }
-}
-
-.google-button {
-    background-color: white !important;
-    color: black !important;
-    display: flex;
-
-    &:hover {
-        background-color: #c7c7c7 !important;
-    }
-}
-
-.github-button {
-    background-color: black !important;
-    color: white !important;
-    display: flex;
-
-    &:hover {
-        background-color: #212121 !important;
     }
 }
