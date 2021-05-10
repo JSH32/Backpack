@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&display=swap');
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Manrope;
+}
+
+body {
+    background-color: #19171b;
+    color: white;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button {
+    background-color: #BB86FC;
+    color: white;
+}
+
+button.github {
+    background-color: black;
+    color: white;
+}
+
+button.google {
+    background-color: white;
+    color: black;
+}
+
+button, button.github, button.google {
+    font-size: 0.9em;
+    padding: 0.5em;
+    border: none;
+    border-radius: 0.3em;
+    transition: color 0.1s, background-color 0.1s, border 0.1s; 
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    border: 1px solid transparent;
+
+    svg {
+        height: 1.3em;
+        justify-self: flex-start;
+        position: absolute;
+        left: 0.5em;
+        fill: currentColor;
+    }
+
+    &:hover, &:focus {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+}

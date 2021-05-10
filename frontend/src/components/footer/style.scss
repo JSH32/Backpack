@@ -1,22 +1,21 @@
-nav {
+footer {
     position: fixed;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100vw;
-    font-size: 1em;
+    font-size: 0.8em;
     padding: 1.5em;
     display: flex;
     text-transform: uppercase;
-
-    > *:first-child {
-        margin-right: auto;
-    }
+    gap: 1.5em;
 
     a {
         color: white;
         font-size: 1.1em;
-        font-weight: 600;
+        font-weight: 400;
         text-decoration: none;
+        opacity: 0.5;
+        letter-spacing: 0.05em;
 
         &:hover {
             text-decoration: underline;

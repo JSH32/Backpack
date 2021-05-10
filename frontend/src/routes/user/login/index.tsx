@@ -1,46 +1,34 @@
 import * as React from "react"
-
-import {
-    Grid, 
-    Paper,
-    Typography
-} from "@material-ui/core"
-
-// import GitHubIcon from "@material-ui/icons/GitHub"
-import GoogleIcon from "assets/icons/google.svg"
-
-import { CenteredBox } from "components/centeredbox"
-
 import "./style.scss"
 
+import GoogleSVG from "assets/icons/google.svg"
+import GithubSVG from "assets/icons/github.svg"
+
 export const UserLogin: React.FC = () => {
-    // console.log(GoogleIcon)
-
     return (
-        <div>
-            <CenteredBox>
-                <Grid item>
-                    <Paper id="login-container">
-                        <Typography id="title" variant="h4">
-                            SIGN IN
-                        </Typography>
-                        <div id="button-box">
-                            <button>
-                                <GoogleIcon />
-                            </button>
+        <form id="sign-in" onSubmit={e => e.preventDefault()}>
+            <h2>Sign in</h2>
 
-                            <button>
-                                <GoogleIcon />
-                            </button>
-                        </div>
-                        <div id="seperator">
-                            <hr/>
-                            <p>OR</p>
-                            <hr/>
-                        </div>
-                    </Paper>
-                </Grid>
-            </CenteredBox>
-        </div>
+            <button className="github">
+                <GithubSVG />
+                Login with GitHub
+            </button>
+
+            <button className="google">
+                <GoogleSVG />
+                Login with Google
+            </button>
+
+            <div className="separator">
+                <hr />
+                <span>or</span>
+                <hr />
+            </div>
+
+            <input type="text" placeholder="Username" />
+            <input type="password" placeholder="Password" />
+            
+            <button>Submit</button>
+        </form>
     )
 }
