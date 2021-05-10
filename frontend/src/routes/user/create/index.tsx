@@ -5,7 +5,7 @@ import * as React from "react"
 export const UserCreate: React.FC = () => {
     return (
         <div>
-            <p>hi</p>
+            <p>TODO</p>
         </div>
     )
 }
