@@ -1,9 +1,12 @@
-export {}
-
 // Images
 declare module "*.png"
 declare module "*.jpg"
-declare module "*.svg"
+
+// SVG
+declare module '*.svg' {
+    const ref: React.FC
+    export default ref
+}
 
 // Styles
 declare module "*.css"
@@ -12,9 +15,7 @@ declare module "*.scss"
 // Other
 declare module "*.wasm"
 
-// Environment variables
-declare global {
-    interface ImportMeta {
-        [env: string]: any
-    }
+// ImportMeta
+interface ImportMeta {
+    [env: string]: any;
 }

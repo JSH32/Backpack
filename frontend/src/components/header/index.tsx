@@ -6,7 +6,7 @@ import Button from "@material-ui/core/Button"
 
 import "./style.scss"
 
-export const Header: React.FunctionComponent = () => {
+export const Header: React.FC = () => {
     return <div>
         <AppBar position="fixed" color="transparent" elevation={0}>
             <Toolbar>

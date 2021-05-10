@@ -4,7 +4,7 @@
 
 import axios from "axios"
 
-const BASE_URL = import.meta.env.SNOWPACK_PUBLIC_BASE_URL
+const BASE_URL = import.meta.env.SNOWPACK_PUBLIC_API_URL
 
 enum UserRole {
     User = "user",
@@ -56,6 +56,27 @@ export const passwordLogin = async (email: string, password: string): Promise<Us
 export const getUserData = async (): Promise<UserData> => {
     try {
         const res = await axios.get<UserData>(`${BASE_URL}/user/info`)
+        return res.data
+    } catch (error) {
+        throw new Error(error.response.data)
+    }
+}
+
+/**
+ * Create and log in to a new account
+ * 
+ * @param username username
+ * @param email email
+ * @param password password
+ * @returns user data
+ */
+export const userCreate = async (username: string, email: string, password: string): Promise<UserData> => {
+    try {
+        const res = await axios.post<UserData>(`${BASE_URL}/user/create`, {
+            username: username,
+            email: email,
+            password: password
+        })
         return res.data
     } catch (error) {
         throw new Error(error.response.data)

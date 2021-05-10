@@ -5,7 +5,7 @@ import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile"
 
 import "./style.scss"
 
-export const Home: React.FunctionComponent = () => {
+export const Home: React.FC = () => {
     // File counter
     //const [count, setCount] = React.useState(0)
 
@@ -13,7 +13,7 @@ export const Home: React.FunctionComponent = () => {
         <div>
             <div className="center">
                 <div id="header">
-                    <Typography variant="h1" color="primary" id="title" >ANOLIS</Typography>
+                    <Typography variant="h1" color="primary" id="title">ANOLIS</Typography>
                     <p id="subtitle">A filevault service for all your needs</p>
                 </div>
                 <div id="counter">

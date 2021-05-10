@@ -27,6 +27,7 @@ module.exports = {
     "@snowpack/plugin-dotenv",
     "@snowpack/plugin-typescript",
     "snowpack-plugin-relative-css-urls",
+    "snowpack-plugin-svgr",
     "@snowpack/plugin-sass",
     [
       "@snowpack/plugin-run-script", {

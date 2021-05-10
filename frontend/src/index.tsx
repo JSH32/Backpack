@@ -13,14 +13,18 @@ const theme = createMuiTheme({
     type: "dark",
     primary: {
       main: import.meta.env.SNOWPACK_PUBLIC_COLOR
+    },
+    background: {
+      default: "#212121",
+      paper: "#272727"
     }
   }
 })
 
 ReactDOM.render(
   <ThemeProvider theme={theme}>
-    <CssBaseline/>
-    <App/>
+      <CssBaseline/>
+      <App/>
   </ThemeProvider>,
   document.getElementById("root")
 )
