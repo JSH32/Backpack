@@ -45,16 +45,13 @@ async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, for
         Err(_) => return MessageResponse::internal_server_error().http_response()
     };
 
-    // Get underlying non wrapped data struct, allows borrows
-    let data = form.into_inner();
-
-    if data.name.len() > 32 {
+    if (&form).name.len() > 32 {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Token name too long (maximum 32 characters)").http_response()
-    } else if data.name.len() < 4 {
+    } else if (&form).name.len() < 4 {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Token name too short (maximum 4 characters)").http_response()
     }
 
-    match state.database.application_exist(auth.user.id, &data.name).await {
+    match state.database.application_exist(auth.user.id, &form.name).await {
         Err(_) => return MessageResponse::internal_server_error().http_response(),
         Ok(val) => {
             if val {
@@ -64,7 +61,7 @@ async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, for
     }
 
     // Create an application token and send JWT to user
-    match state.database.create_application(auth.user.id, &data.name).await {
+    match state.database.create_application(auth.user.id, &form.name).await {
         Err(_) => return MessageResponse::internal_server_error().http_response(),
         Ok(mut token) => {
             // Add the token to a JSON field on creation, will only be showed once

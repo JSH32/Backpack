@@ -3,7 +3,7 @@ use actix_web::http::StatusCode;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
 
-use crate::{models::UserRole, state::State, util::auth::{Auth, auth_role}};
+use crate::{state::State, util::auth::{Auth, auth_role}};
 use crate::util::auth::create_jwt_string;
 use crate::models::{MessageResponse, auth::BasicAuthForm};
 
