@@ -27,7 +27,7 @@ export const UserLogin: React.FC = () => {
 
             <input type="text" placeholder="Username" />
             <input type="password" placeholder="Password" />
-            
+
             <button>Submit</button>
         </form>
     )

@@ -10,4 +10,4 @@ export const Footer: React.FC = () => {
             <Link to="#">Terms of Service</Link>
         </footer>
     )
-} 
+}
