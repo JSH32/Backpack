@@ -1,7 +1,6 @@
 #![feature(macro_attributes_in_derive_output)]
 #![feature(panic_info_message)]
 
-use std::fmt;
 use std::panic;
 use std::panic::PanicInfo;
 use std::path::Path;
@@ -26,6 +25,8 @@ mod util;
 async fn main() -> std::io::Result<()> {
     // Prettier panic message
     panic::set_hook(Box::new(panic_handle));    
+
+    panic!("bruh");
 
     // Setup actix log
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -86,5 +87,5 @@ fn panic_handle<'a>(info: &'a PanicInfo) {
     println!("{}", "\nUh oh! A crash was encountered!\n".bright_red().bold());
     println!("{} {}", "Message:".color(gray), message.bright_yellow());
     println!("{} {}", "Location:".color(gray), info.location().unwrap().to_string().bright_yellow());
-    println!("\n{}\n{}\n", "If you believe this is a bug please report it at:".color(gray), "https://github.com/Riku32/Anolis/issues".bright_green())
+    println!("\n{}\n{}\n", "If you believe this is a bug please report it at:".color(gray), "https://github.com/Riku32/Backpack/issues".bright_green())
 }
