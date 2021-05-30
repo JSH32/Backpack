@@ -1,5 +1,9 @@
+use std::path::Path;
+use std::error::Error;
+
 use crate::models::{self, application::ApplicationData};
 
+use sqlx::migrate::Migrator;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
 
@@ -15,6 +19,13 @@ impl Database {
                         .connect(url).await
                         .expect("Could not initialize connection")
         }
+    }
+    /// Run all pending up migrations
+    pub async fn run_migrations(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+        let migrator = Migrator::new(path).await?;
+        migrator.run(&self.pool).await?;
+
+        Ok(())
     }
     /// Creates a user from a user creation form
     pub async fn create_user(&self, form: &models::user::UserCreateForm) -> Result<(), sqlx::Error> {

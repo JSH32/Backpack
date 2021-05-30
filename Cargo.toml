@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "0.2", features = ["full"] }
-sqlx = { version = "0.5.1", features = [ "runtime-async-std-native-tls", "postgres" ] }
+sqlx = { version = "0.5.5", features = [ "runtime-async-std-native-tls", "postgres" ] }
 serde = "1.0.123"
 serde_json = { version = "1.0.59", features = [ "preserve_order" ] }
 jsonwebtoken = { git = "https://github.com/Riku32/jsonwebtoken" }
@@ -22,3 +22,4 @@ time = "0.2.25"
 chrono = "0.4"
 async-trait = "0.1.42"
 env_logger = "0.8.3"
+colored = "2"

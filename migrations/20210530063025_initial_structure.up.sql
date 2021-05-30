@@ -1,18 +1,8 @@
--- User role enum
-DO
-$do$
-BEGIN
-   IF NOT EXISTS (
-      SELECT FROM pg_catalog.pg_type
-      WHERE typname = 'role') THEN
-
-      CREATE TYPE role AS ENUM ('user', 'admin');
-   END IF;
-END
-$do$;
+-- Role enum
+CREATE TYPE role AS ENUM ('user', 'admin');
 
 -- Users table
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE users
 (
     id       SERIAL                        NOT NULL,
     email    VARCHAR(320)                  NOT NULL,
@@ -22,17 +12,17 @@ CREATE TABLE IF NOT EXISTS users
     role     role    DEFAULT 'user'::role  NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_email_uindex
+CREATE UNIQUE INDEX users_email_uindex
     ON users (email);
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_id_uindex
+CREATE UNIQUE INDEX users_id_uindex
     ON users (id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_username_uindex
+CREATE UNIQUE INDEX users_username_uindex
     ON users (username);
 
 -- API token table for applications
-CREATE TABLE IF NOT EXISTS tokens
+CREATE TABLE tokens
 (
     id          SERIAL       NOT NULL,
     user_id     INTEGER      NOT NULL,
@@ -41,5 +31,5 @@ CREATE TABLE IF NOT EXISTS tokens
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS tokens_id_uindex
+CREATE UNIQUE INDEX tokens_id_uindex
     ON tokens (id);

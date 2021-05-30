@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use rusoto_core::Region;
-use std::{env, path::{Path, PathBuf}};
+use std::{env, fmt::Debug, path::{Path, PathBuf}, str::FromStr};
 
 pub struct Config {
     pub port: u16,
@@ -34,26 +34,26 @@ impl Config {
     pub fn new() -> Self {
         dotenv().ok();
         Config {
-            port: env::var("PORT").unwrap().parse::<u16>().unwrap(),
-            storage_url: env::var("STORAGE_BASEURL").unwrap(),
-            database_url: env::var("DATABASE_URL").unwrap(),
-            jwt_key: env::var("JWT_KEY").unwrap(),
+            port: get_env::<u16>("PORT"),
+            storage_url: get_env::<String>("STORAGE_BASEURL"),
+            database_url: get_env::<String>("DATABASE_URL"),
+            jwt_key: get_env::<String>("JWT_KEY"),
             storage_provider: {
-                match env::var("STORAGE_PROVIDER").unwrap().as_str() {
+                match get_env::<String>("STORAGE_PROVIDER").as_str() {
                     "local" => StorageConfig::Local(LocalConfig {
-                        path: Path::new(env::var("LOCAL_PATH").unwrap().as_str()).to_path_buf(),
+                        path: Path::new(get_env::<String>("LOCAL_PATH").as_str()).to_path_buf(),
                         serve: match env::var("LOCAL_SERVE").ok() {
                             Some(v) => v.parse().expect("LOCAL_SERVE must be true or false"),
                             None => false
                         }
                     }),
                     "s3" => StorageConfig::S3(S3Config {
-                        bucket: env::var("S3_BUCKET").unwrap(),
-                        access_key: env::var("S3_ACCESS_KEY").unwrap(),
-                        secret_key: env::var("S3_SECRET_KEY").unwrap(),
+                        bucket: get_env::<String>("S3_BUCKET"),
+                        access_key: get_env::<String>("S3_ACCESS_KEY"),
+                        secret_key: get_env::<String>("S3_SECRET_KEY"),
                         region: Region::Custom {
-                            name: env::var("S3_REGION").unwrap(),
-                            endpoint: env::var("S3_ENDPOINT").unwrap()
+                            name: get_env::<String>("S3_REGION"),
+                            endpoint: get_env::<String>("S3_ENDPOINT")
                         }
                     }),
                     _ => panic!("Invalid storage provider for environment variable STORAGE_PROVIDER")
@@ -61,4 +61,11 @@ impl Config {
             }
         }
     }
+}
+
+fn get_env<T>(var: &str) -> T where T: FromStr, <T as FromStr>::Err: Debug {
+    env::var(var)
+        .expect(&format!("Missing environment variable {}", var))
+        .parse::<T>()
+        .expect(&format!("Unable to parse {} as {}", var, std::any::type_name::<T>()))
 }
