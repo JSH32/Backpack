@@ -290,30 +290,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anolis"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "async-trait",
- "chrono",
- "colored",
- "dotenv",
- "env_logger",
- "futures",
- "infer",
- "jsonwebtoken",
- "rand 0.8.3",
- "rusoto_core",
- "rusoto_s3",
- "rust-argon2",
- "serde",
- "serde_json",
- "sqlx",
- "time 0.2.26",
- "tokio",
-]
-
-[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -531,6 +507,30 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
+]
+
+[[package]]
+name = "backpack"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "async-trait",
+ "chrono",
+ "colored",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "infer",
+ "jsonwebtoken",
+ "rand 0.8.3",
+ "rusoto_core",
+ "rusoto_s3",
+ "rust-argon2",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "time 0.2.26",
+ "tokio",
 ]
 
 [[package]]
