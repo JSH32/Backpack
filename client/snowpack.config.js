@@ -29,6 +29,7 @@ module.exports = {
     "snowpack-plugin-relative-css-urls",
     "snowpack-plugin-svgr",
     "@snowpack/plugin-sass",
+    "@snowpack/plugin-dotenv",
     [
       "@snowpack/plugin-run-script", {
         "cmd": "eslint src --ext .js,jsx,.ts,.tsx",

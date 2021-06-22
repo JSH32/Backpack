@@ -8,8 +8,8 @@ export const Home: React.FC = () => {
 
     return (
         <div id="landing">
-            <h1>BACKPACK</h1>
-            <h3>A file share service for all your needs</h3>
+            <h1>{import.meta.env.SNOWPACK_PUBLIC_APP_NAME}</h1>
+            <h3>{import.meta.env.SNOWPACK_PUBLIC_APP_DESCRIPTION}</h3>
             <h3>{count} <FileIcon /></h3>
         </div>
     )

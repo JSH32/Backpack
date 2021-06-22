@@ -1,5 +1,5 @@
 /**
- * Web client for anolis API, only to be used with frontend
+ * Web client for backpack API, only to be used with frontend
  */
 
 import axios from "axios"
@@ -11,11 +11,27 @@ enum UserRole {
     Admin = "admin"
 }
 
-interface UserData {
+export interface UserData {
     username: string,
     email: string,
     verified: boolean,
     role: UserRole
+}
+
+export interface AppInfo {
+    name: string,
+    description: string
+}
+
+/**
+ * Will log out of the service, httponly cookie will be deleted
+ */
+export const getAppInfo = async (): Promise<AppInfo> => {
+    try {
+        return await (await axios.get<AppInfo>(`${BASE_URL}/info`)).data
+    } catch (error) {
+        throw new Error(error.response.data)
+    }
 }
 
 /**

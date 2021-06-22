@@ -1,5 +1,5 @@
 -- Role enum
-CREATE TYPE role AS ENUM ('user', 'admin');
+CREATE TYPE Role AS ENUM ('User', 'Admin');
 
 -- Users table
 CREATE TABLE users
@@ -9,7 +9,7 @@ CREATE TABLE users
     username VARCHAR(32)                   NOT NULL,
     password VARCHAR(128)                  NOT NULL,
     verified BOOLEAN DEFAULT false         NOT NULL,
-    role     role    DEFAULT 'user'::role  NOT NULL
+    role     Role    DEFAULT 'User'::Role  NOT NULL
 );
 
 CREATE UNIQUE INDEX users_email_uindex

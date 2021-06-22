@@ -1,5 +1,5 @@
 {
-  "name": "backpack-frontend",
+  "name": "backpack-client",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "build": "snowpack build"
   },
   "devDependencies": {
-    "@snowpack/plugin-dotenv": "^2.0.5",
+    "@snowpack/plugin-dotenv": "^2.1.0",
     "@snowpack/plugin-react-refresh": "^2.4.1",
     "@snowpack/plugin-run-script": "^2.3.0",
     "@snowpack/plugin-sass": "^1.4.0",
@@ -35,7 +35,11 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
+    "@types/react-helmet": "^6.1.1",
+    "@types/react-redux": "^7.1.16",
     "axios": "^0.21.1",
-    "http-proxy": "^1.18.1"
+    "http-proxy": "^1.18.1",
+    "mobx": "^6.3.2",
+    "mobx-react-lite": "^3.2.0"
   }
 }

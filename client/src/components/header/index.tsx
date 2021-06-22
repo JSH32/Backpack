@@ -5,7 +5,7 @@ import "./style.scss"
 export const Header: React.FC = () => {
     return (
         <nav>
-            <Link to="/">Anolis</Link>
+            <Link to="/">{import.meta.env.SNOWPACK_PUBLIC_APP_NAME}</Link>
 
             <Link to="/user/login">Login</Link>
         </nav>
