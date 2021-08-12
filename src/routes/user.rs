@@ -15,11 +15,8 @@ pub fn get_routes() -> Scope {
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: Auth<auth_role::User, true>) -> impl Responder {
-    match state.database.get_user_by_id(auth.user.id).await {
-        Ok(user_data) => HttpResponse::Ok().json(user_data),
-        Err(_) => MessageResponse::internal_server_error().http_response()
-    }
+async fn info(auth: Auth<auth_role::User, true>) -> impl Responder {
+    HttpResponse::Ok().json(auth.user)
 }
 
 #[post("password")]
