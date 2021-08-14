@@ -12,7 +12,7 @@ pub fn get_routes() -> Scope {
 }
 
 #[get("list")]
-async fn list(state: web::Data<State>, auth: Auth<auth_role::User, false>) -> impl Responder {
+async fn list(state: web::Data<State>, auth: Auth<auth_role::User, false, false>) -> impl Responder {
     match state.database.get_all_applications(auth.user.id).await {
         Ok(list) => HttpResponse::Ok().json(list),
         Err(_) => MessageResponse::internal_server_error().http_response()
@@ -20,7 +20,7 @@ async fn list(state: web::Data<State>, auth: Auth<auth_role::User, false>) -> im
 }
 
 #[get("info")]
-async fn info(state: web::Data<State>, auth: Auth<auth_role::User, false>, info: web::Query<IDQuery>) -> impl Responder {
+async fn info(state: web::Data<State>, auth: Auth<auth_role::User, false, false>, info: web::Query<IDQuery>) -> impl Responder {
     match state.database.get_application_by_id(info.id).await {
         Ok(data) => {
             if data.user_id != auth.user.id {
@@ -34,7 +34,7 @@ async fn info(state: web::Data<State>, auth: Auth<auth_role::User, false>, info:
 }
 
 #[post("create")]
-async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, form: web::Json<ApplicationCreateForm>) -> impl Responder {
+async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false, false>, form: web::Json<ApplicationCreateForm>) -> impl Responder {
     // Check if application count is over 5
     match state.database.application_count(auth.user.id).await {
         Ok(count) => {
@@ -77,7 +77,7 @@ async fn create(state: web::Data<State>, auth: Auth<auth_role::User, false>, for
 }
 
 #[get("delete")]
-async fn delete(state: web::Data<State>, auth: Auth<auth_role::User, false>, data: web::Json<IDQuery>) -> impl Responder {
+async fn delete(state: web::Data<State>, auth: Auth<auth_role::User, false, false>, data: web::Json<IDQuery>) -> impl Responder {
     let application_id = match state.database.get_application_by_id(data.id).await {
         Ok(application_data) => {
             if application_data.user_id != auth.user.id {

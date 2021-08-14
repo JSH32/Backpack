@@ -57,7 +57,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
 
 /// Remove httponly cookie
 #[post("logout")]
-async fn logout(_: Auth<auth_role::User, false>) -> impl Responder {
+async fn logout(_: Auth<auth_role::User, true, false>) -> impl Responder {
     HttpResponse::Ok()
         .cookie(
             Cookie::build("auth-token", "")

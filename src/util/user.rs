@@ -1,4 +1,5 @@
 use actix_web::http::StatusCode;
+use lettre::Message;
 use rand::Rng;
 
 use crate::models::MessageResponse;
@@ -28,4 +29,13 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
     };
 
     Ok(hash)
+}
+
+pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &str,) -> Message {
+    Message::builder()
+        .from(from_email.parse().unwrap())
+        .to(email.parse().unwrap())
+        .subject("Verify your account")
+        .body(String::from(format!("Please click on this link to verify your account\n{}/user/verify?code={}", base_url, code)))
+        .unwrap()
 }

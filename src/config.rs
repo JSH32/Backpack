@@ -7,9 +7,11 @@ pub struct Config {
     pub port: u16,
     pub storage_url: String,
     pub database_url: String,
+    pub base_url: String,
     pub jwt_key: String,
     pub serve_frontend: bool,
-    pub storage_provider: StorageConfig
+    pub storage_provider: StorageConfig,
+    pub smtp_config: Option<SMTPConfig>
 }
 
 #[derive(Clone)]
@@ -30,6 +32,13 @@ pub struct LocalConfig {
 }
 
 #[derive(Clone)]
+pub struct SMTPConfig {
+    pub username: String,
+    pub password: String,
+    pub server: String
+}
+
+#[derive(Clone)]
 pub enum StorageConfig {
     Local(LocalConfig),
     S3(S3Config)
@@ -43,6 +52,7 @@ impl Config {
             storage_url: get_env("STORAGE_BASEURL"),
             database_url: get_env("DATABASE_URL"),
             jwt_key: get_env("JWT_KEY"),
+            base_url: get_env("BASEURL"),
             serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
@@ -60,6 +70,16 @@ impl Config {
                         }
                     }),
                     _ => panic!("Invalid storage provider for environment variable STORAGE_PROVIDER")
+                }
+            },
+            smtp_config: {
+                match get_env_or("SMTP_ENABLED", false) {
+                    true => Some(SMTPConfig {
+                        username: get_env("SMTP_USERNAME"),
+                        password: get_env("SMTP_PASSWORD"),
+                        server: get_env("SMTP_SERVER")
+                    }),
+                    false => None,
                 }
             }
         }

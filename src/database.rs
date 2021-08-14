@@ -146,6 +146,44 @@ impl Database {
         
         Ok(row.0)
     }
+
+    pub async fn create_verification(&self, user_id: i32, code: &str) -> Result<(), sqlx::Error> {
+        sqlx::query("INSERT INTO verifications (user_id, code) VALUES ($1, $2)")
+            .bind(user_id)
+            .bind(code)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    // SELECT id, email, username, password, verified, role FROM users WHERE id = $1
+    pub async fn get_user_from_verification(&self, code: &str) -> Result<UserData, sqlx::Error> {
+        sqlx::query("SELECT u.id, u.email, u.username, u.password, u.verified, u.role FROM users u JOIN verifications v ON v.user_id = u.id WHERE v.code = $1")
+            .bind(code)
+            .try_map(user_map)
+            .fetch_one(&self.pool)
+            .await
+    }
+    
+    pub async fn delete_verification(&self, user_id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM verifications WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        
+        Ok(())
+    }
+
+    /// Verify the user
+    pub async fn verify_user(&self, user_id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE users SET verified = TRUE WHERE id = $1")
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
 }
 
 /// sqlx function to map a user row to UserData

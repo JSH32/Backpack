@@ -1,4 +1,5 @@
-use actix_web::{Error, FromRequest, HttpMessage, HttpRequest, web::Data};
+use actix_web::http::StatusCode;
+use actix_web::{Error, FromRequest, HttpRequest, web::Data};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Serialize, Deserialize};
@@ -43,31 +44,32 @@ pub mod auth_role {
     define_role!(Admin, UserRole::Admin);
 }
 
-pub struct Auth<R: Role, const ALLOW_APPLICATION: bool> {
+pub struct Auth<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> {
     pub user: UserData,
     _r: std::marker::PhantomData<R>
 }
 
-impl<R: Role, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLICATION> {
+impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION> {
     type Error = Error;
-    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, ALLOW_APPLICATION>, Error>>>>;
+    type Future = std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION>, Error>>>>;
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
         let req = req.clone();
 
         Box::pin(async move {
-            let (user_data, is_application) = match get_auth_data(req).await {
+            let (user_data, is_application) = match get_auth_data(req, ALLOW_UNVERIFIED).await {
                 Ok(user_data) => user_data,
                 Err(err) => return Err(err)
             };
 
+
             if is_application && !ALLOW_APPLICATION {
-                return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
+                return Err(Error::from(MessageResponse::unauthorized_error()));
             }
 
             if user_data.role < R::LEVEL {
-                return Err(actix_web::Error::from(MessageResponse::unauthorized_error()));
+                return Err(Error::from(MessageResponse::unauthorized_error()));
             }
 
             Ok(Auth {
@@ -79,7 +81,7 @@ impl<R: Role, const ALLOW_APPLICATION: bool> FromRequest for Auth<R, ALLOW_APPLI
 }
 
 /// Get data from user based on request
-async fn get_auth_data(req: HttpRequest) -> Result<(UserData, bool), actix_web::Error> {
+async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(UserData, bool), actix_web::Error> {
     let state = req.app_data::<Data<State>>().expect("State was not found");
 
     let jwt_token = match req.cookie("auth-token") {
@@ -98,6 +100,11 @@ async fn get_auth_data(req: HttpRequest) -> Result<(UserData, bool), actix_web::
         Ok(data) => data,
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
+
+    // Block user out if unverified is false
+    if state.smtp_client.is_some() && !user.verified && !allow_unverified {
+        return Err(Error::from(MessageResponse::new(StatusCode::UNAUTHORIZED, "You need to verify your email")));
+    }
 
     let mut is_application = false;
 

@@ -12,14 +12,73 @@ nav {
         margin-right: auto;
     }
 
-    a {
+    > *:not(:first-child) {
+        margin-left: 15px;
+    }
+
+    a, span {
         color: white;
         font-size: 1.1em;
         font-weight: 600;
         text-decoration: none;
+    }
 
-        &:hover {
-            text-decoration: underline;
+    .dropdown {
+        position: relative;
+
+        &:not(:hover) .dropdown-container {
+            display: none;
+        }
+
+        .dropdown-container {
+            z-index: 1;
+            display: block;
+
+            // For some reason this lets you hover down into the space between dropdown and name
+            padding-bottom: 10px;
+
+            .dropdown-content {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                position: absolute;
+                background-color: var(--lighter-bg);
+                right: 0;
+                margin-top: 10px;
+                width: 125px;
+                padding: 10px;
+
+                div {
+                    display: flex;
+                    flex-direction: row;
+                    width: 100%;
+
+                    a {
+                        margin-left: auto;
+                        font-size: 0.8em;
+                        cursor: pointer;
+                        text-decoration: none;
+                    }
+
+                    svg {
+                        width: 16px;
+                    }
+                }
+
+                .dropdown-content-accent, .dropdown-content-accent a {
+                    color: var(--accent-color);
+                }
+            }
+
+            .dropdown-triangle {
+                position: absolute;
+                right: 0;
+                width: 0;
+                height: 0;
+                border-style: solid;
+                border-width: 0 0 10px 10px;
+                border-color: transparent transparent var(--lighter-bg) transparent;
+            }
         }
     }
 }

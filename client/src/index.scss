@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&display=swap');
 
+:root {
+    --lighter-bg: rgba(255, 255, 255, 0.04);
+    --accent-color: rgba(187, 134, 252, 1);
+    --error-color: rgba(250, 77, 80, 1);
+}
+
 *, *::before, *::after {
     margin: 0;
     padding: 0;
@@ -20,7 +26,7 @@ body {
 }
 
 button {
-    background-color: #BB86FC;
+    background-color: var(--accent-color);
     color: white;
 }
 
@@ -60,5 +66,51 @@ button, button.github, button.google {
         border: 1px solid rgba(255, 255, 255, 0.1);
         background-color: rgba(255, 255, 255, 0.1);
         color: white;
+    }
+}
+
+a {
+    color: #BB86FC;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+input {
+    border: 1px solid rgb(255, 255, 255, 0.3);
+    background-color: transparent;
+    font-size: 1em;
+    border-radius: 0.3em;
+    padding: 0.5em;
+    color: white;
+}
+
+.card {
+    padding: 1em;
+    width: 25em;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    background-color: var(--lighter-bg);
+}
+
+.error {
+    color: var(--error-color);
+}
+
+div.fullpage-info {
+    text-align: center;
+    width: 500px;
+
+    svg {
+        fill: white;
+        width: 100px;
+    }
+
+    p {
+        margin-top: 10px;
     }
 }

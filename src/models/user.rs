@@ -8,6 +8,11 @@ pub struct UserCreateForm {
 }
 
 #[derive(Deserialize)]
+pub struct UserVerifyForm {
+    pub code: String
+}
+
+#[derive(Deserialize)]
 pub struct UserDeleteForm {
     pub password: String
 }

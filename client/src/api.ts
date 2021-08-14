@@ -2,7 +2,7 @@
  * Web client for backpack API, only to be used with frontend
  */
 
-import axios from "axios"
+import axios, { AxiosResponse } from "axios"
 
 const BASE_URL = import.meta.env.SNOWPACK_PUBLIC_API_URL
 
@@ -18,31 +18,11 @@ export interface UserData {
     role: UserRole
 }
 
-export interface AppInfo {
-    name: string,
-    description: string
-}
-
-/**
- * Will log out of the service, httponly cookie will be deleted
- */
-export const getAppInfo = async (): Promise<AppInfo> => {
-    try {
-        return await (await axios.get<AppInfo>(`${BASE_URL}/info`)).data
-    } catch (error) {
-        throw new Error(error.response.data)
-    }
-}
-
 /**
  * Will log out of the service, httponly cookie will be deleted
  */
 export const logout = async (): Promise<void> => {
-    try {
-        await axios.post(`${BASE_URL}/auth/logout`)
-    } catch (error) {
-        throw new Error(error.response.data)
-    }
+    return (await axios.post(`${BASE_URL}/auth/logout`))
 }
 
 /**
@@ -53,15 +33,10 @@ export const logout = async (): Promise<void> => {
  * @returns user data
  */
 export const passwordLogin = async (email: string, password: string): Promise<UserData> => {
-    try {
-        const res = await axios.post<UserData>(`${BASE_URL}/auth/basic`, {
-            email: email,
-            password: password
-        })
-        return res.data
-    } catch (error) {
-        throw new Error(error.response.data)
-    }
+    return (await axios.post<UserData>(`${BASE_URL}/auth/basic`, {
+        email: email,
+        password: password
+    })).data
 }
 
 /**
@@ -70,12 +45,7 @@ export const passwordLogin = async (email: string, password: string): Promise<Us
  * @returns user data
  */
 export const getUserData = async (): Promise<UserData> => {
-    try {
-        const res = await axios.get<UserData>(`${BASE_URL}/user/info`)
-        return res.data
-    } catch (error) {
-        throw new Error(error.response.data)
-    }
+    return (await axios.get<UserData>(`${BASE_URL}/user/info`)).data
 }
 
 /**
@@ -87,14 +57,15 @@ export const getUserData = async (): Promise<UserData> => {
  * @returns user data
  */
 export const userCreate = async (username: string, email: string, password: string): Promise<UserData> => {
-    try {
-        const res = await axios.post<UserData>(`${BASE_URL}/user/create`, {
-            username: username,
-            email: email,
-            password: password
-        })
-        return res.data
-    } catch (error) {
-        throw new Error(error.response.data)
-    }
+    return (await axios.post<UserData>(`${BASE_URL}/user/create`, {
+        username: username,
+        email: email,
+        password: password
+    })).data
+}
+
+export const verifyCode = async (code: string): Promise<AxiosResponse<any>> => {
+    return await axios.post(`${BASE_URL}/user/verify`, {
+        code: code
+    })
 }

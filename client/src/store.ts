@@ -1,16 +1,16 @@
+import { getUserData, UserData } from "api"
 import { action, makeAutoObservable, observable } from "mobx"
-import { AppInfo, getAppInfo } from "api"
 
 class Store {
-    @observable appInfo: AppInfo = undefined
+    @observable userData: UserData = undefined
 
     constructor() {
         makeAutoObservable(this)
-        getAppInfo().then(v => this.appInfo = v)
+        getUserData().then(v => this.userData = v)
     }
 
-    @action setAppInfo = (value: AppInfo) => {
-        this.appInfo = value
+    @action setAppInfo = (value: UserData) => {
+        this.userData = value
     }
 }
 

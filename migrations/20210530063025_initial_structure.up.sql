@@ -33,3 +33,18 @@ CREATE TABLE tokens
 
 CREATE UNIQUE INDEX tokens_id_uindex
     ON tokens (id);
+
+CREATE TABLE verifications
+(
+	id          SERIAL       NOT NULL,
+	user_id     INTEGER      NOT NULL,
+	code        VARCHAR(72)  NOT NULL,
+
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX verifications_code_uindex
+	on verifications (code);
+
+CREATE UNIQUE INDEX verifications_id_uindex
+	on verifications (id);

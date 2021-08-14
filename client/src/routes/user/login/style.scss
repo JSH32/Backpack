@@ -1,23 +1,6 @@
 form#sign-in {
-    padding: 1em;
-    width: 25em;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    background-color: rgba(255, 255, 255, 0.04);
-
     h2 {
         margin: 0.5em 0;
-    }
-
-    input {
-        border: 1px solid rgb(255, 255, 255, 0.3);
-        background-color: transparent;
-        font-size: 1em;
-        border-radius: 0.3em;
-        padding: 0.5em;
-        color: white;
     }
 
     .separator {
