@@ -5,6 +5,7 @@ use lettre::{AsyncTransport};
 use crate::{state::State, util::{auth::{Auth, auth_role}, random_string, user::verification_email}};
 use crate::models::*;
 use crate::util;
+use regex::Regex;
 
 use actix_web::*;
 
@@ -58,6 +59,11 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Username too short (minimum 4 characters)");
     } else if username_length > 15 {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Username too long (maximum 15 characters)");
+    }
+
+    let email_regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
+    if !email_regex.is_match(&form.email) {
+        return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
     // Check if user with same email was found
