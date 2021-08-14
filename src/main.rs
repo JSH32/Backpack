@@ -82,9 +82,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::application::get_routes())
             )
             // Error handler when json body deserialization failed
-            .app_data(web::JsonConfig::default().error_handler(|_, _| {
-                Error::from(models::MessageResponse::bad_request())
-            }));
+            .app_data(web::JsonConfig::default().error_handler(|_, _| Error::from(models::MessageResponse::bad_request())));
 
 
         if client_path.is_some() {
@@ -99,7 +97,7 @@ async fn main() -> std::io::Result<()> {
 
                         let response = NamedFile::open(&index_path)
                             .expect("Index file not found")
-                            .into_response(&req).unwrap();
+                            .into_response(&req);
 
                         async {
                             Ok(ServiceResponse::new(req, response))

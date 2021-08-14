@@ -1,4 +1,5 @@
 use actix_web::*;
+use actix_web::cookie::Cookie;
 use actix_web::http::StatusCode;
 use time::OffsetDateTime;
 use chrono::{DateTime, Utc};
@@ -44,7 +45,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
     // Set JWT token as cookie
     HttpResponse::Ok()
         .cookie(
-            http::Cookie::build("auth-token", jwt)
+            Cookie::build("auth-token", jwt)
             .secure(false)
             .http_only(true)
             .path("/")
@@ -59,7 +60,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
 async fn logout(_: Auth<auth_role::User, false>) -> impl Responder {
     HttpResponse::Ok()
         .cookie(
-            http::Cookie::build("auth-token", "")
+            Cookie::build("auth-token", "")
             .secure(false)
             .http_only(true)
             .path("/")

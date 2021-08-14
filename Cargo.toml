@@ -5,17 +5,17 @@ authors = ["Riku <riku@kawaii.sh>"]
 edition = "2018"
 
 [dependencies]
-tokio = { version = "0.2", features = ["full"] }
-sqlx = { version = "0.5.1", features = [ "runtime-async-std-native-tls", "postgres" ] }
+tokio = { version = "1.10.0", features = ["full"] }
+sqlx = { version = "0.5.1", features = [ "runtime-actix-native-tls", "postgres" ] }
 serde = "1.0.126"
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
 jsonwebtoken = { git = "https://github.com/Riku32/jsonwebtoken" }
 dotenv = "0.15.0"
-actix-web = "3.3.2"
-actix-files = "0.5.0"
+actix-web = "4.0.0-beta.8"
+actix-files = "0.6.0-beta.6"
 rust-argon2 = "0.8.3"
-rusoto_s3 = "0.43.0"
-rusoto_core = "0.43.0"
+rusoto_s3 = "0.47.0"
+rusoto_core = "0.47.0"
 infer = "0.3.4"
 rand = "0.8.3"
 futures = "0.3.12"

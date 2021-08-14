@@ -3,10 +3,12 @@ pub mod auth;
 pub mod file;
 pub mod application;
 
+use core::fmt;
+use std::fmt::{Debug, Display};
+
 pub use self::{user::*, auth::*};
 
-use actix_web::{Error, HttpRequest, HttpResponse, Responder, http::StatusCode};
-use futures::future::{Ready, ok};
+use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, http::StatusCode};
 use serde::{Serialize, Deserialize};
 
 /// Query for any data with an ID
@@ -16,7 +18,7 @@ pub struct IDQuery {
 }
 
 /// Standard message response
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct MessageResponse {
     #[serde(skip_serializing)]
     code: StatusCode,
@@ -58,20 +60,26 @@ impl From<MessageResponse> for HttpResponse {
     }
 }
 
-/// Convert to actix Error type
-impl From<MessageResponse> for Error {
-    fn from(response: MessageResponse) -> Self {
-        HttpResponse::from(response).into()
+impl Display for MessageResponse {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "code: {}, message: {}", self.code, self.message)
+    }
+}
+
+impl ResponseError for MessageResponse {
+    fn status_code(&self) -> StatusCode {
+        self.code
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        self.http_response()
     }
 }
 
 /// Responder to convert data to valid simple HTTP response
 impl Responder for MessageResponse {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse, Error>>;
-
     /// Get HTTP response from response
-    fn respond_to(self, _: &HttpRequest) -> Self::Future {
-        ok(HttpResponse::from(self))
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse {
+        HttpResponse::from(self)
     }
 }
