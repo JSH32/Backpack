@@ -96,7 +96,7 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
 
-    let user = match state.database.get_user_by_id(claims.user_id).await {
+    let mut user = match state.database.get_user_by_id(claims.user_id).await {
         Ok(data) => data,
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
@@ -104,6 +104,27 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
     // Block user out if unverified is false
     if state.smtp_client.is_some() && !user.verified && !allow_unverified {
         return Err(Error::from(MessageResponse::new(StatusCode::UNAUTHORIZED, "You need to verify your email")));
+    }
+
+    if !user.verified {
+        match state.smtp_client {
+            Some(_) => if !allow_unverified {
+                return Err(Error::from(MessageResponse::new(StatusCode::UNAUTHORIZED, "You need to verify your email")));
+            },
+            None => {
+                // Delete all verifications for the user
+                if let Err(_) = state.database.delete_verification(user.id).await {
+                    return Err(Error::from(MessageResponse::internal_server_error()));
+                }
+
+                // Verify the user
+                if let Err(_) = state.database.verify_user(user.id).await {
+                    return Err(Error::from(MessageResponse::internal_server_error()));
+                }
+
+                user.verified = true;
+            }
+        }
     }
 
     let mut is_application = false;
