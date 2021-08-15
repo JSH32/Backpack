@@ -1,0 +1,7 @@
+target
+uploads
+.env
+
+# Client
+client/node_modules
+client/build

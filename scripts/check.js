@@ -12,6 +12,7 @@ const OLD_NAME = path.join(__dirname, "check.json")
 const currentEnv = {
   SNOWPACK_PUBLIC_APP_NAME: process.env.APP_NAME == null ? "Backpack" : process.env.APP_NAME,
   SNOWPACK_PUBLIC_APP_DESCRIPTION: process.env.APP_DESCRIPTION == null ? "A file sharing service for all your needs" : process.env.APP_DESCRIPTION,
+  SNOWPACK_PUBLIC_APP_SMTP_ENABLED: process.env.SMTP_ENABLED == null ? false : true
 }
 
 const build = () => {

@@ -2,3 +2,4 @@
 target
 .vscode
 uploads
+docker-compose.yml

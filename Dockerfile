@@ -12,7 +12,7 @@ COPY client ./client
 COPY scripts ./scripts
 COPY migrations ./migrations
 WORKDIR /usr/src/client
-RUN npm install
+RUN npm install && npm run build
 WORKDIR /usr/src
 COPY --from=builder /usr/src/backpack/target/release/backpack .
 
