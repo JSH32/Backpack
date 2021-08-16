@@ -14,7 +14,7 @@ import { logout } from "api"
 export const Header: React.FC = () => {
     const history = useHistory()
 
-    const RenderUser = observer(() => {
+    const User = observer(() => {
         const onLogout = async() => {
             logout()
                 .then(() => {
@@ -24,14 +24,14 @@ export const Header: React.FC = () => {
         }
 
         const userData = toJS(store.userData)
-        return userData ? <div className="dropdown">
+        return !userData ? <Link to="/user/login">Login</Link> : <div className="dropdown">
             <span className="username">{userData.username}</span>
             <div className="dropdown-container">
                 <span className="dropdown-triangle"/>
                 <div className="dropdown-content">
                     <div>
                         <UploadIcon />
-                        <a>Uploads</a>
+                        <Link to="/user/uploads">Uploads</Link>
                     </div>
                     <div>
                         <SettingsIcon />
@@ -47,14 +47,14 @@ export const Header: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </div> : <Link to="/user/login">Login</Link>
+        </div>
     })
 
     return (
         <nav>
             <Link to="/">{import.meta.env.SNOWPACK_PUBLIC_APP_NAME}</Link>
 
-            <RenderUser />
+            <User />
         </nav>
     )
 }

@@ -3,14 +3,16 @@ import "./style.scss"
 
 import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
-import { Link } from "react-router-dom"
+import { Link, useHistory } from "react-router-dom"
 import { passwordLogin } from "api"
 import store from "../../../store"
-import EmailIcon from "../../../assets/icons/email.svg"
+import { VerificationMessage } from "components/verificationmessage"
+import { toJS } from "mobx"
 
 export const UserLogin: React.FC = () => {
     const [errorMessage, setErrorMessage] = React.useState(null)
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState(null)
+    const history = useHistory()
 
     const formSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -20,29 +22,23 @@ export const UserLogin: React.FC = () => {
 
         passwordLogin(email, password)
             .then(userInfo => {
-                if (!userInfo.verified) {
+                store.setAppInfo(userInfo)
+                if (!userInfo.verified)
                     setPostLoginUnverifiedEmail(userInfo.email)
-                } else {
-                    store.setAppInfo(userInfo)
-                }
+                else
+                    history.replace("/user/uploads")
             })
             .catch(error => setErrorMessage(error.response.data.message))
     }
-
-    if (postLoginUnverifiedEmail != null) {
-        return <div className="fullpage-info">
-            <EmailIcon />
-            <h2>Verify your email</h2>
-            <p>An email was sent previously to <b>{postLoginUnverifiedEmail}</b>. Please click the link to verify and activate your account</p>
-            <p>If you did not get a link please click <a href="about:page">here</a></p>
-        </div>
-    }
+    
+    if (postLoginUnverifiedEmail != null)
+        return <VerificationMessage email={postLoginUnverifiedEmail}/>
 
     return (
         <form id="sign-in" className="card" onSubmit={formSubmit}>
             <h2>Sign in</h2>
 
-            {errorMessage != null ? <p className="error">{errorMessage}</p> : null}
+            { errorMessage != null ? <p className="error">{errorMessage}</p> : null }
 
             <button className="github">
                 <GithubSVG />

@@ -21,15 +21,11 @@ export const UserCreate: React.FC = () => {
     }
 
     if (emailPostSignup != null) {
-        if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED) {
-            return <div className="fullpage-info">
-                <EmailIcon />
-                <h2>Verify your email</h2>
-                <p>An email has been sent to <b>{emailPostSignup}</b>. Please click the link to verify and activate your account</p>
-            </div>
-        }
-
-        return <div className="fullpage-info">
+        return import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED === "true" ? <div className="fullpage-info">
+            <EmailIcon />
+            <h2>Verify your email</h2>
+            <p>An email has been sent to <b>{emailPostSignup}</b>. Please click the link to verify and activate your account</p>
+        </div> : <div className="fullpage-info">
             <Check />
             <h2>Account created</h2>
             <p>Your account has been created. Please login to your account</p>

@@ -22,7 +22,7 @@ export interface UserData {
  * Will log out of the service, httponly cookie will be deleted
  */
 export const logout = async (): Promise<void> => {
-    return (await axios.post(`${BASE_URL}/auth/logout`))
+    return await axios.post(`${BASE_URL}/auth/logout`)
 }
 
 /**
