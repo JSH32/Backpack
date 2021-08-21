@@ -1,4 +1,4 @@
 DROP TABLE tokens;
-DROP TABLE users;
 DROP TABLE verifications;
+DROP TABLE users;
 DROP TYPE Role;
