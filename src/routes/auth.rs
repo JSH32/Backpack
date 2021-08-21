@@ -33,10 +33,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!").http_response();
     }
 
-    let utc: DateTime<Utc> = Utc::now();
-    let one_week = chrono::Duration::weeks(1);
-    let expire_time = (utc + one_week).timestamp();
-
+    let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();
     let jwt = match create_jwt_string(user_data.id, None, "localhost", Some(expire_time), &state.jwt_key) {
         Ok(jwt) => jwt,
         Err(_) => return MessageResponse::internal_server_error().http_response()
