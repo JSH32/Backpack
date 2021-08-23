@@ -1,4 +1,4 @@
-FROM rust:latest as builder
+FROM rust:1.54.0 as builder
 WORKDIR /usr/src/backpack
 # Copy only the files needed to build the Rust project
 COPY src ./src
