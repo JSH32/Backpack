@@ -1,5 +1,9 @@
 <p align="center">
-	<img width="550" src="https://raw.githubusercontent.com/Riku32/Backpack/rewrite/.github/branding/banner.png">
+	<img width="550" src="https://raw.githubusercontent.com/Riku32/Backpack/rewrite/.github/branding/banner.png"><br>
+	<img src="https://img.shields.io/badge/license-MIT-blue.svg">
+	<img src="https://img.shields.io/badge/contributions-welcome-orange.svg">
+	<img src="https://app.codacy.com/project/badge/Grade/ad8d4764919f4ebfbb1d94e2c3f59ce4">
+	<img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4-ff69b4?logo=love">
 </p>
 
 ## Backpack
