@@ -43,9 +43,7 @@ button.google {
 button, button.github, button.google {
     font-size: 0.9em;
     padding: 0.5em;
-    border: none;
-    border-radius: 0.3em;
-    transition: color 0.1s, background-color 0.1s, border 0.1s; 
+    transition: color 0.1s, background-color 0.1s, border 0.1s;
     text-transform: uppercase;
     font-weight: 600;
     cursor: pointer;
@@ -53,6 +51,7 @@ button, button.github, button.google {
     justify-content: center;
     position: relative;
     border: 1px solid transparent;
+    border-radius: 0.3em;
 
     svg {
         height: 1.3em;
@@ -70,7 +69,7 @@ button, button.github, button.google {
 }
 
 a {
-    color: #BB86FC;
+    color: var(--accent-color);
     text-decoration: none;
 
     &:hover {
