@@ -1,5 +1,5 @@
 <p align="center">
-	<img height="150" src="https://raw.githubusercontent.com/Riku32/Backpack/rewrite/.github/branding/banner.png">
+	<img height="150" width="565" src="https://raw.githubusercontent.com/Riku32/Backpack/rewrite/.github/branding/banner.png">
 </p>
 
 ## Backpack
