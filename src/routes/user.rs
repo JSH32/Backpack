@@ -126,6 +126,7 @@ async fn verify(state: web::Data<State>, form: web::Json<UserVerifyForm>) -> imp
     }
 }
 
+// This needs to delete every file owned by the user
 // #[post("delete")]
 // async fn delete(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<UserDeleteForm>) -> impl Responder {
 //     let matches = match argon2::verify_encoded(&auth.0.password, form.current_password.as_bytes()) {

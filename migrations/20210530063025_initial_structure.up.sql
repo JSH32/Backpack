@@ -48,3 +48,16 @@ CREATE UNIQUE INDEX verifications_code_uindex
 
 CREATE UNIQUE INDEX verifications_id_uindex
 	on verifications (id);
+
+CREATE TABLE files
+(
+    id         SERIAL       NOT NULL,
+    name       VARCHAR(32)  NOT NULL,
+    owner_id   INTEGER      NOT NULL,
+    hash       VARCHAR(32)  NOT NULL,
+    uploaded   timestamptz  NOT NULL,
+    size       BIGINT       NOT NULL,
+    
+    -- Application needs to delete the files from the S3 container. This is precautionary for database
+    FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
+);
