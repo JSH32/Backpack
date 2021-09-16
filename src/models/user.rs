@@ -27,7 +27,7 @@ pub struct PasswordChangeForm {
 /// User access level
 #[derive(Serialize, Deserialize, sqlx::Type, Eq, PartialEq, PartialOrd)]
 #[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
-#[sqlx(type_name = "role")]
+#[sqlx(type_name = "Role")]
 pub enum UserRole {
     User,
     Admin
