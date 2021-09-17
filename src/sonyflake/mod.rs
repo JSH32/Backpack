@@ -13,15 +13,15 @@ const BIT_LEN_SEQUENCE: u64 = 8;
 const BIT_LEN_MACHINE_ID: u64 = 63 - BIT_LEN_TIME - BIT_LEN_SEQUENCE;
 
 #[derive(Debug)]
-pub struct Internals {
+struct WorkerState {
     pub elapsed_time: i64,
     pub sequence: u16,
 }
 
 pub struct SharedSonyflake {
-    pub machine_id: u16,
-    pub start_time: i64,
-    pub internals: Mutex<Internals>,
+    machine_id: u16,
+    start_time: i64,
+    worker_state: Mutex<WorkerState>,
 }
 
 /// Sonyflake is a distributed unique ID generator.
@@ -49,7 +49,7 @@ impl Sonyflake {
                 },
                 None => to_sonyflake_time(Utc.ymd(2014, 9, 1).and_hms(0, 0, 0))
             },
-            internals: Mutex::new(Internals {
+            worker_state: Mutex::new(WorkerState {
                 elapsed_time: 0,
                 sequence: 1 << (BIT_LEN_SEQUENCE - 1),
             }),
@@ -63,29 +63,28 @@ impl Sonyflake {
     /// Generate the next unique id.
     /// After the Sonyflake time overflows, next_id returns an error.
     pub fn next_id(&mut self) -> Result<u64, Error> {
-        let mut internals = self.0.internals.lock().map_err(|_| Error::MutexPoisoned)?;
+        let mut worker_state = self.0.worker_state.lock().map_err(|_| Error::MutexPoisoned)?;
 
         let current = current_elapsed_time(self.0.start_time);
-        if internals.elapsed_time < current {
-            internals.elapsed_time = current;
-            internals.sequence = 0;
+        if worker_state.elapsed_time < current {
+            worker_state.elapsed_time = current;
+            worker_state.sequence = 0;
         } else {
-            // self.elapsed_time >= current
-            internals.sequence = (internals.sequence + 1) & (1 << BIT_LEN_SEQUENCE) - 1;
-            if internals.sequence == 0 {
-                internals.elapsed_time += 1;
-                let overtime = internals.elapsed_time - current;
+            worker_state.sequence = (worker_state.sequence + 1) & (1 << BIT_LEN_SEQUENCE) - 1;
+            if worker_state.sequence == 0 {
+                worker_state.elapsed_time += 1;
+                let overtime = worker_state.elapsed_time - current;
                 thread::sleep(sleep_time(overtime));
             }
         }
 
-        if internals.elapsed_time >= 1 << BIT_LEN_TIME {
+        if worker_state.elapsed_time >= 1 << BIT_LEN_TIME {
             return Err(Error::OverTimeLimit);
         }
 
         Ok(
-            (internals.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
-                | (internals.sequence as u64) << BIT_LEN_MACHINE_ID
+            (worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
+                | (worker_state.sequence as u64) << BIT_LEN_MACHINE_ID
                 | (self.0.machine_id as u64),
         )
     }
