@@ -1,9 +1,6 @@
-pub mod error;
-
 use std::{collections::HashMap, sync::{Arc, Mutex}, thread, time::Duration};
 use chrono::{DateTime, TimeZone, Utc};
-
-use self::{error::Error};
+use thiserror::Error;
 
 /// bit length of time
 const BIT_LEN_TIME: u64 = 39;
@@ -129,4 +126,15 @@ pub fn decompose(id: u64) -> HashMap<String, u64> {
     map.insert("machine-id".into(), id & mask_machine_id);
 
     map
+}
+
+/// The error type for this crate.
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("start_time `{0}` is ahead of current time")]
+    StartTimeAheadOfCurrentTime(DateTime<Utc>),
+    #[error("over the time limit")]
+    OverTimeLimit,
+    #[error("mutex is poisoned (i.e. a panic happened while it was locked)")]
+    MutexPoisoned,
 }
