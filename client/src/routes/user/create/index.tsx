@@ -21,30 +21,36 @@ export const UserCreate: React.FC = () => {
     }
 
     if (emailPostSignup != null) {
-        return import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED === "true" ? <div className="fullpage-info">
-            <EmailIcon />
-            <h2>Verify your email</h2>
-            <p>An email has been sent to <b>{emailPostSignup}</b>. Please click the link to verify and activate your account</p>
-        </div> : <div className="fullpage-info">
-            <Check />
-            <h2>Account created</h2>
-            <p>Your account has been created. Please login to your account</p>
+        return <div className="centered">
+            <div className="fullpage-info">
+                { import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED === "true" ? <>
+                    <EmailIcon />
+                    <h2>Verify your email</h2>
+                    <p>An email has been sent to <b>{emailPostSignup}</b>. Please click the link to verify and activate your account</p>
+                </> : <>
+                    <Check />
+                    <h2>Account created</h2>
+                    <p>Your account has been created. Please login to your account</p>
+                </> }
+            </div>
         </div>
     }
 
     return (
-        <form className="card" onSubmit={formSubmit}>
-            <h2>Sign up</h2>
-            <p>Create a new account</p>
+        <div className="centered">
+            <form className="card" onSubmit={formSubmit}>
+                <h2>Sign up</h2>
+                <p>Create a new account</p>
 
-            {errorMessage != null ? <p className="error">{errorMessage}</p> : null}
+                {errorMessage != null ? <p className="error">{errorMessage}</p> : null}
 
-            <input type="text" name="username" placeholder="Username" minLength={4} maxLength={15} required/>
-            <input type="email" name="email" placeholder="Email" required/>
-            <input type="password" name="password" placeholder="Password" required/>
+                <input type="text" name="username" placeholder="Username" minLength={4} maxLength={15} required/>
+                <input type="email" name="email" placeholder="Email" required/>
+                <input type="password" name="password" placeholder="Password" required/>
 
-            <button>Submit</button>
-            <p>Already have an account? <Link to="/user/login">Login</Link></p>
-        </form>
+                <button>Submit</button>
+                <p>Already have an account? <Link to="/user/login">Login</Link></p>
+            </form>
+        </div>
     )
 }

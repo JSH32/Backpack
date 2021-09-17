@@ -27,13 +27,17 @@ export const UserVerify: React.FC = () => {
     // While verification is pending
     if (verifySuccess == null) return <></>
 
-    return verifySuccess ? <div className="fullpage-info">
-        <Check />
-        <h2>Account verified</h2>
-        <p>Your account was verified. { toJS(store.userData) ? "You may now access your account" : "Please login to access your account" }</p>
-    </div> : <div className="fullpage-info">
-        <Error />
-        <h2>Invalid verification code</h2>
-        <p>Invalid or expired verification code was provided</p>
+    return <div className="centered">
+        <div className="fullpage-info">
+            { verifySuccess ? <>
+                <Check />
+                <h2>Account verified</h2>
+                <p>Your account was verified. { toJS(store.userData) ? "You may now access your account" : "Please login to access your account" }</p>
+            </> : <>
+                <Error />
+                <h2>Invalid verification code</h2>
+                <p>Invalid or expired verification code was provided</p>
+            </> }
+        </div>
     </div>
 }

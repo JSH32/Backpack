@@ -39,7 +39,7 @@ export const Header: React.FC = () => {
                     </div>
                     <div>
                         <KeyIcon />
-                        <a>Tokens</a>
+                        <Link to="/user/tokens">Tokens</Link>
                     </div>
                     <div className="dropdown-content-accent">
                         <LogOutIcon />

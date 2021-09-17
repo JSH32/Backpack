@@ -7,7 +7,6 @@ import { Link, useHistory } from "react-router-dom"
 import { passwordLogin } from "api"
 import store from "../../../store"
 import { VerificationMessage } from "components/verificationmessage"
-import { toJS } from "mobx"
 
 export const UserLogin: React.FC = () => {
     const [errorMessage, setErrorMessage] = React.useState(null)
@@ -35,33 +34,35 @@ export const UserLogin: React.FC = () => {
         return <VerificationMessage email={postLoginUnverifiedEmail}/>
 
     return (
-        <form id="sign-in" className="card" onSubmit={formSubmit}>
-            <h2>Sign in</h2>
+        <div className="centered">
+            <form id="sign-in" className="card" onSubmit={formSubmit}>
+                <h2>Sign in</h2>
 
-            { errorMessage != null ? <p className="error">{errorMessage}</p> : null }
+                { errorMessage != null ? <p className="error">{errorMessage}</p> : null }
 
-            <button className="github">
-                <GithubSVG />
-                Login with GitHub
-            </button>
+                <button className="github">
+                    <GithubSVG />
+                    Login with GitHub
+                </button>
 
-            <button className="google">
-                <GoogleSVG />
-                Login with Google
-            </button>
+                <button className="google">
+                    <GoogleSVG />
+                    Login with Google
+                </button>
 
-            <div className="separator">
-                <hr />
-                <span>or</span>
-                <hr />
-            </div>
+                <div className="separator">
+                    <hr />
+                    <span>or</span>
+                    <hr />
+                </div>
 
-            <input type="text" name="email" placeholder="Email" required/>
-            <input type="password" name="password" placeholder="Password" required/>
-            
-            <button>Submit</button>
+                <input type="text" name="email" placeholder="Email" required/>
+                <input type="password" name="password" placeholder="Password" required/>
+                
+                <button>Submit</button>
 
-            <p>Don't have an account? <Link to="/user/create">Sign up</Link></p>
-        </form>
+                <p>Don't have an account? <Link to="/user/create">Sign up</Link></p>
+            </form>
+        </div>
     )
 }

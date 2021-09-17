@@ -20,6 +20,7 @@ import { VerificationMessage } from "components/verificationmessage"
 import { getUserData } from "api"
 import store from "./store"
 import { toJS } from "mobx"
+import { UserTokens } from "routes/user/tokens"
 
 interface AuthenticatedRouteProps {
     path: string,
@@ -66,6 +67,7 @@ export const App: React.FC = () => {
                 <Route path="/user/login" component={UserLogin}/>
                 {import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED ? <Route path="/user/verify" component={UserVerify}/> : null}
                 <AuthenticatedRoute path="/user/uploads" component={UploadFiles}/>
+                <AuthenticatedRoute path="/user/tokens" component={UserTokens}/>
             </Switch>
             <Footer />
         </Router>
