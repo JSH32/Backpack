@@ -1,5 +1,8 @@
 -- Role enum
-CREATE TYPE Role AS ENUM ('User', 'Admin');
+CREATE TYPE role AS ENUM ('user', 'admin');
+
+-- Sonyflake type
+CREATE DOMAIN sonyflake AS VARCHAR(18) NOT NULL;
 
 -- Users table
 CREATE TABLE users
@@ -9,7 +12,7 @@ CREATE TABLE users
     username VARCHAR(32)                   NOT NULL,
     password VARCHAR(128)                  NOT NULL,
     verified BOOLEAN DEFAULT false         NOT NULL,
-    role     Role    DEFAULT 'User'::Role  NOT NULL
+    role     role    DEFAULT 'user'::role  NOT NULL
 );
 
 CREATE UNIQUE INDEX users_email_uindex
@@ -24,9 +27,9 @@ CREATE UNIQUE INDEX users_username_uindex
 -- API token table for applications
 CREATE TABLE tokens
 (
-    id          SERIAL  PRIMARY KEY  NOT NULL,
-    user_id     INTEGER              NOT NULL,
-    name        VARCHAR(32)          NOT NULL,
+    id          sonyflake  PRIMARY KEY  NOT NULL,
+    user_id     INTEGER                 NOT NULL,
+    name        VARCHAR(32)             NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -36,9 +39,9 @@ CREATE UNIQUE INDEX tokens_id_uindex
 
 CREATE TABLE verifications
 (
-	id          SERIAL  PRIMARY KEY  NOT NULL,
-	user_id     INTEGER              NOT NULL,
-	code        VARCHAR(72)          NOT NULL,
+	id          sonyflake  PRIMARY KEY  NOT NULL,
+	user_id     INTEGER                 NOT NULL,
+	code        VARCHAR(72)             NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -51,13 +54,19 @@ CREATE UNIQUE INDEX verifications_id_uindex
 
 CREATE TABLE files
 (
-    id         SERIAL  PRIMARY KEY    NOT NULL,
-    name       VARCHAR(32)            NOT NULL,
-    owner_id   INTEGER                NOT NULL,
-    hash       VARCHAR(32)            NOT NULL,
-    uploaded   timestamptz            NOT NULL,
-    size       BIGINT                 NOT NULL,
+    id         sonyflake  PRIMARY KEY  NOT NULL,
+    name       VARCHAR(32)             NOT NULL,
+    owner_id   INTEGER                 NOT NULL,
+    hash       VARCHAR(32)             NOT NULL,
+    uploaded   timestamptz             NOT NULL,
+    size       BIGINT                  NOT NULL,
     
     -- Application needs to delete the files from the S3 container. This is precautionary for database
     FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX files_id_uindex
+	on files (id);
+
+CREATE UNIQUE INDEX files_name_uindex
+	on files (name);

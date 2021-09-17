@@ -17,7 +17,7 @@ pub struct UserData {
 /// User access level
 #[derive(Serialize, Deserialize, sqlx::Type, Eq, PartialEq, PartialOrd)]
 #[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
-#[sqlx(type_name = "Role")]
+#[sqlx(type_name = "role")]
 pub enum UserRole {
     User,
     Admin
