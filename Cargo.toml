@@ -25,3 +25,4 @@ async-trait = "0.1.42"
 env_logger = "0.8.3"
 regex = "1"
 lettre = { version = "0.10.0-rc.3", features = [ "tokio1-native-tls" ] }
+thiserror = "1.0"

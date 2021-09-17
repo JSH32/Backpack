@@ -11,6 +11,7 @@ use config::StorageConfig;
 use lettre::AsyncSmtpTransport;
 use lettre::Tokio1Executor;
 use lettre::transport::smtp::authentication::Credentials;
+use sonyflake::Sonyflake;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 use tokio::fs;
 
@@ -25,6 +26,7 @@ mod state;
 mod routes;
 mod storage;
 mod util;
+mod sonyflake;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -83,12 +85,15 @@ async fn main() -> std::io::Result<()> {
     // Get setting as single boolean before client gets moved
     let smtp_enabled = smtp_client.is_some();
 
+    let machine_id = config.machine_id;
     let api_state = web::Data::new(state::State {
         database: database,
         storage: storage,
         jwt_key: config.jwt_key,
         smtp_client: smtp_client,
-        base_url: config.base_url
+        base_url: config.base_url,
+        sonyflake: Sonyflake::new(machine_id, None)
+            .expect("There was a problem creating the Sonyflake worker")
     });
 
     HttpServer::new(move || {
@@ -103,7 +108,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::file::get_routes())
             )
             // Error handler when json body deserialization failed
-            .app_data(web::JsonConfig::default().error_handler(|_, _| Error::from(models::MessageResponse::bad_request())));
+            .app_data(web::JsonConfig::default().error_handler(|_, _| actix_web::Error::from(models::MessageResponse::bad_request())));
 
 
         if client_path.is_some() {

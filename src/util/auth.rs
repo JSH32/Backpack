@@ -63,7 +63,6 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
                 Err(err) => return Err(err)
             };
 
-
             if is_application && !ALLOW_APPLICATION {
                 return Err(Error::from(MessageResponse::unauthorized_error()));
             }

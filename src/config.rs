@@ -8,6 +8,7 @@ pub struct Config {
     pub storage_url: String,
     pub database_url: String,
     pub base_url: String,
+    pub machine_id: u16,
     pub jwt_key: String,
     pub serve_frontend: bool,
     pub storage_provider: StorageConfig,
@@ -53,6 +54,7 @@ impl Config {
             database_url: get_env("DATABASE_URL"),
             jwt_key: get_env("JWT_KEY"),
             base_url: get_env("BASEURL"),
+            machine_id: get_env::<u16>("MACHINE_ID"),
             serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
