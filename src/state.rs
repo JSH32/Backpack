@@ -6,6 +6,5 @@ pub struct State {
     pub storage: Box<dyn StorageProvider>,
     pub jwt_key: String,
     pub base_url: String,
-    pub smtp_client: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>,
-    pub sonyflake: Sonyflake,
+    pub smtp_client: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>
 }

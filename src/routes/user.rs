@@ -45,7 +45,7 @@ async fn password(state: web::Data<State>, auth: Auth<auth_role::User, false, fa
         Err(err) => return err
     };
 
-    match state.database.change_password(auth.user.id, &new_hash).await {
+    match state.database.change_password(&auth.user.id, &new_hash).await {
         Ok(_) => MessageResponse::new(StatusCode::OK, "Password changed successfully"),
         Err(_) => MessageResponse::internal_server_error()
     }
@@ -85,7 +85,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         Ok(user_data) => {
             if let Some(smtp) = &state.smtp_client {
                 let random_code = random_string(72);
-                if !state.database.create_verification(user_data.id, &random_code).await.is_err() {
+                if !state.database.create_verification(&user_data.id, &random_code).await.is_err() {
                     let email = verification_email(&state.base_url, &smtp.1, &user_data.email, &random_code);
                     let mailer = smtp.clone().0;
                     tokio::spawn(async move {
@@ -94,7 +94,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
                 }
             } else {
                 // If SMTP is disabled we just verify the user
-                let _ = state.database.verify_user(user_data.id).await;
+                let _ = state.database.verify_user(&user_data.id).await;
             }
         }
         Err(_) => return MessageResponse::internal_server_error()
@@ -107,7 +107,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
 async fn verify(state: web::Data<State>, form: web::Json<UserVerifyForm>) -> impl Responder {
     match state.database.get_user_from_verification(&form.code).await {
         Ok(user_data) => {
-            if state.database.delete_verification(user_data.id).await.is_err() {
+            if state.database.delete_verification(&user_data.id).await.is_err() {
                 return MessageResponse::internal_server_error();
             }
 
@@ -116,7 +116,7 @@ async fn verify(state: web::Data<State>, form: web::Json<UserVerifyForm>) -> imp
                 return MessageResponse::new(StatusCode::CONFLICT, "User was already verified")
             }
 
-            if state.database.verify_user(user_data.id).await.is_err() {
+            if state.database.verify_user(&user_data.id).await.is_err() {
                 return MessageResponse::internal_server_error();
             }
 

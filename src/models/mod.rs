@@ -4,17 +4,17 @@ pub mod file;
 pub mod application;
 
 use core::fmt;
-use std::fmt::{Debug, Display};
+use std::{fmt::{Debug, Display}};
 
 pub use self::{user::*, auth::*};
 
 use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, http::StatusCode};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Query for any data with an ID
 #[derive(Deserialize)]
 pub struct IDQuery {
-    pub id: i32
+    pub id: String
 }
 
 /// Standard message response

@@ -17,10 +17,10 @@ struct JWTClaims {
     #[serde(skip_serializing_if = "Option::is_none")]
     exp: Option<i64>, // Expire
 
-    user_id: i32, // User ID the token refers to
+    user_id: String, // User ID the token refers to
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    application_id: Option<i32> // Application ID, if the token was an application token
+    application_id: Option<String> // Application ID, if the token was an application token
 }
 
 /// TODO: Replace the use of this entirely with const_generics when possible
@@ -95,7 +95,7 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
 
-    let mut user = match state.database.get_user_by_id(claims.user_id).await {
+    let mut user = match state.database.get_user_by_id(&claims.user_id).await {
         Ok(data) => data,
         Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
     };
@@ -112,12 +112,12 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
             },
             None => {
                 // Delete all verifications for the user
-                if let Err(_) = state.database.delete_verification(user.id).await {
+                if let Err(_) = state.database.delete_verification(&user.id).await {
                     return Err(Error::from(MessageResponse::internal_server_error()));
                 }
 
                 // Verify the user
-                if let Err(_) = state.database.verify_user(user.id).await {
+                if let Err(_) = state.database.verify_user(&user.id).await {
                     return Err(Error::from(MessageResponse::internal_server_error()));
                 }
 
@@ -130,7 +130,7 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
 
     // Check if it is perm JWT token
     if let Some(application_id) = claims.application_id {
-        match state.database.get_application_by_id(application_id).await {
+        match state.database.get_application_by_id(&application_id).await {
             Ok(application_data) => {
                 is_application = true;
 
@@ -148,12 +148,12 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
 }
 
 // Sign a JWT token and get a string
-pub fn create_jwt_string(user_id: i32, application_id: Option<i32>, issuer: &str, expiration: Option<i64>, key: &str) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn create_jwt_string(user_id: &str, application_id: Option<String>, issuer: &str, expiration: Option<i64>, key: &str) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = JWTClaims {
         iss: issuer.into(),
         exp: expiration,
         iat: Utc::now().timestamp(),
-        user_id: user_id,
+        user_id: user_id.to_string(),
         application_id: application_id
     };
 

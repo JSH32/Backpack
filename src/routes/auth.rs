@@ -34,7 +34,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
     }
 
     let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();
-    let jwt = match create_jwt_string(user_data.id, None, "localhost", Some(expire_time), &state.jwt_key) {
+    let jwt = match create_jwt_string(&user_data.id, None, "localhost", Some(expire_time), &state.jwt_key) {
         Ok(jwt) => jwt,
         Err(_) => return MessageResponse::internal_server_error().http_response()
     };

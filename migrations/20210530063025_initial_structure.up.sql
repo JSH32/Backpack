@@ -2,12 +2,12 @@
 CREATE TYPE role AS ENUM ('user', 'admin');
 
 -- Sonyflake type
-CREATE DOMAIN sonyflake AS VARCHAR(18) NOT NULL;
+CREATE DOMAIN sonyflake AS VARCHAR(20) NOT NULL;
 
 -- Users table
 CREATE TABLE users
 (
-    id       SERIAL  PRIMARY KEY           NOT NULL,
+    id       sonyflake  PRIMARY KEY        NOT NULL,
     email    VARCHAR(320)                  NOT NULL,
     username VARCHAR(32)                   NOT NULL,
     password VARCHAR(128)                  NOT NULL,
@@ -28,7 +28,7 @@ CREATE UNIQUE INDEX users_username_uindex
 CREATE TABLE tokens
 (
     id          sonyflake  PRIMARY KEY  NOT NULL,
-    user_id     INTEGER                 NOT NULL,
+    user_id     sonyflake               NOT NULL,
     name        VARCHAR(32)             NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -39,9 +39,9 @@ CREATE UNIQUE INDEX tokens_id_uindex
 
 CREATE TABLE verifications
 (
-	id          sonyflake  PRIMARY KEY  NOT NULL,
-	user_id     INTEGER                 NOT NULL,
-	code        VARCHAR(72)             NOT NULL,
+	id          SERIAL  PRIMARY KEY  NOT NULL,
+	user_id     sonyflake            NOT NULL,
+	code        VARCHAR(72)          NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -55,8 +55,8 @@ CREATE UNIQUE INDEX verifications_id_uindex
 CREATE TABLE files
 (
     id         sonyflake  PRIMARY KEY  NOT NULL,
+    owner_id   sonyflake               NOT NULL,
     name       VARCHAR(32)             NOT NULL,
-    owner_id   INTEGER                 NOT NULL,
     hash       VARCHAR(32)             NOT NULL,
     uploaded   timestamptz             NOT NULL,
     size       BIGINT                  NOT NULL,

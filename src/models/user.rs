@@ -2,8 +2,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize)]
 pub struct UserData {
-    #[serde(skip_serializing)]
-    pub id: i32,
+    pub id: String,
 
     #[serde(skip_serializing)]
     pub password: String,
@@ -17,7 +16,7 @@ pub struct UserData {
 /// User access level
 #[derive(Serialize, Deserialize, sqlx::Type, Eq, PartialEq, PartialOrd)]
 #[serde(rename_all(serialize  = "lowercase", deserialize  = "PascalCase"))]
-#[sqlx(type_name = "role")]
+#[sqlx(type_name = "role", rename_all = "lowercase")]
 pub enum UserRole {
     User,
     Admin

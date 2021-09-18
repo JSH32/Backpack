@@ -53,7 +53,10 @@ async fn main() -> std::io::Result<()> {
         None => None,
     };
 
-    let database = database::Database::new(16, &config.database_url).await;
+    let sonyflake_worker = Sonyflake::new(config.worker_id, None)
+        .expect("There was a problem creating the Sonyflake worker");
+
+    let database = database::Database::new(16, &config.database_url, sonyflake_worker).await;
     if let Err(err) = database.run_migrations(Path::new("migrations")).await {
         panic!("{}", err.to_string());
     }
@@ -85,15 +88,12 @@ async fn main() -> std::io::Result<()> {
     // Get setting as single boolean before client gets moved
     let smtp_enabled = smtp_client.is_some();
 
-    let machine_id = config.machine_id;
     let api_state = web::Data::new(state::State {
         database: database,
         storage: storage,
         jwt_key: config.jwt_key,
         smtp_client: smtp_client,
-        base_url: config.base_url,
-        sonyflake: Sonyflake::new(machine_id, None)
-            .expect("There was a problem creating the Sonyflake worker")
+        base_url: config.base_url
     });
 
     HttpServer::new(move || {

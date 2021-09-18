@@ -9,6 +9,17 @@ const BIT_LEN_SEQUENCE: u64 = 8;
 /// bit length of machine id
 const BIT_LEN_MACHINE_ID: u64 = 63 - BIT_LEN_TIME - BIT_LEN_SEQUENCE;
 
+/// The error type for this crate.
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("start_time `{0}` is ahead of current time")]
+    StartTimeAheadOfCurrentTime(DateTime<Utc>),
+    #[error("over the time limit")]
+    OverTimeLimit,
+    #[error("mutex is poisoned (i.e. a panic happened while it was locked)")]
+    MutexPoisoned,
+}
+
 #[derive(Debug)]
 struct WorkerState {
     pub elapsed_time: i64,
@@ -16,7 +27,7 @@ struct WorkerState {
 }
 
 pub struct SharedSonyflake {
-    machine_id: u16,
+    worker_id: u16,
     start_time: i64,
     worker_state: Mutex<WorkerState>,
 }
@@ -29,13 +40,13 @@ impl Sonyflake {
     ///
     /// # Arguments
     ///
-    /// * `machine_id` - A unique identifier of the machine ID.
+    /// * `worker_id` - A unique identifier of the machine ID.
     /// if sonyflake is being used in a distributed setting no two machines must use the same ID
     ///
     /// * `start_time` - Optional start time for the mutex. If no time provided this will be set to 2014-09-01 00:00:00 +0000 UTC
-    pub fn new(machine_id: u16, start_time: Option<DateTime<Utc>>) -> Result<Self, Error> {
+    pub fn new(worker_id: u16, start_time: Option<DateTime<Utc>>) -> Result<Self, Error> {
         Ok(Self(Arc::new(SharedSonyflake {
-            machine_id,
+            worker_id,
             start_time: match start_time {
                 Some(time) => {
                     if time > Utc::now() {
@@ -59,7 +70,7 @@ impl Sonyflake {
 
     /// Generate the next unique id.
     /// After the Sonyflake time overflows, next_id returns an error.
-    pub fn next_id(&mut self) -> Result<u64, Error> {
+    pub fn next_id(&self) -> Result<u64, Error> {
         let mut worker_state = self.0.worker_state.lock().map_err(|_| Error::MutexPoisoned)?;
 
         let current = current_elapsed_time(self.0.start_time);
@@ -82,7 +93,7 @@ impl Sonyflake {
         Ok(
             (worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
                 | (worker_state.sequence as u64) << BIT_LEN_MACHINE_ID
-                | (self.0.machine_id as u64),
+                | (self.0.worker_id as u64),
         )
     }
 }
@@ -126,15 +137,4 @@ pub fn decompose(id: u64) -> HashMap<String, u64> {
     map.insert("machine-id".into(), id & mask_machine_id);
 
     map
-}
-
-/// The error type for this crate.
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("start_time `{0}` is ahead of current time")]
-    StartTimeAheadOfCurrentTime(DateTime<Utc>),
-    #[error("over the time limit")]
-    OverTimeLimit,
-    #[error("mutex is poisoned (i.e. a panic happened while it was locked)")]
-    MutexPoisoned,
 }
