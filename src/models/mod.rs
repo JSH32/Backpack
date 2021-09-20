@@ -34,18 +34,22 @@ impl MessageResponse {
             message: message.to_string(),
         }
     }
+    
     /// New internal server error response
     pub fn internal_server_error() -> Self {
         MessageResponse::new(StatusCode::INTERNAL_SERVER_ERROR, "There was a problem processing your request")
     }
+
     /// Create new unauthorized error response
     pub fn unauthorized_error() -> Self {
         MessageResponse::new(StatusCode::UNAUTHORIZED, "You are not authorized to make this request")
     }
+
     /// Create new bad request error response
     pub fn bad_request() -> Self {
         MessageResponse::new(StatusCode::BAD_REQUEST, "You sent an invalid request")
     }
+    
     /// Explicit convert to actix HttpResponse type
     pub fn http_response(&self) -> HttpResponse {
         HttpResponse::build(self.code)
