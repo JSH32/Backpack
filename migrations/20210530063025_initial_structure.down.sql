@@ -1,4 +1,4 @@
-DROP TABLE tokens;
+DROP TABLE applications;
 DROP TABLE verifications;
 DROP TABLE files;
 DROP TABLE users;

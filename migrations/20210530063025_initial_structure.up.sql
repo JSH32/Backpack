@@ -7,41 +7,34 @@ CREATE DOMAIN sonyflake AS VARCHAR(20) NOT NULL;
 -- Users table
 CREATE TABLE users
 (
-    id       sonyflake  PRIMARY KEY        NOT NULL,
-    email    VARCHAR(320)                  NOT NULL,
-    username VARCHAR(32)                   NOT NULL,
+    id       sonyflake  PRIMARY KEY        NOT NULL UNIQUE,
+    email    VARCHAR(320)                  NOT NULL UNIQUE,
+    username VARCHAR(32)                   NOT NULL UNIQUE,
     password VARCHAR(128)                  NOT NULL,
     verified BOOLEAN DEFAULT false         NOT NULL,
     role     role    DEFAULT 'user'::role  NOT NULL
 );
 
-CREATE UNIQUE INDEX users_email_uindex
-    ON users (email);
-
-CREATE UNIQUE INDEX users_id_uindex
-    ON users (id);
-
-CREATE UNIQUE INDEX users_username_uindex
-    ON users (username);
-
 -- API token table for applications
-CREATE TABLE tokens
+CREATE TABLE applications
 (
-    id          sonyflake  PRIMARY KEY  NOT NULL,
+    id          sonyflake  PRIMARY KEY  NOT NULL UNIQUE,
     user_id     sonyflake               NOT NULL,
     name        VARCHAR(32)             NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX tokens_id_uindex
-    ON tokens (id);
+-- A user may not have two duplicate application names
+CREATE UNIQUE INDEX applications_name_uindex
+    ON applications (user_id, name);
 
+-- Only one verification may exist per user
 CREATE TABLE verifications
 (
-	id          SERIAL  PRIMARY KEY  NOT NULL,
-	user_id     sonyflake            NOT NULL,
-	code        VARCHAR(72)          NOT NULL,
+	id          SERIAL  PRIMARY KEY  NOT NULL UNIQUE,
+    code        VARCHAR(72)          NOT NULL UNIQUE,
+	user_id     sonyflake            NOT NULL UNIQUE,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
