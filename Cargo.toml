@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1.10.0", features = ["full"] }
-sqlx = { version = "0.5.1", features = [ "runtime-actix-native-tls", "postgres" ] }
+sqlx = { version = "0.5.1", features = [ "runtime-actix-native-tls", "postgres", "chrono" ] }
 serde = "1.0.126"
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
 jsonwebtoken = { git = "https://github.com/Riku32/jsonwebtoken" }

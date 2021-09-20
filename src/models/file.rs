@@ -4,7 +4,7 @@ use serde::{Serialize};
 #[derive(Serialize)]
 pub struct FileData {
     pub id: String,
-    pub owner_id: String,
+    pub uploader: String,
     pub name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -12,5 +12,5 @@ pub struct FileData {
     
     pub hash: String,
     pub uploaded: DateTime<Utc>,
-    pub size: u32,
+    pub size: i64,
 }

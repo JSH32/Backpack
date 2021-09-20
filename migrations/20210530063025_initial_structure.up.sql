@@ -46,27 +46,19 @@ CREATE TABLE verifications
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX verifications_code_uindex
-	on verifications (code);
-
-CREATE UNIQUE INDEX verifications_id_uindex
-	on verifications (id);
-
 CREATE TABLE files
 (
-    id         sonyflake  PRIMARY KEY  NOT NULL,
-    owner_id   sonyflake               NOT NULL,
-    name       VARCHAR(32)             NOT NULL,
+    id         sonyflake  PRIMARY KEY  NOT NULL UNIQUE,
+    name       VARCHAR(32)             NOT NULL UNIQUE,
+    uploader   sonyflake               NOT NULL,
     hash       VARCHAR(32)             NOT NULL,
     uploaded   timestamptz             NOT NULL,
     size       BIGINT                  NOT NULL,
     
     -- Application needs to delete the files from the S3 container. This is precautionary for database
-    FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
+    FOREIGN KEY (uploader) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX files_id_uindex
-	on files (id);
-
-CREATE UNIQUE INDEX files_name_uindex
-	on files (name);
+-- Two identical files can not exist if owned by the same user
+CREATE UNIQUE INDEX files_user_hash_uindex
+    ON files (uploader, hash);

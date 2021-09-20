@@ -7,7 +7,7 @@ pub fn get_routes() -> Scope {
         .service(info)
 }
 
-#[get("/info")]
-async fn info(state: web::Data<State>, id: web::Query<IDQuery>) -> impl Responder {
+#[get("/info/{file_id}")]
+async fn info(state: web::Data<State>, file_id: web::Path<String>) -> impl Responder {
     HttpResponse::Ok()
 }

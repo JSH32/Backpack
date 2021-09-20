@@ -110,7 +110,6 @@ async fn main() -> std::io::Result<()> {
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| actix_web::Error::from(models::MessageResponse::bad_request())));
 
-
         if client_path.is_some() {
             let mut index_path = client_path.as_ref().unwrap().clone();
             index_path.push("index.html");

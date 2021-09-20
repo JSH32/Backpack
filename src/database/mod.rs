@@ -233,8 +233,20 @@ fn user_map(row: sqlx::postgres::PgRow) -> Result<models::user::UserData, sqlx::
     })
 }
 
-fn application_map(row: sqlx::postgres::PgRow) -> Result<ApplicationData, sqlx::Error> {
-    Ok(ApplicationData {
+fn file_map(row: sqlx::postgres::PgRow) -> Result<models::file::FileData, sqlx::Error> {
+    Ok(models::file::FileData {
+        id: row.get("id"),
+        uploader: row.get("uploader"),
+        name: row.get("name"),
+        hash: row.get("hash"),
+        uploaded: row.get("uploaded"),
+        size: row.get("size"),
+        url: None
+    })
+}
+
+fn application_map(row: sqlx::postgres::PgRow) -> Result<models::application::ApplicationData, sqlx::Error> {
+    Ok(models::application::ApplicationData {
         id: row.get("id"),
         name: row.get("name"),
         user_id:  row.get("user_id"),
