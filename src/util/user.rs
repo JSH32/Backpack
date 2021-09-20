@@ -1,13 +1,8 @@
 use actix_web::http::StatusCode;
 use lettre::Message;
 use rand::Rng;
-use regex::Regex;
 
 use crate::models::MessageResponse;
-
-lazy_static! {
-    pub static ref EMAIL_REGEX: regex::Regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
-}
 
 /// Checks and generates a new hashed password
 pub fn new_password(password: &str) -> Result<String, MessageResponse> {

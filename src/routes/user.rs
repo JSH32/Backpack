@@ -60,7 +60,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Username too long (maximum 15 characters)");
     }
 
-    if !util::user::EMAIL_REGEX.is_match(&form.email) {
+    if !util::EMAIL_REGEX.is_match(&form.email) {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
@@ -103,7 +103,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
 
 #[post("/email")]
 async fn change_email(state: web::Data<State>, auth: Auth<auth_role::User, true, false>, form: web::Form<UserEmailForm>) -> impl Responder {
-    if !util::user::EMAIL_REGEX.is_match(&form.email) {
+    if !util::EMAIL_REGEX.is_match(&form.email) {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
