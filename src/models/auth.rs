@@ -2,6 +2,6 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct BasicAuthForm {
-    pub email: String,
+    pub auth: String,
     pub password: String
 }

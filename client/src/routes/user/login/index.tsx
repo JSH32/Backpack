@@ -16,10 +16,10 @@ export const UserLogin: React.FC = () => {
     const formSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const form = event.target as HTMLFormElement
-        const email = (form.elements.namedItem("email") as HTMLInputElement).value
+        const auth = (form.elements.namedItem("auth") as HTMLInputElement).value
         const password = (form.elements.namedItem("password") as HTMLInputElement).value
 
-        passwordLogin(email, password)
+        passwordLogin(auth, password)
             .then(userInfo => {
                 store.setAppInfo(userInfo)
                 if (!userInfo.verified)
@@ -56,7 +56,7 @@ export const UserLogin: React.FC = () => {
                     <hr />
                 </div>
 
-                <input type="text" name="email" placeholder="Email" required/>
+                <input type="text" name="auth" placeholder="Username or Email" required/>
                 <input type="password" name="password" placeholder="Password" required/>
                 
                 <button>Submit</button>

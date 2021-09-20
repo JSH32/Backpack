@@ -4,7 +4,7 @@ use actix_web::http::StatusCode;
 use time::OffsetDateTime;
 use chrono::{Utc};
 
-use crate::{state::State, util::auth::{Auth, auth_role}};
+use crate::{state::State, util::{self, auth::{Auth, auth_role}}};
 use crate::util::auth::create_jwt_string;
 use crate::models::{MessageResponse, auth::BasicAuthForm};
 
@@ -16,31 +16,31 @@ pub fn get_routes() -> Scope {
 
 /// Login with email and password
 #[post("basic")]
-async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl Responder {
-    // Get user data from database
-    let user_data = match state.database.get_user_by_email(&data.email).await {
-        Ok(user_data) => user_data,
-        Err(_) => return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!").http_response()
-    };
+async fn basic(state: web::Data<State>, form: web::Json<BasicAuthForm>) -> Result<HttpResponse, MessageResponse> {
+    let user_data = if util::EMAIL_REGEX.is_match(&form.auth) {
+        state.database.get_user_by_email(&form.auth).await
+    } else {
+        state.database.get_user_by_username(&form.auth).await
+    }.map_err(|_| MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!"))?;
 
     // Check if password is valid to password hash
-    let matches = match argon2::verify_encoded(&user_data.password, data.password.as_bytes()) {
-        Ok(matches) => matches,
-        Err(_) => return MessageResponse::internal_server_error().http_response()
+    match argon2::verify_encoded(&user_data.password, form.password.as_bytes()) {
+        Ok(matches) => {
+            if !matches {
+                return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!"))
+            }
+        },
+        Err(_) => return Err(MessageResponse::internal_server_error())
     };
 
-    if !matches {
-        return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!").http_response();
-    }
-
     let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();
-    let jwt = match create_jwt_string(&user_data.id, None, "localhost", Some(expire_time), &state.jwt_key) {
+    let jwt = match create_jwt_string(&user_data.id, None, &state.base_url, Some(expire_time), &state.jwt_key) {
         Ok(jwt) => jwt,
-        Err(_) => return MessageResponse::internal_server_error().http_response()
+        Err(_) => return Err(MessageResponse::internal_server_error())
     };
 
     // Set JWT token as cookie
-    HttpResponse::Ok()
+    Ok(HttpResponse::Ok()
         .cookie(
             Cookie::build("auth-token", jwt)
             .secure(false)
@@ -49,7 +49,7 @@ async fn basic(state: web::Data<State>, data: web::Json<BasicAuthForm>) -> impl 
             .expires(OffsetDateTime::from_unix_timestamp(expire_time))
             .finish()
         )
-        .json(user_data)
+        .json(user_data))
 }
 
 /// Remove httponly cookie

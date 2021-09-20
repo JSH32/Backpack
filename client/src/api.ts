@@ -33,9 +33,9 @@ export const logout = async (): Promise<void> => {
  * @param password password
  * @returns user data
  */
-export const passwordLogin = async (email: string, password: string): Promise<UserData> => {
+export const passwordLogin = async (auth: string, password: string): Promise<UserData> => {
     return (await axios.post<UserData>(`${BASE_URL}/auth/basic`, {
-        email: email,
+        auth: auth,
         password: password
     })).data
 }
