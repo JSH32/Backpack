@@ -1,34 +1,17 @@
+pub mod sonyflake;
+pub mod error;
+
 use std::path::Path;
-use std::error::Error as StdError;
 
 use crate::models::UserData;
 use crate::models::{self, application::ApplicationData};
-use crate::sonyflake::{self, Sonyflake};
 
-use sqlx::migrate::Migrator;
+use sqlx::migrate::{MigrateError, Migrator};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("database error")]
-    SqlxError(sqlx::Error),
-    #[error("there was a problem generating a sonyflake")]
-    SonyflakeError(sonyflake::Error)
-}
-
-impl From<sqlx::Error> for Error {
-    fn from(error: sqlx::Error) -> Error {
-        Error::SqlxError(error)
-    }
-}
-
-impl From<sonyflake::Error> for Error {
-    fn from(error: sonyflake::Error) -> Error {
-        Error::SonyflakeError(error)
-    }
-}
+use self::error::Error;
+use self::sonyflake::Sonyflake;
 
 pub struct Database {
     pool: sqlx::Pool<sqlx::Postgres>,
@@ -54,7 +37,7 @@ impl Database {
     }
 
     /// Run all pending up migrations
-    pub async fn run_migrations(&self, path: &Path) -> Result<(), Box<dyn StdError>> {
+    pub async fn run_migrations(&self, path: &Path) -> Result<(), MigrateError> {
         let migrator = Migrator::new(path).await?;
         migrator.run(&self.pool).await?;
 
@@ -73,6 +56,7 @@ impl Database {
             .await
             .map_err(From::from)
     }
+
     /// Gets user info from database by email
     pub async fn get_user_by_email(&self, email: &str) -> Result<UserData, Error> {
         sqlx::query("SELECT id, email, username, password, verified, role FROM users WHERE email = $1")
@@ -82,6 +66,7 @@ impl Database {
             .await
             .map_err(From::from)
     }
+
     /// Gets user info from database by id
     pub async fn get_user_by_id(&self, id: &str) -> Result<UserData, Error> {
         sqlx::query("SELECT id, email, username, password, verified, role FROM users WHERE id = $1")
@@ -113,10 +98,20 @@ impl Database {
     }
 
     /// Change a password for a user id
-    pub async fn change_password(&self, id: &str, password: &str) -> Result<(), Error> {
+    pub async fn change_password(&self, user_id: &str, password: &str) -> Result<(), Error> {
         sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
             .bind(password)
-            .bind(id)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn change_email(&self, user_id: &str, email: &str) -> Result<(), Error> {
+        sqlx::query("UPDATE users SET email = $1 WHERE id = $2")
+            .bind(email)
+            .bind(user_id)
             .execute(&self.pool)
             .await?;
 
@@ -187,7 +182,7 @@ impl Database {
     }
 
     pub async fn create_verification(&self, user_id: &str, code: &str) -> Result<(), Error> {
-        sqlx::query("INSERT INTO verifications (user_id, code) VALUES ($1, $2)")
+        sqlx::query("INSERT INTO verifications (user_id, code) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET code = $2")
             .bind(user_id)
             .bind(code)
             .execute(&self.pool)
@@ -196,7 +191,6 @@ impl Database {
         Ok(())
     }
 
-    // SELECT id, email, username, password, verified, role FROM users WHERE id = $1
     pub async fn get_user_from_verification(&self, code: &str) -> Result<UserData, Error> {
         sqlx::query("SELECT u.id, u.email, u.username, u.password, u.verified, u.role FROM users u JOIN verifications v ON v.user_id = u.id WHERE v.code = $1")
             .bind(code)
@@ -216,8 +210,9 @@ impl Database {
     }
 
     /// Verify the user
-    pub async fn verify_user(&self, user_id: &str) -> Result<(), Error> {
-        sqlx::query("UPDATE users SET verified = TRUE WHERE id = $1")
+    pub async fn verify_user(&self, user_id: &str, verify: bool) -> Result<(), Error> {
+        sqlx::query("UPDATE users SET verified = $1 WHERE id = $2")
+            .bind(verify)
             .bind(user_id)
             .execute(&self.pool)
             .await?;

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}, thread, time::Duration};
+use std::{sync::{Arc, Mutex}, thread, time::Duration};
 use chrono::{DateTime, TimeZone, Utc};
 use thiserror::Error;
 
@@ -17,19 +17,19 @@ pub enum Error {
     #[error("over the time limit")]
     OverTimeLimit,
     #[error("mutex is poisoned (i.e. a panic happened while it was locked)")]
-    MutexPoisoned,
+    MutexPoisoned
 }
 
 #[derive(Debug)]
 struct WorkerState {
     pub elapsed_time: i64,
-    pub sequence: u16,
+    pub sequence: u16
 }
 
 pub struct SharedSonyflake {
     worker_id: u16,
     start_time: i64,
-    worker_state: Mutex<WorkerState>,
+    worker_state: Mutex<WorkerState>
 }
 
 /// Sonyflake is a distributed unique ID generator.
@@ -60,13 +60,9 @@ impl Sonyflake {
             worker_state: Mutex::new(WorkerState {
                 elapsed_time: 0,
                 sequence: 1 << (BIT_LEN_SEQUENCE - 1),
-            }),
+            })
         })))
     }
-
-    // pub(crate) fn new_inner(shared: Arc<SharedSonyflake>) -> Self {
-    //     Self(shared)
-    // }
 
     /// Generate the next unique id.
     /// After the Sonyflake time overflows, next_id returns an error.
@@ -118,23 +114,4 @@ fn current_elapsed_time(start_time: i64) -> i64 {
 fn sleep_time(overtime: i64) -> Duration {
     Duration::from_millis(overtime as u64 * 10)
         - Duration::from_nanos((Utc::now().timestamp_nanos() % SONYFLAKE_TIME_UNIT) as u64)
-}
-
-/// Break a Sonyflake ID up into its parts.
-pub fn decompose(id: u64) -> HashMap<String, u64> {
-    let mut map = HashMap::new();
-
-    let mask_sequence = ((1 << BIT_LEN_SEQUENCE) - 1) << BIT_LEN_MACHINE_ID;
-    let mask_machine_id = (1 << BIT_LEN_MACHINE_ID) - 1;
-
-    map.insert("id".into(), id);
-    map.insert("msb".into(), id >> 63);
-    map.insert("time".into(), id >> (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID));
-    map.insert(
-        "sequence".into(),
-        (id & mask_sequence) >> BIT_LEN_MACHINE_ID,
-    );
-    map.insert("machine-id".into(), id & mask_machine_id);
-
-    map
 }
