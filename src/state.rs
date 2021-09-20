@@ -1,5 +1,5 @@
 use lettre::{AsyncSmtpTransport, Tokio1Executor};
-use crate::{database::Database, sonyflake::Sonyflake, storage::StorageProvider};
+use crate::{database::Database, storage::StorageProvider};
 
 pub struct State {
     pub database: Database,

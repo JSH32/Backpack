@@ -5,7 +5,6 @@ use lettre::{AsyncTransport};
 use crate::{state::State, util::{auth::{Auth, auth_role}, random_string, user::verification_email}};
 use crate::models::*;
 use crate::util;
-use regex::Regex;
 
 use actix_web::*;
 
@@ -61,8 +60,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Username too long (maximum 15 characters)");
     }
 
-    let email_regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
-    if !email_regex.is_match(&form.email) {
+    if !util::user::EMAIL_REGEX.is_match(&form.email) {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
@@ -94,7 +92,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
                 }
             } else {
                 // If SMTP is disabled we just verify the user
-                let _ = state.database.verify_user(&user_data.id).await;
+                let _ = state.database.verify_user(&user_data.id, true).await;
             }
         }
         Err(_) => return MessageResponse::internal_server_error()
@@ -103,9 +101,44 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
     MessageResponse::new(StatusCode::OK, "User has successfully been created")
 }
 
-#[post("/verify")]
-async fn verify(state: web::Data<State>, form: web::Json<UserVerifyForm>) -> impl Responder {
-    match state.database.get_user_from_verification(&form.code).await {
+#[post("/email")]
+async fn change_email(state: web::Data<State>, auth: Auth<auth_role::User, true, false>, form: web::Form<UserEmailForm>) -> impl Responder {
+    if !util::user::EMAIL_REGEX.is_match(&form.email) {
+        return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
+    }
+
+    if state.database.get_user_by_email(&form.email).await.is_ok() {
+        return MessageResponse::new(StatusCode::CONFLICT, "An account with that email already exists!");
+    }
+
+    if let Err(_) = state.database.change_email(&auth.user.id, &form.email).await {
+        return MessageResponse::internal_server_error();
+    }
+
+    match &state.smtp_client {
+        Some(smtp) => {
+            if let Err(_) = state.database.verify_user(&auth.user.id, false).await {
+                return MessageResponse::internal_server_error();
+            }
+
+            let random_code = random_string(72);
+            if !state.database.create_verification(&auth.user.id, &random_code).await.is_err() {
+                let email = verification_email(&state.base_url, &smtp.1, &form.email, &random_code);
+                let mailer = smtp.clone().0;
+                tokio::spawn(async move {
+                    let _ = mailer.send(email).await;
+                });
+            }
+
+            MessageResponse::new(StatusCode::OK, &format!("User email was changed, verification email was sent to {}", &auth.user.email))
+        },
+        None => MessageResponse::new(StatusCode::OK, &format!("User email was changed to {}", &form.email))
+    }
+}
+
+#[post("/verify/{code}")]
+async fn verify(state: web::Data<State>, code: web::Path<String>) -> impl Responder {
+    match state.database.get_user_from_verification(&code).await {
         Ok(user_data) => {
             if state.database.delete_verification(&user_data.id).await.is_err() {
                 return MessageResponse::internal_server_error();
@@ -116,7 +149,7 @@ async fn verify(state: web::Data<State>, form: web::Json<UserVerifyForm>) -> imp
                 return MessageResponse::new(StatusCode::CONFLICT, "User was already verified")
             }
 
-            if state.database.verify_user(&user_data.id).await.is_err() {
+            if state.database.verify_user(&user_data.id, true).await.is_err() {
                 return MessageResponse::internal_server_error();
             }
 

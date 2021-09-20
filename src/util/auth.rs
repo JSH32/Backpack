@@ -79,26 +79,39 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
     }
 }
 
+fn get_token(req: &HttpRequest) -> Option<String> {
+    match req.cookie("auth-token") {
+        Some(cookie) => Some(cookie.value().to_string()),
+        // Token could not be found
+        None => match req.headers().get("Authorization") {
+            Some(header) => match header.to_str() {
+                Ok(value) => {
+                    // Auth type must be bearer
+                    if value.starts_with("Bearer ") {
+                        Some(value.trim_start_matches("Bearer ").to_string())
+                    } else {
+                        None
+                    }
+                },
+                Err(_) => None
+            },
+            None => None
+        }
+    }
+}
+
 /// Get data from user based on request
 async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(UserData, bool), actix_web::Error> {
     let state = req.app_data::<Data<State>>().expect("State was not found");
 
-    let jwt_token = match req.cookie("auth-token") {
-        Some(jwt_token) => jwt_token,
-        // Token could not be found
-        None => return Err(Error::from(MessageResponse::unauthorized_error()))
-    };
+    let jwt_token = get_token(&req).ok_or(Error::from(MessageResponse::unauthorized_error()))?;
 
     // Try to verify token
-    let claims = match decode::<JWTClaims>(jwt_token.value(), &DecodingKey::from_secret(state.jwt_key.as_ref()), &Validation::default()) {
-        Ok(claims) => claims.claims,
-        Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
-    };
+    let claims = decode::<JWTClaims>(&jwt_token, &DecodingKey::from_secret(state.jwt_key.as_ref()), &Validation::default())
+        .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?.claims;
 
-    let mut user = match state.database.get_user_by_id(&claims.user_id).await {
-        Ok(data) => data,
-        Err(_) => return Err(Error::from(MessageResponse::unauthorized_error()))
-    };
+    let mut user = state.database.get_user_by_id(&claims.user_id).await
+        .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?;
 
     // Block user out if unverified is false
     if state.smtp_client.is_some() && !user.verified && !allow_unverified {
@@ -117,7 +130,7 @@ async fn get_auth_data(req: HttpRequest, allow_unverified: bool) -> Result<(User
                 }
 
                 // Verify the user
-                if let Err(_) = state.database.verify_user(&user.id).await {
+                if let Err(_) = state.database.verify_user(&user.id, true).await {
                     return Err(Error::from(MessageResponse::internal_server_error()));
                 }
 

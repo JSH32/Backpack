@@ -1,5 +1,5 @@
 import * as React from "react"
-import { verifyCode } from "api"
+import { verify } from "api"
 import { useLocation } from "react-router-dom"
 
 import Check from "assets/icons/check.svg"
@@ -13,7 +13,7 @@ export const UserVerify: React.FC = () => {
     const [verifySuccess, setVerifySuccess] = React.useState(null)
 
     React.useEffect(() => {
-        verifyCode(verificationCode)
+        verify(verificationCode)
             .then(() => {
                 setVerifySuccess(true)
 

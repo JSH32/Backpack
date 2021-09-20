@@ -319,6 +319,7 @@ dependencies = [
  "futures",
  "infer",
  "jsonwebtoken",
+ "lazy_static",
  "lettre",
  "rand",
  "regex",

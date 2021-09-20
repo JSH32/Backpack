@@ -11,10 +11,11 @@ use config::StorageConfig;
 use lettre::AsyncSmtpTransport;
 use lettre::Tokio1Executor;
 use lettre::transport::smtp::authentication::Credentials;
-use sonyflake::Sonyflake;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 use tokio::fs;
 
+#[macro_use]
+extern crate lazy_static;
 extern crate env_logger;
 extern crate dotenv;
 extern crate argon2;
@@ -26,7 +27,6 @@ mod state;
 mod routes;
 mod storage;
 mod util;
-mod sonyflake;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -53,12 +53,12 @@ async fn main() -> std::io::Result<()> {
         None => None,
     };
 
-    let sonyflake_worker = Sonyflake::new(config.worker_id, None)
+    let sonyflake_worker = database::sonyflake::Sonyflake::new(config.worker_id, None)
         .expect("There was a problem creating the Sonyflake worker");
 
     let database = database::Database::new(16, &config.database_url, sonyflake_worker).await;
     if let Err(err) = database.run_migrations(Path::new("migrations")).await {
-        panic!("{}", err.to_string());
+        panic!("{}", err);
     }
 
     let storage: Box<dyn StorageProvider> = match config.storage_provider {

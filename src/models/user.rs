@@ -30,13 +30,13 @@ pub struct UserCreateForm {
 }
 
 #[derive(Deserialize)]
-pub struct UserVerifyForm {
-    pub code: String
+pub struct UserDeleteForm {
+    pub password: String
 }
 
 #[derive(Deserialize)]
-pub struct UserDeleteForm {
-    pub password: String
+pub struct UserEmailForm {
+    pub email: String
 }
 
 #[derive(Deserialize)]

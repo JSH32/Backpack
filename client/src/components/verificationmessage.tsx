@@ -7,7 +7,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
             <EmailIcon />
             <h2>Verify your email</h2>
             <p>An email was sent previously to <b>{email}</b>. Please click the link to verify and activate your account</p>
-            <p>If you did not get a link please click <a href="about:page">here</a></p>
+            <p>If you did not get a link please click <a href="about:page">here</a> to resend</p>
         </div>
     </div>
 }

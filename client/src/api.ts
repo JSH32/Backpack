@@ -12,6 +12,7 @@ enum UserRole {
 }
 
 export interface UserData {
+    id: string,
     username: string,
     email: string,
     verified: boolean,
@@ -64,8 +65,12 @@ export const userCreate = async (username: string, email: string, password: stri
     })).data
 }
 
-export const verifyCode = async (code: string): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${BASE_URL}/user/verify`, {
-        code: code
+export const verify = async (code: string): Promise<AxiosResponse<any>> => {
+    return await axios.post(`${BASE_URL}/user/verify/${code}`)
+}
+
+export const resendCode = async (email: string): Promise<AxiosResponse<any>> => {
+    return await axios.post(`${BASE_URL}/user/verify/resend`, {
+        email: email
     })
 }
