@@ -1,3 +1,11 @@
+//! # Sonyflake implementation
+//! Worker/machine IDs must be manually assigned, IPv4 may not be used
+//!
+//! ## Structure
+//! 39 bits for time in units of 10 msec\
+//!  8 bits for a sequence number\
+//! 16 bits for a machine id
+
 use std::{sync::{Arc, Mutex}, thread, time::Duration};
 use chrono::{DateTime, TimeZone, Utc};
 use thiserror::Error;
@@ -32,7 +40,8 @@ pub struct SharedSonyflake {
     worker_state: Mutex<WorkerState>
 }
 
-/// Sonyflake is a distributed unique ID generator.
+/// Distributed unique ID generator.
+/// This is thread safe
 pub struct Sonyflake(pub Arc<SharedSonyflake>);
 
 impl Sonyflake {
