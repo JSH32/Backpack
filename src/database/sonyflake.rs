@@ -95,11 +95,9 @@ impl Sonyflake {
             return Err(Error::OverTimeLimit);
         }
 
-        Ok(
-            (worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
+        Ok((worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
                 | (worker_state.sequence as u64) << BIT_LEN_MACHINE_ID
-                | (self.0.worker_id as u64),
-        )
+                | (self.0.worker_id as u64))
     }
 }
 
