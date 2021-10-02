@@ -5,12 +5,14 @@ use std::path::PathBuf;
 use actix_files::NamedFile;
 use actix_web::dev::ServiceRequest;
 use actix_web::dev::ServiceResponse;
+use actix_web::http::StatusCode;
 use actix_web::{*, middleware::Logger};
 use actix_files::Files;
 use config::StorageConfig;
 use lettre::AsyncSmtpTransport;
 use lettre::Tokio1Executor;
 use lettre::transport::smtp::authentication::Credentials;
+use models::MessageResponse;
 use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 use tokio::fs;
 
@@ -61,16 +63,16 @@ async fn main() -> std::io::Result<()> {
         panic!("{}", err);
     }
 
-    let storage: Box<dyn StorageProvider> = match config.storage_provider {
+    let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
             if !v.path.exists() {
                 fs::create_dir(&v.path).await.expect(&format!("Unable to create {} directory", 
                     v.path.to_str().unwrap_or("storage")));
             }
 
-            Box::new(LocalProvider::new(v.path))
+            Box::new(LocalProvider::new(v.path.clone()))
         },
-        StorageConfig::S3(v) => Box::new(S3Provider::new(&v.bucket, &v.access_key, &v.secret_key, v.region))
+        StorageConfig::S3(v) => Box::new(S3Provider::new(&v.bucket, &v.access_key, &v.secret_key, v.region.clone()))
     };
 
     let smtp_client = match config.smtp_config {
@@ -96,6 +98,17 @@ async fn main() -> std::io::Result<()> {
         base_url: config.base_url
     });
 
+    let storage_path = match &config.storage_provider {
+        StorageConfig::Local(v) => {
+            if v.serve {
+                Some(v.path.clone())
+            } else {
+                None
+            }
+        },
+        _ => None
+    };
+
     HttpServer::new(move || {
         let mut app = App::new() 
             .wrap(Logger::default())
@@ -110,6 +123,8 @@ async fn main() -> std::io::Result<()> {
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| actix_web::Error::from(models::MessageResponse::bad_request())));
 
+        let base_storage_path = storage_path.clone();
+
         if client_path.is_some() {
             let mut index_path = client_path.as_ref().unwrap().clone();
             index_path.push("index.html");
@@ -120,18 +135,44 @@ async fn main() -> std::io::Result<()> {
                     .default_handler(move |req: ServiceRequest| {
                         let (req, _) = req.into_parts();
 
-                        let response = NamedFile::open(&index_path)
-                            .expect("Index file not found")
-                            .into_response(&req);
+                        let response = match &base_storage_path {
+                            Some(v) => {
+                                let mut file_path = v.clone();
+                                file_path.push(req.path().trim_start_matches("/").replace("..", ""));
+                                match NamedFile::open(&file_path) {
+                                    Ok(v) => v.into_response(&req),
+                                    Err(_) => NamedFile::open(&index_path)
+                                        .expect("Index file not found")
+                                        .into_response(&req)
+                                }
+                            },
+                            None => {
+                                NamedFile::open(&index_path)
+                                    .expect("Index file not found")
+                                    .into_response(&req)
+                            }
+                        };
 
-                        async {
+                        async { 
                             Ok(ServiceResponse::new(req, response))
                         }
                     })
                     .index_file("index.html") // Set defailt index file
                     .show_files_listing() // Show index file
-            )
-        }
+            );
+        } else {
+            app = app.default_service(web::route().to(move |req: HttpRequest| {
+                if let Some(v) = &base_storage_path {
+                    let mut file_path = v.clone();
+                    file_path.push(req.path().trim_start_matches("/").replace("..", ""));
+                    if let Ok(v) = NamedFile::open(&file_path) {
+                        return v.into_response(&req)
+                    }
+                };
+
+                MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!").http_response()
+            }))
+        };
         
         app
     })
