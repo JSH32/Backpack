@@ -24,11 +24,15 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
         .map_err(|_| MessageResponse::internal_server_error())?)
 }
 
-pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &str,) -> Message {
+pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &str) -> Message {
     Message::builder()
         .from(from_email.parse().unwrap())
         .to(email.parse().unwrap())
         .subject("Verify your account")
-        .body(String::from(format!("Please click on this link to verify your account\n{}/user/verify?code={}", base_url, code)))
+        .body(if true {
+            format!("Please click on this link to verify your account\n{}/user/verify?code={}", base_url, code)
+        } else {
+            format!("Please POST to the URL in order to verify your account\n{}/api/user/verify/{}", base_url, code)
+        }.to_string())
         .unwrap()
 }
