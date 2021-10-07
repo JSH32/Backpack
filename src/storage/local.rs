@@ -19,9 +19,13 @@ impl LocalProvider {
 
 #[async_trait]
 impl StorageProvider for LocalProvider {
-    async fn put_object(&self, name: &str, data: Vec<u8>) -> Result<(), String> {
+    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), String> {
         let mut path = self.path.clone();
         path.push(name);
+
+        if path.exists() {
+            return Err("Path exists".to_string())
+        }
 
         let mut file = match tokio::fs::OpenOptions::new()
             .write(true)

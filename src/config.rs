@@ -11,6 +11,7 @@ pub struct Config {
     pub worker_id: u16,
     pub jwt_key: String,
     pub serve_frontend: bool,
+    pub file_size_limit: usize,
     pub storage_provider: StorageConfig,
     pub smtp_config: Option<SMTPConfig>
 }
@@ -54,6 +55,7 @@ impl Config {
             database_url: get_env("DATABASE_URL"),
             jwt_key: get_env("JWT_KEY"),
             base_url: get_env("BASEURL"),
+            file_size_limit: get_env("FILE_LIMIT"),
             worker_id: get_env::<u16>("WORKER_ID"),
             serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {

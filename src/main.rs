@@ -95,7 +95,11 @@ async fn main() -> std::io::Result<()> {
         storage: storage,
         jwt_key: config.jwt_key,
         smtp_client: smtp_client,
-        base_url: config.base_url
+        base_url: config.base_url,
+        storage_url: config.storage_url,
+        with_client: config.serve_frontend,
+        // Convert MB to bytes
+        file_size_limit: config.file_size_limit*1000*1000
     });
 
     let storage_path = match &config.storage_provider {

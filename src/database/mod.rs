@@ -4,8 +4,10 @@ pub mod error;
 use std::path::Path;
 
 use crate::models::UserData;
+use crate::models::file::FileData;
 use crate::models::{self, application::ApplicationData};
 
+use chrono::{DateTime, Utc};
 use sqlx::migrate::{MigrateError, Migrator};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Row;
@@ -217,6 +219,38 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
+        Ok(())
+    }
+
+    pub async fn get_file(&self, id: &str) -> Result<FileData, Error> {
+        sqlx::query("SELECT id, name, uploader, hash, uploaded, size FROM files WHERE id = $1")
+            .bind(id)
+            .try_map(file_map)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(From::from)
+    }
+
+    pub async fn create_file(&self, user_id: &str, name: &str, hash: &str, size: i32, uploaded: DateTime<Utc>) -> Result<FileData, Error> {
+        sqlx::query("INSERT INTO files (id, uploader, name, hash, size, uploaded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
+            .bind(self.get_sonyflake()?)
+            .bind(user_id)
+            .bind(name)
+            .bind(hash)
+            .bind(size)
+            .bind(uploaded)
+            .try_map(file_map)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(From::from)
+    }
+
+    pub async fn delete_file(&self, id: &str) -> Result<(), Error> {
+        sqlx::query("DELETE FROM files WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        
         Ok(())
     }
 }

@@ -22,7 +22,7 @@ impl S3Provider {
 
 #[async_trait]
 impl StorageProvider for S3Provider {
-    async fn put_object(&self, name: &str, data: Vec<u8>) -> Result<(), String> {
+    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), String> {
         // Attempt to detect content type
         let content_type = match infer::get(&data) {
             Some(kind) => {
@@ -33,7 +33,7 @@ impl StorageProvider for S3Provider {
 
         match self.client.put_object(PutObjectRequest {
             bucket: self.bucket.clone(),
-            body: Some(ByteStream::from(data)),
+            body: Some(ByteStream::from(data.clone())),
             key: name.to_string(),
             acl: Some("public-read".into()),
             content_type: content_type,
