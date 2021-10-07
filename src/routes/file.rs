@@ -1,4 +1,15 @@
-use std::{collections::hash_map::DefaultHasher, ffi::OsStr, hash::{Hash, Hasher}, path::{Path, PathBuf}};
+use std::{
+    collections::hash_map::DefaultHasher, 
+    ffi::OsStr, 
+    hash::{
+        Hash, 
+        Hasher
+    }, 
+    path::{
+        Path,
+        PathBuf
+    }
+};
 
 use actix_multipart::Multipart;
 use nanoid::nanoid;
@@ -8,16 +19,13 @@ use actix_web::{
     Scope, 
     http::StatusCode, 
     get, 
-    put, 
+    post, 
     web
 };
 
-use crate::{
-    models::MessageResponse, 
-    state::State,
-    util::{
+use crate::{models::{MessageResponse, file::FilePage}, state::State, util::{
         auth::{
-            Auth, 
+            Auth,
             auth_role
         }, 
         file::{
@@ -31,9 +39,10 @@ pub fn get_routes() -> Scope {
     web::scope("/file/")
         .service(info)
         .service(upload)
+        .service(list)
 }
 
-#[put("/upload")]
+#[post("/upload")]
 async fn upload(state: web::Data<State>, auth: Auth<auth_role::User, false, true>, mut payload: Multipart) -> Result<impl Responder, MessageResponse> {
     match get_file_from_payload(&mut payload, state.file_size_limit, "uploadFile").await {
         Ok(file) => {
@@ -77,6 +86,31 @@ async fn upload(state: web::Data<State>, auth: Auth<auth_role::User, false, true
                     &format!("File was larger than the size limit of {}mb", state.file_size_limit/1000/1000)),
             MultipartError::WriteError => MessageResponse::internal_server_error(),
         })
+    }
+}
+
+#[get("/list/{page_number}")]
+async fn list(state: web::Data<State>, page_number: web::Path<u32>, auth: Auth<auth_role::User, false, true>) -> Result<impl Responder, MessageResponse> {
+    if *page_number < 1 {
+        return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1"));
+    }
+    
+    match state.database.get_total_file_pages(&auth.user.id, 50).await {
+        Ok(total_pages) => {
+            let file_list = state.database.get_files(&auth.user.id, 50, *page_number).await
+                .map_err(|_| MessageResponse::internal_server_error())?;
+
+            if file_list.len() < 1 {
+                return Err(MessageResponse::new(StatusCode::NOT_FOUND, &format!("There are only {} pages", total_pages)));
+            }
+
+            Ok(HttpResponse::Ok().json(FilePage {
+                page: *page_number,
+                pages: total_pages,
+                files: file_list
+            }))
+        },
+        Err(_) => Err(MessageResponse::internal_server_error())
     }
 }
 

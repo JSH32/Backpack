@@ -14,3 +14,10 @@ pub struct FileData {
     pub uploaded: DateTime<Utc>,
     pub size: i64,
 }
+
+#[derive(Serialize)]
+pub struct FilePage {
+    pub page: u32,
+    pub pages: u32,
+    pub files: Vec<FileData>
+}
