@@ -1,9 +1,20 @@
-use rusoto_s3::{*};
-use rusoto_core::{*};
-use infer;
-use async_trait::async_trait;
-
 use super::StorageProvider;
+use async_trait::async_trait;
+use infer;
+
+use rusoto_core::{
+    ByteStream, 
+    HttpClient, 
+    Region, 
+    credential
+};
+
+use rusoto_s3::{
+    DeleteObjectRequest, 
+    PutObjectRequest,
+    S3, 
+    S3Client
+};
 
 pub struct S3Provider {
     bucket: String,

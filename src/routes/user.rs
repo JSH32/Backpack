@@ -1,12 +1,37 @@
 use argon2;
-use http::StatusCode;
-use lettre::{AsyncTransport};
+use lettre::AsyncTransport;
 
-use crate::{state::State, util::{auth::{Auth, auth_role}, random_string, user::verification_email}};
-use crate::models::*;
-use crate::util;
-
-use actix_web::*;
+use crate::{
+    state::State,
+    models::{
+        MessageResponse, 
+        PasswordChangeForm, 
+        UserCreateForm,
+        UserEmailForm
+    },
+    util::{
+        EMAIL_REGEX,
+        auth::{
+            Auth, 
+            auth_role
+        }, 
+        random_string, 
+        user::{
+            new_password, 
+            verification_email
+        }
+    }
+};
+        
+use actix_web::{
+    HttpResponse, 
+    Responder, 
+    Scope, 
+    http::StatusCode, 
+    get, 
+    post, 
+    web
+};
 
 pub fn get_routes(smtp_verification: bool) -> Scope {
     let scope = web::scope("/user/")
@@ -39,7 +64,7 @@ async fn password(state: web::Data<State>, auth: Auth<auth_role::User, false, fa
     }
 
     // Get new password hash
-    let new_hash = match util::user::new_password(&form.new_password) {
+    let new_hash = match new_password(&form.new_password) {
         Ok(hash) => hash,
         Err(err) => return err
     };
@@ -60,7 +85,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Username too long (maximum 15 characters)");
     }
 
-    if !util::EMAIL_REGEX.is_match(&form.email) {
+    if !EMAIL_REGEX.is_match(&form.email) {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
@@ -74,7 +99,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         return MessageResponse::new(StatusCode::CONFLICT, "An account with that username already exists!");
     }
     
-    form.password = match util::user::new_password(&form.password) {
+    form.password = match new_password(&form.password) {
         Ok(password_hashed) => password_hashed,
         Err(err) => return err
     };
@@ -103,7 +128,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
 
 #[post("/email")]
 async fn change_email(state: web::Data<State>, auth: Auth<auth_role::User, true, false>, form: web::Form<UserEmailForm>) -> impl Responder {
-    if !util::EMAIL_REGEX.is_match(&form.email) {
+    if !EMAIL_REGEX.is_match(&form.email) {
         return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 

@@ -6,9 +6,22 @@
 //!  8 bits for a sequence number\
 //! 16 bits for a machine id
 
-use std::{sync::{Arc, Mutex}, thread, time::Duration};
-use chrono::{DateTime, TimeZone, Utc};
 use thiserror::Error;
+
+use std::{
+    sync::{
+        Arc, 
+        Mutex
+    }, 
+    thread, 
+    time::Duration
+};
+
+use chrono::{
+    DateTime, 
+    TimeZone, 
+    Utc
+};
 
 /// bit length of time
 const BIT_LEN_TIME: u64 = 39;

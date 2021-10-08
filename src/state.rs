@@ -1,5 +1,12 @@
-use lettre::{AsyncSmtpTransport, Tokio1Executor};
-use crate::{database::Database, storage::StorageProvider};
+use lettre::{
+    AsyncSmtpTransport, 
+    Tokio1Executor
+};
+
+use crate::{
+    database::Database, 
+    storage::StorageProvider
+};
 
 pub struct State {
     pub database: Database,

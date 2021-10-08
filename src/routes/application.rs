@@ -1,7 +1,26 @@
-use crate::{models::{IDQuery, MessageResponse, application::*}, state::State, util::auth::{Auth, auth_role, create_jwt_string}};
+use actix_web::{
+    post, 
+    get,
+    HttpResponse, 
+    Responder, 
+    Scope, 
+    http::StatusCode,
+    web
+};
 
-use actix_web::*;
-use actix_web::http::StatusCode;
+use crate::{
+    state::State,
+    models::{
+        IDQuery, 
+        MessageResponse, 
+        application::*
+    }, 
+    util::auth::{
+        Auth, 
+        auth_role, 
+        create_jwt_string
+    }
+};
 
 pub fn get_routes() -> Scope {
     web::scope("/application/")

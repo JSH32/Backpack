@@ -1,12 +1,31 @@
-use actix_web::*;
-use actix_web::cookie::Cookie;
-use actix_web::http::StatusCode;
 use time::OffsetDateTime;
-use chrono::{Utc};
+use chrono::Utc;
 
-use crate::{state::State, util::{self, auth::{Auth, auth_role}}};
-use crate::util::auth::create_jwt_string;
-use crate::models::{MessageResponse, auth::BasicAuthForm};
+use crate::{
+    state::State,
+    util::{
+        self, 
+        auth::{
+            Auth, 
+            auth_role,
+            create_jwt_string
+        }
+    },
+    models::{
+        MessageResponse, 
+        auth::BasicAuthForm
+    }
+};
+
+use actix_web::{
+    HttpResponse, 
+    cookie::Cookie,
+    Responder, 
+    Scope, 
+    http::StatusCode, 
+    post, 
+    web
+};
 
 pub fn get_routes() -> Scope {
     web::scope("/auth/")

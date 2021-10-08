@@ -3,17 +3,34 @@ pub mod error;
 
 use std::path::Path;
 
-use crate::models::UserData;
-use crate::models::file::FileData;
-use crate::models::{self, application::ApplicationData};
+use sqlx::{
+    Row,
+    postgres::PgPoolOptions,
+    migrate::{
+        MigrateError, 
+        Migrator
+    },
+};
 
-use chrono::{DateTime, Utc};
-use sqlx::migrate::{MigrateError, Migrator};
-use sqlx::postgres::PgPoolOptions;
-use sqlx::Row;
+use crate::{
+    database::Error::SqlxError,
+    models::{
+        self,
+        UserData,
+        file::FileData,
+        application::ApplicationData
+    }
+};
 
-use self::error::Error;
-use self::sonyflake::Sonyflake;
+use chrono::{
+    DateTime, 
+    Utc
+};
+
+use self::{
+    error::Error,
+    sonyflake::Sonyflake
+};
 
 pub struct Database {
     pool: sqlx::Pool<sqlx::Postgres>,

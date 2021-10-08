@@ -1,6 +1,13 @@
 use dotenv::dotenv;
 use rusoto_core::Region;
-use std::{env, fmt::Debug, path::{Path, PathBuf}, str::FromStr};
+use std::{
+    fmt::Debug, path::{
+        Path, 
+        PathBuf
+    },
+    env,
+    str::FromStr
+};
 
 #[derive(Clone)]
 pub struct Config {

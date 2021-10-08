@@ -1,6 +1,10 @@
 use actix_multipart::Multipart;
-use futures::{AsyncWriteExt, TryStreamExt};
 use thiserror::Error;
+
+use futures::{
+    AsyncWriteExt, 
+    TryStreamExt
+};
 
 #[derive(Error, Debug)]
 pub enum MultipartError {

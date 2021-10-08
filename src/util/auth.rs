@@ -1,12 +1,35 @@
-use actix_web::http::StatusCode;
-use actix_web::{Error, FromRequest, HttpRequest, web::Data};
-use chrono::Utc;
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use serde::{Serialize, Deserialize};
+use actix_web::{
+    http::StatusCode,
+    Error, 
+    FromRequest, 
+    HttpRequest, 
+    web::Data
+};
 
-use crate::{models::UserRole, state::State};
-use crate::models::MessageResponse;
-use crate::models::user::UserData;
+use chrono::Utc;
+
+use jsonwebtoken::{
+    DecodingKey, 
+    EncodingKey,
+    Header, 
+    Validation, 
+    decode, 
+    encode
+};
+
+use serde::{
+    Serialize, 
+    Deserialize
+};
+
+use crate::{
+    state::State,
+    models::{
+        UserRole,
+        MessageResponse,
+        user::UserData
+    },
+};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

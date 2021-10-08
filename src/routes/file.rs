@@ -24,7 +24,13 @@ use actix_web::{
     web
 };
 
-use crate::{models::{MessageResponse, file::FilePage}, state::State, util::{
+use crate::{
+    models::{
+        MessageResponse, 
+        file::FilePage
+    }, 
+    state::State,
+    util::{
         auth::{
             Auth,
             auth_role
@@ -115,9 +121,9 @@ async fn list(state: web::Data<State>, page_number: web::Path<u32>, auth: Auth<a
         return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1"));
     }
     
-    match state.database.get_total_file_pages(&auth.user.id, 50).await {
+    match state.database.get_total_file_pages(&auth.user.id, PAGE_SIZE).await {
         Ok(total_pages) => {
-            let file_list = state.database.get_files(&auth.user.id, 50, *page_number).await
+            let file_list = state.database.get_files(&auth.user.id, PAGE_SIZE, *page_number).await
                 .map_err(|_| MessageResponse::internal_server_error())?;
 
             if file_list.len() < 1 {

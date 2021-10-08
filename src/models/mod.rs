@@ -4,12 +4,30 @@ pub mod file;
 pub mod application;
 
 use core::fmt;
-use std::{fmt::{Debug, Display}};
+use std::fmt::{
+    Debug, 
+    Display
+};
 
-pub use self::{user::*, auth::*};
+use actix_web::{
+    HttpRequest, 
+    HttpResponse, 
+    Responder, 
+    ResponseError, 
+    http::StatusCode
+};
 
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, http::StatusCode};
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, 
+    Serialize
+};
+
+pub use self::{
+    user::*, 
+    auth::*,
+    application::*,
+    file::*
+};
 
 /// Query for any data with an ID
 #[derive(Deserialize)]

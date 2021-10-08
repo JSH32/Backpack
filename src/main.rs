@@ -1,20 +1,47 @@
-use std::panic;
-use std::path::Path;
-use std::path::PathBuf;
-
-use actix_files::NamedFile;
-use actix_web::dev::ServiceRequest;
-use actix_web::dev::ServiceResponse;
-use actix_web::http::StatusCode;
-use actix_web::{*, middleware::Logger};
-use actix_files::Files;
 use config::StorageConfig;
-use lettre::AsyncSmtpTransport;
-use lettre::Tokio1Executor;
-use lettre::transport::smtp::authentication::Credentials;
 use models::MessageResponse;
-use storage::{StorageProvider, local::LocalProvider, s3::S3Provider};
 use tokio::fs;
+
+use std::{
+    panic,
+    path::{
+        Path, 
+        PathBuf
+    }
+};
+
+use actix_web::{
+    App,
+    HttpServer,
+    HttpRequest,
+    http::StatusCode,
+    middleware::Logger,
+    dev::{
+        ServiceRequest,
+        ServiceResponse
+    },
+    web::{
+        self,
+        Data
+    }
+};
+
+use actix_files::{
+    Files, 
+    NamedFile
+};
+
+use lettre::{
+    AsyncSmtpTransport,
+    Tokio1Executor,
+    transport::smtp::authentication::Credentials,
+};
+
+use storage::{
+    StorageProvider, 
+    local::LocalProvider, 
+    s3::S3Provider
+};
 
 #[macro_use]
 extern crate lazy_static;
@@ -90,7 +117,7 @@ async fn main() -> std::io::Result<()> {
     // Get setting as single boolean before client gets moved
     let smtp_enabled = smtp_client.is_some();
 
-    let api_state = web::Data::new(state::State {
+    let api_state = Data::new(state::State {
         database: database,
         storage: storage,
         jwt_key: config.jwt_key,

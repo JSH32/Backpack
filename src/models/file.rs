@@ -1,5 +1,9 @@
-use chrono::{DateTime, Utc};
-use serde::{Serialize};
+use serde::Serialize;
+
+use chrono::{
+    DateTime, 
+    Utc
+};
 
 #[derive(Serialize)]
 pub struct FileData {
