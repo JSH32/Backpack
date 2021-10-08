@@ -13,6 +13,7 @@ use std::{
 
 use actix_multipart::Multipart;
 use nanoid::nanoid;
+use serde_json::json;
 use actix_web::{
     HttpResponse, 
     Responder, 
@@ -56,11 +57,29 @@ async fn upload(state: web::Data<State>, auth: Auth<auth_role::User, false, true
 
             let mut hasher = DefaultHasher::new();
             file.bytes.hash(&mut hasher);
+            let hash = &hasher.finish().to_string();
+
+            let file_exists = state.database.exist_file_hash(&auth.user.id, hash).await
+                .map_err(|_| MessageResponse::internal_server_error())?;
+
+            let mut file_url = PathBuf::from(&state.storage_url);
+
+            if let Some(name) = file_exists {
+                // Push the existing file name for the matching hash
+                file_url.push(name);
+
+                let mut object = serde_json::Map::new();
+                object.insert("url".to_string(), json!(&file_url.as_path().display().to_string()));
+
+                return Err(MessageResponse::new_with_data(StatusCode::CONFLICT, 
+                    "You have already uploaded this file", 
+                    serde_json::Value::Object(object)));
+            }
 
             let mut file_data = state.database.create_file(
                 &auth.user.id,
                 &filename, 
-                &hasher.finish().to_string(),
+                hash,
                 file.size as i32,
                 chrono::offset::Utc::now()
             ).await.map_err(|_| MessageResponse::internal_server_error())?;
@@ -72,7 +91,6 @@ async fn upload(state: web::Data<State>, auth: Auth<auth_role::User, false, true
                 return Err(MessageResponse::internal_server_error());
             }
 
-            let mut file_url = PathBuf::from(&state.storage_url);
             file_url.push(&filename);
             file_data.url = Some(file_url.as_path().display().to_string());
 
@@ -91,6 +109,8 @@ async fn upload(state: web::Data<State>, auth: Auth<auth_role::User, false, true
 
 #[get("/list/{page_number}")]
 async fn list(state: web::Data<State>, page_number: web::Path<u32>, auth: Auth<auth_role::User, false, true>) -> Result<impl Responder, MessageResponse> {
+    const PAGE_SIZE: u32 = 25;
+    
     if *page_number < 1 {
         return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1"));
     }

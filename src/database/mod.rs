@@ -231,6 +231,20 @@ impl Database {
             .map_err(From::from)
     }
 
+    pub async fn exist_file_hash(&self, user_id: &str, hash: &str) -> Result<Option<String>, Error> {
+        match sqlx::query("SELECT name FROM files WHERE uploader = $1 AND hash = $2")
+            .bind(user_id)
+            .bind(hash)
+            .fetch_one(&self.pool)
+            .await {
+                Ok(row) => Ok(Some(row.get("name"))),
+                Err(err) => match err {
+                    sqlx::Error::RowNotFound => Ok(None),
+                    _ => Err(SqlxError(err))
+                },
+            }
+    }
+
     pub async fn create_file(&self, user_id: &str, name: &str, hash: &str, size: i32, uploaded: DateTime<Utc>) -> Result<FileData, Error> {
         sqlx::query("INSERT INTO files (id, uploader, name, hash, size, uploaded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
             .bind(self.get_sonyflake()?)

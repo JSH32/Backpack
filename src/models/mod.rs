@@ -24,6 +24,10 @@ pub struct MessageResponse {
     code: StatusCode,
 
     message: String,
+
+    // Optional data, can be any JSON value
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<serde_json::Value>
 }
 
 impl MessageResponse {
@@ -32,6 +36,15 @@ impl MessageResponse {
         MessageResponse {
             code: code,
             message: message.to_string(),
+            data: None
+        }
+    }
+
+    pub fn new_with_data(code: StatusCode, message: &str, data: serde_json::Value) -> Self {
+        MessageResponse {
+            code: code,
+            message: message.to_string(),
+            data: Some(data)
         }
     }
     
