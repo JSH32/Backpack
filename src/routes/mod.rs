@@ -1,4 +1,4 @@
-pub mod user;
-pub mod auth;
 pub mod application;
+pub mod auth;
 pub mod file;
+pub mod user;

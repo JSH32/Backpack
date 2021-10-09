@@ -1,10 +1,7 @@
 use actix_multipart::Multipart;
 use thiserror::Error;
 
-use futures::{
-    AsyncWriteExt, 
-    TryStreamExt
-};
+use futures::{AsyncWriteExt, TryStreamExt};
 
 #[derive(Error, Debug)]
 pub enum MultipartError {
@@ -13,26 +10,30 @@ pub enum MultipartError {
     #[error("payload was larger than `{0}`")]
     PayloadTooLarge(usize),
     #[error("there was a problem writing from the payload")]
-    WriteError
+    WriteError,
 }
 
 pub struct File {
     pub filename: String,
     pub bytes: Vec<u8>,
-    pub size: usize
+    pub size: usize,
 }
 
-pub async fn get_file_from_payload(payload: &mut Multipart, size_limit: usize, field_name: &str) -> Result<File, MultipartError> {
+pub async fn get_file_from_payload(
+    payload: &mut Multipart,
+    size_limit: usize,
+    field_name: &str,
+) -> Result<File, MultipartError> {
     while let Ok(Some(mut field)) = payload.try_next().await {
         if let Some(disposition) = field.content_disposition() {
             let filename_param = match disposition.get_filename() {
                 Some(v) => v,
-                None => continue
+                None => continue,
             };
 
             let name_param = match disposition.get_name() {
                 Some(v) => v,
-                None => continue
+                None => continue,
             };
 
             if name_param != field_name {
@@ -46,21 +47,21 @@ pub async fn get_file_from_payload(payload: &mut Multipart, size_limit: usize, f
                 size += chunk.len();
 
                 if size > size_limit {
-                    return Err(MultipartError::PayloadTooLarge(size_limit))
+                    return Err(MultipartError::PayloadTooLarge(size_limit));
                 }
 
                 if let Err(_) = bytes.write(&chunk).await {
-                    return Err(MultipartError::WriteError)
+                    return Err(MultipartError::WriteError);
                 }
             }
 
             return Ok(File {
                 filename: filename_param.to_string(),
                 bytes: bytes,
-                size: size
+                size: size,
             });
         }
-    };
+    }
 
     Err(MultipartError::FieldNotFound(field_name.to_string()))
 }

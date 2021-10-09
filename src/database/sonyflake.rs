@@ -9,19 +9,12 @@
 use thiserror::Error;
 
 use std::{
-    sync::{
-        Arc, 
-        Mutex
-    }, 
-    thread, 
-    time::Duration
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
 };
 
-use chrono::{
-    DateTime, 
-    TimeZone, 
-    Utc
-};
+use chrono::{DateTime, TimeZone, Utc};
 
 /// bit length of time
 const BIT_LEN_TIME: u64 = 39;
@@ -38,19 +31,19 @@ pub enum Error {
     #[error("over the time limit")]
     OverTimeLimit,
     #[error("mutex is poisoned (i.e. a panic happened while it was locked)")]
-    MutexPoisoned
+    MutexPoisoned,
 }
 
 #[derive(Debug)]
 struct WorkerState {
     pub elapsed_time: i64,
-    pub sequence: u16
+    pub sequence: u16,
 }
 
 pub struct SharedSonyflake {
     worker_id: u16,
     start_time: i64,
-    worker_state: Mutex<WorkerState>
+    worker_state: Mutex<WorkerState>,
 }
 
 /// Distributed unique ID generator.
@@ -76,20 +69,24 @@ impl Sonyflake {
                     }
 
                     to_sonyflake_time(time)
-                },
-                None => to_sonyflake_time(Utc.ymd(2014, 9, 1).and_hms(0, 0, 0))
+                }
+                None => to_sonyflake_time(Utc.ymd(2014, 9, 1).and_hms(0, 0, 0)),
             },
             worker_state: Mutex::new(WorkerState {
                 elapsed_time: 0,
                 sequence: 1 << (BIT_LEN_SEQUENCE - 1),
-            })
+            }),
         })))
     }
 
     /// Generate the next unique id.
     /// After the Sonyflake time overflows, next_id returns an error.
     pub fn next_id(&self) -> Result<u64, Error> {
-        let mut worker_state = self.0.worker_state.lock().map_err(|_| Error::MutexPoisoned)?;
+        let mut worker_state = self
+            .0
+            .worker_state
+            .lock()
+            .map_err(|_| Error::MutexPoisoned)?;
 
         let current = current_elapsed_time(self.0.start_time);
         if worker_state.elapsed_time < current {
@@ -108,9 +105,11 @@ impl Sonyflake {
             return Err(Error::OverTimeLimit);
         }
 
-        Ok((worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
+        Ok(
+            (worker_state.elapsed_time as u64) << (BIT_LEN_SEQUENCE + BIT_LEN_MACHINE_ID)
                 | (worker_state.sequence as u64) << BIT_LEN_MACHINE_ID
-                | (self.0.worker_id as u64))
+                | (self.0.worker_id as u64),
+        )
     }
 }
 

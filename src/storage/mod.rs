@@ -1,5 +1,5 @@
-pub mod s3;
 pub mod local;
+pub mod s3;
 
 use async_trait::async_trait;
 

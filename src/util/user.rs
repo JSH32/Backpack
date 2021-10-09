@@ -8,9 +8,15 @@ use crate::models::MessageResponse;
 pub fn new_password(password: &str) -> Result<String, MessageResponse> {
     let password_length = password.len();
     if password_length < 6 {
-        return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Password too short (minimum 6 characters)"));
+        return Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Password too short (minimum 6 characters)",
+        ));
     } else if password_length > 128 {
-        return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Password too long (maximum 128 characters)"));
+        return Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Password too long (maximum 128 characters)",
+        ));
     }
 
     // Generate a random salt
@@ -19,9 +25,13 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
         .take(36)
         .map(char::from)
         .collect();
-        
-    Ok(argon2::hash_encoded(password.as_bytes(), salt.as_bytes(), &argon2::Config::default())
-        .map_err(|_| MessageResponse::internal_server_error())?)
+
+    Ok(argon2::hash_encoded(
+        password.as_bytes(),
+        salt.as_bytes(),
+        &argon2::Config::default(),
+    )
+    .map_err(|_| MessageResponse::internal_server_error())?)
 }
 
 pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &str) -> Message {
@@ -29,10 +39,19 @@ pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &
         .from(from_email.parse().unwrap())
         .to(email.parse().unwrap())
         .subject("Verify your account")
-        .body(if true {
-            format!("Please click on this link to verify your account\n{}/user/verify?code={}", base_url, code)
-        } else {
-            format!("Please POST to the URL in order to verify your account\n{}/api/user/verify/{}", base_url, code)
-        }.to_string())
+        .body(
+            if true {
+                format!(
+                    "Please click on this link to verify your account\n{}/user/verify?code={}",
+                    base_url, code
+                )
+            } else {
+                format!(
+                    "Please POST to the URL in order to verify your account\n{}/api/user/verify/{}",
+                    base_url, code
+                )
+            }
+            .to_string(),
+        )
         .unwrap()
 }

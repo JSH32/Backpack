@@ -6,14 +6,12 @@ use async_trait::async_trait;
 use tokio::io::AsyncWriteExt;
 
 pub struct LocalProvider {
-    path: PathBuf
+    path: PathBuf,
 }
 
 impl LocalProvider {
     pub fn new(path: PathBuf) -> Self {
-        LocalProvider {
-            path: path
-        }
+        LocalProvider { path: path }
     }
 }
 
@@ -24,21 +22,22 @@ impl StorageProvider for LocalProvider {
         path.push(name);
 
         if path.exists() {
-            return Err("Path exists".to_string())
+            return Err("Path exists".to_string());
         }
 
         let mut file = match tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .open(path)
-            .await {
-                Err(err) => return Err(err.to_string()),
-                Ok(file) => file
-            };
+            .await
+        {
+            Err(err) => return Err(err.to_string()),
+            Ok(file) => file,
+        };
 
         match file.write_all(&data).await {
             Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(err.to_string()),
         }
     }
 
@@ -48,7 +47,7 @@ impl StorageProvider for LocalProvider {
 
         match tokio::fs::remove_file(path).await {
             Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(err.to_string()),
         }
     }
 }

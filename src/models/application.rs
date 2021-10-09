@@ -1,14 +1,11 @@
-use serde::{
-    Serialize, 
-    Deserialize
-};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationData {
     pub id: String,
     pub name: String,
-    
+
     #[serde(skip_serializing)]
     pub user_id: String,
 
@@ -19,5 +16,5 @@ pub struct ApplicationData {
 
 #[derive(Deserialize)]
 pub struct ApplicationCreateForm {
-    pub name: String
+    pub name: String,
 }

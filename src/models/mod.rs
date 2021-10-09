@@ -1,38 +1,21 @@
-pub mod user;
+pub mod application;
 pub mod auth;
 pub mod file;
-pub mod application;
+pub mod user;
 
 use core::fmt;
-use std::fmt::{
-    Debug, 
-    Display
-};
+use std::fmt::{Debug, Display};
 
-use actix_web::{
-    HttpRequest, 
-    HttpResponse, 
-    Responder, 
-    ResponseError, 
-    http::StatusCode
-};
+use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 
-use serde::{
-    Deserialize, 
-    Serialize
-};
+use serde::{Deserialize, Serialize};
 
-pub use self::{
-    user::*, 
-    auth::*,
-    application::*,
-    file::*
-};
+pub use self::{application::*, auth::*, file::*, user::*};
 
 /// Query for any data with an ID
 #[derive(Deserialize)]
 pub struct IDQuery {
-    pub id: String
+    pub id: String,
 }
 
 /// Standard message response
@@ -45,7 +28,7 @@ pub struct MessageResponse {
 
     // Optional data, can be any JSON value
     #[serde(skip_serializing_if = "Option::is_none")]
-    data: Option<serde_json::Value>
+    data: Option<serde_json::Value>,
 }
 
 impl MessageResponse {
@@ -54,7 +37,7 @@ impl MessageResponse {
         MessageResponse {
             code: code,
             message: message.to_string(),
-            data: None
+            data: None,
         }
     }
 
@@ -62,29 +45,34 @@ impl MessageResponse {
         MessageResponse {
             code: code,
             message: message.to_string(),
-            data: Some(data)
+            data: Some(data),
         }
     }
-    
+
     /// New internal server error response
     pub fn internal_server_error() -> Self {
-        MessageResponse::new(StatusCode::INTERNAL_SERVER_ERROR, "There was a problem processing your request")
+        MessageResponse::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "There was a problem processing your request",
+        )
     }
 
     /// Create new unauthorized error response
     pub fn unauthorized_error() -> Self {
-        MessageResponse::new(StatusCode::UNAUTHORIZED, "You are not authorized to make this request")
+        MessageResponse::new(
+            StatusCode::UNAUTHORIZED,
+            "You are not authorized to make this request",
+        )
     }
 
     /// Create new bad request error response
     pub fn bad_request() -> Self {
         MessageResponse::new(StatusCode::BAD_REQUEST, "You sent an invalid request")
     }
-    
+
     /// Explicit convert to actix HttpResponse type
     pub fn http_response(&self) -> HttpResponse {
-        HttpResponse::build(self.code)
-            .json(self)
+        HttpResponse::build(self.code).json(self)
     }
 }
 

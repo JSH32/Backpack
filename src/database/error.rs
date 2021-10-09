@@ -7,7 +7,7 @@ pub enum Error {
     #[error("database error: `{0}`")]
     SqlxError(sqlx::Error),
     #[error("there was a problem generating a sonyflake: `{0}`")]
-    SonyflakeError(sonyflake::Error)
+    SonyflakeError(sonyflake::Error),
 }
 
 impl From<sqlx::Error> for Error {

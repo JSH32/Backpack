@@ -1,12 +1,10 @@
 use dotenv::dotenv;
 use rusoto_core::Region;
 use std::{
-    fmt::Debug, path::{
-        Path, 
-        PathBuf
-    },
     env,
-    str::FromStr
+    fmt::Debug,
+    path::{Path, PathBuf},
+    str::FromStr,
 };
 
 #[derive(Clone)]
@@ -20,7 +18,7 @@ pub struct Config {
     pub serve_frontend: bool,
     pub file_size_limit: usize,
     pub storage_provider: StorageConfig,
-    pub smtp_config: Option<SMTPConfig>
+    pub smtp_config: Option<SMTPConfig>,
 }
 
 #[derive(Clone)]
@@ -28,7 +26,7 @@ pub struct S3Config {
     pub bucket: String,
     pub access_key: String,
     pub secret_key: String,
-    pub region: Region
+    pub region: Region,
 }
 
 #[derive(Clone)]
@@ -37,20 +35,20 @@ pub struct LocalConfig {
 
     // Should local provider directory be served by the application
     // This can be disable if someone wants to serve using some other webserver
-    pub serve: bool
+    pub serve: bool,
 }
 
 #[derive(Clone)]
 pub struct SMTPConfig {
     pub username: String,
     pub password: String,
-    pub server: String
+    pub server: String,
 }
 
 #[derive(Clone)]
 pub enum StorageConfig {
     Local(LocalConfig),
-    S3(S3Config)
+    S3(S3Config),
 }
 
 impl Config {
@@ -69,7 +67,7 @@ impl Config {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
                     "local" => StorageConfig::Local(LocalConfig {
                         path: Path::new(get_env::<String>("LOCAL_PATH").as_str()).to_path_buf(),
-                        serve: get_env_or("LOCAL_SERVE", true)
+                        serve: get_env_or("LOCAL_SERVE", true),
                     }),
                     "s3" => StorageConfig::S3(S3Config {
                         bucket: get_env("S3_BUCKET"),
@@ -77,10 +75,12 @@ impl Config {
                         secret_key: get_env("S3_SECRET_KEY"),
                         region: Region::Custom {
                             name: get_env("S3_REGION"),
-                            endpoint: get_env("S3_ENDPOINT")
-                        }
+                            endpoint: get_env("S3_ENDPOINT"),
+                        },
                     }),
-                    _ => panic!("Invalid storage provider for environment variable STORAGE_PROVIDER")
+                    _ => {
+                        panic!("Invalid storage provider for environment variable STORAGE_PROVIDER")
+                    }
                 }
             },
             smtp_config: {
@@ -88,26 +88,41 @@ impl Config {
                     true => Some(SMTPConfig {
                         username: get_env("SMTP_USERNAME"),
                         password: get_env("SMTP_PASSWORD"),
-                        server: get_env("SMTP_SERVER")
+                        server: get_env("SMTP_SERVER"),
                     }),
                     false => None,
                 }
-            }
+            },
         }
     }
 }
 
-fn get_env_or<T>(var: &str, default: T) -> T where T: FromStr, <T as FromStr>::Err: Debug {
+fn get_env_or<T>(var: &str, default: T) -> T
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
     match env::var(var) {
-        Ok(v) => v.parse::<T>()
-            .expect(&format!("Unable to parse {} as {}", var, std::any::type_name::<T>())),
+        Ok(v) => v.parse::<T>().expect(&format!(
+            "Unable to parse {} as {}",
+            var,
+            std::any::type_name::<T>()
+        )),
         Err(_) => default,
     }
 }
 
-fn get_env<T>(var: &str) -> T where T: FromStr, <T as FromStr>::Err: Debug {
+fn get_env<T>(var: &str) -> T
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
     env::var(var)
         .expect(&format!("Missing environment variable {}", var))
         .parse::<T>()
-        .expect(&format!("Unable to parse {} as {}", var, std::any::type_name::<T>()))
+        .expect(&format!(
+            "Unable to parse {} as {}",
+            var,
+            std::any::type_name::<T>()
+        ))
 }

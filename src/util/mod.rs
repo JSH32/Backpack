@@ -2,11 +2,14 @@ use rand::Rng;
 use regex::Regex;
 
 pub mod auth;
-pub mod user;
 pub mod file;
+pub mod user;
 
 lazy_static! {
-    pub static ref EMAIL_REGEX: regex::Regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
+    pub static ref EMAIL_REGEX: regex::Regex = Regex::new(
+        r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
+    )
+    .unwrap();
 }
 
 pub fn random_string(length: usize) -> String {

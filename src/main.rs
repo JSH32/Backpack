@@ -4,56 +4,34 @@ use tokio::fs;
 
 use std::{
     panic,
-    path::{
-        Path, 
-        PathBuf
-    }
+    path::{Path, PathBuf},
 };
 
 use actix_web::{
-    App,
-    HttpServer,
-    HttpRequest,
+    dev::{ServiceRequest, ServiceResponse},
     http::StatusCode,
     middleware::Logger,
-    dev::{
-        ServiceRequest,
-        ServiceResponse
-    },
-    web::{
-        self,
-        Data
-    }
+    web::{self, Data},
+    App, HttpRequest, HttpServer,
 };
 
-use actix_files::{
-    Files, 
-    NamedFile
-};
+use actix_files::{Files, NamedFile};
 
-use lettre::{
-    AsyncSmtpTransport,
-    Tokio1Executor,
-    transport::smtp::authentication::Credentials,
-};
+use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 
-use storage::{
-    StorageProvider, 
-    local::LocalProvider, 
-    s3::S3Provider
-};
+use storage::{local::LocalProvider, s3::S3Provider, StorageProvider};
 
 #[macro_use]
 extern crate lazy_static;
-extern crate env_logger;
-extern crate dotenv;
 extern crate argon2;
+extern crate dotenv;
+extern crate env_logger;
 
+mod config;
 mod database;
 mod models;
-mod config;
-mod state;
 mod routes;
+mod state;
 mod storage;
 mod util;
 
@@ -70,13 +48,13 @@ async fn main() -> std::io::Result<()> {
         Some(v) => match config.serve_frontend {
             true => {
                 let path = PathBuf::from(v);
-                
-                if !path.is_dir() { 
+
+                if !path.is_dir() {
                     panic!("Invalid client provided");
                 }
-    
+
                 Some(path)
-            },
+            }
             false => None,
         },
         None => None,
@@ -93,25 +71,35 @@ async fn main() -> std::io::Result<()> {
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
             if !v.path.exists() {
-                fs::create_dir(&v.path).await.expect(&format!("Unable to create {} directory", 
-                    v.path.to_str().unwrap_or("storage")));
+                fs::create_dir(&v.path).await.expect(&format!(
+                    "Unable to create {} directory",
+                    v.path.to_str().unwrap_or("storage")
+                ));
             }
 
             Box::new(LocalProvider::new(v.path.clone()))
-        },
-        StorageConfig::S3(v) => Box::new(S3Provider::new(&v.bucket, &v.access_key, &v.secret_key, v.region.clone()))
+        }
+        StorageConfig::S3(v) => Box::new(S3Provider::new(
+            &v.bucket,
+            &v.access_key,
+            &v.secret_key,
+            v.region.clone(),
+        )),
     };
 
     let smtp_client = match config.smtp_config {
         Some(smtp_config) => {
             let creds = Credentials::new(smtp_config.username.clone(), smtp_config.password);
 
-            Some((AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_config.server)
-                .unwrap()
-                .credentials(creds)
-                .build(), smtp_config.username))
-        },
-        None => None
+            Some((
+                AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_config.server)
+                    .unwrap()
+                    .credentials(creds)
+                    .build(),
+                smtp_config.username,
+            ))
+        }
+        None => None,
     };
 
     // Get setting as single boolean before client gets moved
@@ -126,7 +114,7 @@ async fn main() -> std::io::Result<()> {
         storage_url: config.storage_url,
         with_client: config.serve_frontend,
         // Convert MB to bytes
-        file_size_limit: config.file_size_limit*1000*1000
+        file_size_limit: config.file_size_limit * 1000 * 1000,
     });
 
     let storage_path = match &config.storage_provider {
@@ -136,12 +124,12 @@ async fn main() -> std::io::Result<()> {
             } else {
                 None
             }
-        },
-        _ => None
+        }
+        _ => None,
     };
 
     HttpServer::new(move || {
-        let mut app = App::new() 
+        let mut app = App::new()
             .wrap(Logger::default())
             .app_data(api_state.clone())
             .service(
@@ -149,10 +137,12 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::user::get_routes(smtp_enabled))
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
-                    .service(routes::file::get_routes())
+                    .service(routes::file::get_routes()),
             )
             // Error handler when json body deserialization failed
-            .app_data(web::JsonConfig::default().error_handler(|_, _| actix_web::Error::from(models::MessageResponse::bad_request())));
+            .app_data(web::JsonConfig::default().error_handler(|_, _| {
+                actix_web::Error::from(models::MessageResponse::bad_request())
+            }));
 
         let base_storage_path = storage_path.clone();
 
@@ -169,42 +159,40 @@ async fn main() -> std::io::Result<()> {
                         let response = match &base_storage_path {
                             Some(v) => {
                                 let mut file_path = v.clone();
-                                file_path.push(req.path().trim_start_matches("/").replace("..", ""));
+                                file_path
+                                    .push(req.path().trim_start_matches('/').replace("..", ""));
                                 match NamedFile::open(&file_path) {
                                     Ok(v) => v.into_response(&req),
                                     Err(_) => NamedFile::open(&index_path)
                                         .expect("Index file not found")
-                                        .into_response(&req)
+                                        .into_response(&req),
                                 }
-                            },
-                            None => {
-                                NamedFile::open(&index_path)
-                                    .expect("Index file not found")
-                                    .into_response(&req)
                             }
+                            None => NamedFile::open(&index_path)
+                                .expect("Index file not found")
+                                .into_response(&req),
                         };
 
-                        async { 
-                            Ok(ServiceResponse::new(req, response))
-                        }
+                        async { Ok(ServiceResponse::new(req, response)) }
                     })
                     .index_file("index.html") // Set defailt index file
-                    .show_files_listing() // Show index file
+                    .show_files_listing(), // Show index file
             );
         } else {
             app = app.default_service(web::route().to(move |req: HttpRequest| {
                 if let Some(v) = &base_storage_path {
                     let mut file_path = v.clone();
-                    file_path.push(req.path().trim_start_matches("/").replace("..", ""));
+                    file_path.push(req.path().trim_start_matches('/').replace("..", ""));
                     if let Ok(v) = NamedFile::open(&file_path) {
-                        return v.into_response(&req)
+                        return v.into_response(&req);
                     }
                 };
 
-                MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!").http_response()
+                MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!")
+                    .http_response()
             }))
         };
-        
+
         app
     })
     .bind(("0.0.0.0", config.port))?

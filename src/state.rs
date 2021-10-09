@@ -1,12 +1,6 @@
-use lettre::{
-    AsyncSmtpTransport, 
-    Tokio1Executor
-};
+use lettre::{AsyncSmtpTransport, Tokio1Executor};
 
-use crate::{
-    database::Database, 
-    storage::StorageProvider
-};
+use crate::{database::Database, storage::StorageProvider};
 
 pub struct State {
     pub database: Database,
@@ -16,5 +10,5 @@ pub struct State {
     pub storage_url: String,
     pub smtp_client: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>,
     pub with_client: bool,
-    pub file_size_limit: usize
+    pub file_size_limit: usize,
 }
