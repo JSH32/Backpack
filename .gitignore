@@ -3,3 +3,4 @@ target
 .vscode
 uploads
 docker-compose.yml
+*.code-workspace
