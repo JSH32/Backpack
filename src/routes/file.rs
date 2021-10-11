@@ -6,12 +6,12 @@ use std::{
 };
 
 use actix_multipart::Multipart;
-use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use serde_json::json;
 
 use crate::{
-    models::{file::FilePage, MessageResponse},
+    models::{file::FilePage, FileData, MessageResponse},
     state::State,
     util::{
         auth::{auth_role, Auth},
@@ -24,6 +24,7 @@ pub fn get_routes() -> Scope {
         .service(info)
         .service(upload)
         .service(list)
+        .service(delete_file)
 }
 
 #[post("/upload")]
@@ -188,5 +189,41 @@ async fn info(
         Err(_) => {
             MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found").http_response()
         }
+    }
+}
+
+#[delete("/delete/{file_id}")]
+async fn delete_file(
+    state: web::Data<State>,
+    file_id: web::Path<String>,
+    auth: Auth<auth_role::User, true, true>,
+) -> Result<impl Responder, MessageResponse> {
+    match state.database.get_file(&file_id).await {
+        Ok(v) => {
+            if v.uploader != auth.user.id {
+                Err(MessageResponse::new(
+                    StatusCode::FORBIDDEN,
+                    "You are not allowed to access this file",
+                ))
+            } else {
+                state
+                    .database
+                    .delete_file(&file_id)
+                    .await
+                    .map_err(|_| MessageResponse::internal_server_error())?;
+
+                // We dont care about the result of this because of discrepancies
+                let _ = state.storage.delete_object(&v.name).await;
+
+                Ok(MessageResponse::new(
+                    StatusCode::OK,
+                    &format!("File {} was deleted", v.name),
+                ))
+            }
+        }
+        Err(_) => Err(MessageResponse::new(
+            StatusCode::NOT_FOUND,
+            "That file was not found",
+        )),
     }
 }
