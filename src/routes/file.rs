@@ -130,11 +130,22 @@ async fn list(
         .await
     {
         Ok(total_pages) => {
-            let file_list = state
+            let storage_url = PathBuf::from(&state.storage_url);
+
+            let file_list: Vec<FileData> = state
                 .database
                 .get_files(&auth.user.id, PAGE_SIZE, *page_number)
                 .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+                .map_err(|_| MessageResponse::internal_server_error())?
+                .into_iter()
+                // Attach the URL to each file
+                .map(|mut file| {
+                    let mut file_url = storage_url.clone();
+                    file_url.push(&file.name);
+                    file.url = Some(file_url.as_path().display().to_string());
+                    file
+                })
+                .collect();
 
             if file_list.len() < 1 {
                 return Err(MessageResponse::new(
