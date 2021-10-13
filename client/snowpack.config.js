@@ -4,14 +4,19 @@
 /** @type {import("snowpack").SnowpackUserConfig } */
 
 const httpProxy = require('http-proxy')
-const proxy = httpProxy.createServer({target: 'http://localhost:8081'})
+const proxy = httpProxy.createServer({
+  target: 'http://localhost:8081'
+})
 
 module.exports = {
   mount: {
     public: { url: "/", static: true },
     src: { url: "/dist" },
   },
-  "routes": [
+  devOptions: {
+    port: 3000
+  },
+  routes: [
     {
       src: '/api/.*',
       dest: (req, res) => proxy.web(req, res)
