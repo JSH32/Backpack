@@ -182,9 +182,18 @@ async fn main() -> std::io::Result<()> {
             app = app.default_service(web::route().to(move |req: HttpRequest| {
                 if let Some(v) = &base_storage_path {
                     let mut file_path = v.clone();
-                    file_path.push(req.path().trim_start_matches('/').replace("..", ""));
-                    if let Ok(v) = NamedFile::open(&file_path) {
-                        return v.into_response(&req);
+
+                    // Request path after the root
+                    let path_end = req.path().trim_start_matches('/');
+
+                    // Make sure request path isn't empty
+                    // This would attempt to send the directory (and fail) otherwise
+                    if !path_end.eq("") {
+                        // Sanitize the path to prevent walking to another directory
+                        file_path.push(path_end.replace("..", ""));
+                        if let Ok(v) = NamedFile::open(&file_path) {
+                            return v.into_response(&req);
+                        }
                     }
                 };
 
