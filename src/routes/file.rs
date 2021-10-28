@@ -1,5 +1,5 @@
 use std::{
-    collections::hash_map::DefaultHasher,
+    collections::{hash_map::DefaultHasher, HashMap},
     ffi::OsStr,
     hash::{Hash, Hasher},
     path::{Path, PathBuf},
@@ -115,7 +115,13 @@ async fn list(
     state: web::Data<State>,
     page_number: web::Path<u32>,
     auth: Auth<auth_role::User, false, true>,
+    query_params: web::Query<HashMap<String, String>>,
 ) -> Result<impl Responder, MessageResponse> {
+    let query = match query_params.get("query") {
+        Some(str) => Some(str.clone()),
+        None => None,
+    };
+
     const PAGE_SIZE: u32 = 25;
 
     if *page_number < 1 {
@@ -127,7 +133,7 @@ async fn list(
 
     match state
         .database
-        .get_total_file_pages(&auth.user.id, PAGE_SIZE)
+        .get_total_file_pages(&auth.user.id, PAGE_SIZE, &query)
         .await
     {
         Ok(total_pages) => {
@@ -135,7 +141,7 @@ async fn list(
 
             let file_list: Vec<FileData> = state
                 .database
-                .get_files(&auth.user.id, PAGE_SIZE, *page_number)
+                .get_files(&auth.user.id, PAGE_SIZE, *page_number, &query)
                 .await
                 .map_err(|_| MessageResponse::internal_server_error())?
                 .into_iter()

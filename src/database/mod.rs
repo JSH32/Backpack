@@ -310,9 +310,11 @@ impl Database {
         user_id: &str,
         limit: u32,
         page: u32,
+        query: &Option<String>,
     ) -> Result<Vec<FileData>, Error> {
         sqlx::query(
-            "SELECT * FROM files WHERE uploader = $1 ORDER BY uploaded DESC LIMIT $2 OFFSET $3",
+            &format!("SELECT * FROM files WHERE uploader = $1 AND name LIKE '%{}%' ORDER BY uploaded DESC LIMIT $2 OFFSET $3", 
+            query.as_ref().unwrap_or(&"".to_string()))
         )
         .bind(user_id)
         .bind(limit)
@@ -323,11 +325,19 @@ impl Database {
         .map_err(From::from)
     }
 
-    pub async fn get_total_file_pages(&self, user_id: &str, page_size: u32) -> Result<u32, Error> {
-        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM files WHERE uploader = $1")
-            .bind(user_id)
-            .fetch_one(&self.pool)
-            .await?;
+    pub async fn get_total_file_pages(
+        &self,
+        user_id: &str,
+        page_size: u32,
+        query: &Option<String>,
+    ) -> Result<u32, Error> {
+        let row: (i64,) = sqlx::query_as(&format!(
+            "SELECT COUNT(*) FROM files WHERE uploader = $1 AND name LIKE '%{}%'",
+            query.as_ref().unwrap_or(&"".to_string())
+        ))
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok((row.0 as u32 + page_size - 1) / page_size)
     }
