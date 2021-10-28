@@ -22,10 +22,7 @@ export const UserLogin: React.FC = () => {
         passwordLogin(auth, password)
             .then(userInfo => {
                 store.setAppInfo(userInfo)
-                if (!userInfo.verified)
-                    setPostLoginUnverifiedEmail(userInfo.email)
-                else
-                    history.replace("/user/uploads")
+                userInfo.verified ? history.replace("/user/uploads") : setPostLoginUnverifiedEmail(userInfo.email)
             })
             .catch(error => setErrorMessage(error.response.data.message))
     }

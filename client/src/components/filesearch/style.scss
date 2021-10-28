@@ -1,0 +1,82 @@
+.file-search {
+    .search-bar {
+        position: relative;
+
+        input {
+            border: none;
+            margin: auto;
+            width: 100%;
+            
+            // Darker white
+            border-bottom: 1px solid rgba(255, 255, 255, .5);
+            border-radius: 0;
+            padding-left: 35px;
+            height: 3em;
+
+            &:focus {
+                outline: none;
+                border-bottom: 1px solid white;
+            }
+        }
+
+        svg {
+            position: absolute;
+            top: 12px;
+            left: 0;
+        }
+
+        margin-bottom: 1.5rem;
+    }
+
+    .file-list {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .no-result {
+        opacity: .3;
+        text-align: center;
+        width: 100%;
+
+        svg {
+            width: 5rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-top: .5rem;
+        }
+    }
+}
+
+.file-card {
+    width: 10rem;
+    height: 15rem;
+    background-color: var(--darker-bg);
+
+    .placeholder, img {
+        width: 10rem;
+        height: 10rem;
+        object-fit: cover;
+    }
+
+    .placeholder {
+        text-align: center;
+        background-color: var(--placeholder-bg);
+        padding-top: 3.5rem;
+        color: var(--placeholder-text);
+    }
+
+    .details {
+        padding: .8em;
+
+        .date {
+            color: white;
+            opacity: .6;
+            font-size: .8em;
+        }
+    }
+}

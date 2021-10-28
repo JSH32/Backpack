@@ -19,6 +19,30 @@ export interface UserData {
     role: UserRole
 }
 
+export interface FileData {
+    id: string,
+    uploader: string,
+    name: string,
+    url: string,
+    hash: string,
+    uploaded: Date,
+    size: number
+}
+
+export interface SearchResult {
+    files: FileData[],
+    pages: number,
+    page: number
+}
+
+export const searchFile = async (page: number, query?: string): Promise<SearchResult> => {
+    const data = (await axios.get(`${BASE_URL}/file/list/${page}${query !== null ? "?query=" + query : ""}`)).data
+    for (const file of data.files)
+        file.uploaded = new Date(file.uploaded)
+
+    return data
+}
+
 /**
  * Will log out of the service, httponly cookie will be deleted
  */

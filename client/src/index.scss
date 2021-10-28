@@ -2,6 +2,9 @@
 
 :root {
     --lighter-bg: rgba(255, 255, 255, 0.04);
+    --darker-bg: rgba(14, 12, 18, 1);
+    --placeholder-bg: rgba(37, 32, 47, 1);
+    --placeholder-text: rgba(85, 73, 84, 1);
     --accent-color: rgba(187, 134, 252, 1);
     --error-color: rgba(250, 77, 80, 1);
 }
@@ -100,6 +103,22 @@ input {
     color: var(--error-color);
 }
 
+.page {
+    width: 65%;
+    margin: 0 auto;
+    margin-top: 150px;
+
+    .title {
+        font-size: 2.5em;
+    }
+}
+
+@media (max-width: 600px) {
+    .page {
+        width: 85%;
+    }
+}
+
 div.fullpage-info {
     text-align: center;
     width: 500px;
@@ -111,5 +130,38 @@ div.fullpage-info {
 
     p {
         margin-top: 10px;
+    }
+}
+
+hr.divider {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: var(--accent-color);
+    height: 1px;
+    border: none;
+}
+
+.data-label {
+    opacity: 50%;
+    font-weight: bold;
+
+    > * {
+        float: left;
+    }
+
+    hr {
+        width: 15px;
+        margin: 5px;
+        margin-top: 10px;
+    }
+
+    span:first-of-type {
+        margin-left: 5px;
+    }
+
+    &:after {
+        content: '';
+        display: block;
+        clear: both;
     }
 }
