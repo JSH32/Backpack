@@ -22,9 +22,16 @@ module.exports = {
       dest: (req, res) => proxy.web(req, res)
     },
     {
-      "match": "routes", 
-      "src": ".*", 
-      "dest": "/index.html"
+      src: '/file/.*',
+      dest: (req, res) => {
+        req.url = req.url.replace('/file/', '/')
+        return proxy.web(req, res)
+      }
+    },
+    {
+      match: "routes", 
+      src: ".*", 
+      dest: "/index.html"
     }
   ],
   plugins: [
