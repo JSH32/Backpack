@@ -41,12 +41,13 @@ CREATE TABLE verifications
 
 CREATE TABLE files
 (
-    id         sonyflake  PRIMARY KEY  NOT NULL UNIQUE,
-    name       VARCHAR(32)             NOT NULL UNIQUE,
-    uploader   sonyflake               NOT NULL,
-    hash       VARCHAR(32)             NOT NULL,
-    uploaded   timestamptz             NOT NULL,
-    size       BIGINT                  NOT NULL,
+    id             sonyflake  PRIMARY KEY  NOT NULL UNIQUE,
+    name           VARCHAR(32)             NOT NULL UNIQUE,
+    original_name  VARCHAR(256)            NOT NULL,
+    uploader       sonyflake               NOT NULL,
+    hash           VARCHAR(32)             NOT NULL,
+    uploaded       timestamptz             NOT NULL,
+    size           BIGINT                  NOT NULL,
     
     -- Application needs to delete the files from the S3 container. This is precautionary for database
     FOREIGN KEY (uploader) REFERENCES users (id) ON DELETE CASCADE
