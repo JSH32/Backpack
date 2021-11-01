@@ -77,6 +77,7 @@ async fn upload(
                 .create_file(
                     &auth.user.id,
                     &filename,
+                    &file.filename,
                     hash,
                     file.size as i32,
                     chrono::offset::Utc::now(),

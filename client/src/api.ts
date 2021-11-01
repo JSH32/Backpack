@@ -23,6 +23,7 @@ export interface FileData {
     id: string,
     uploader: string,
     name: string,
+    originalName: string,
     url: string,
     hash: string,
     uploaded: Date,

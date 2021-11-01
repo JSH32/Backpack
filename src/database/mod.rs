@@ -279,14 +279,16 @@ impl Database {
         &self,
         user_id: &str,
         name: &str,
+        original_name: &str,
         hash: &str,
         size: i32,
         uploaded: DateTime<Utc>,
     ) -> Result<FileData, Error> {
-        sqlx::query("INSERT INTO files (id, uploader, name, hash, size, uploaded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
+        sqlx::query("INSERT INTO files (id, uploader, name, original_name, hash, size, uploaded) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *")
             .bind(self.get_sonyflake()?)
             .bind(user_id)
             .bind(name)
+            .bind(original_name)
             .bind(hash)
             .bind(size)
             .bind(uploaded)
@@ -341,6 +343,16 @@ impl Database {
 
         Ok((row.0 as u32 + page_size - 1) / page_size)
     }
+
+    pub async fn get_user_usage(&self, user_id: &str) -> Result<i64, Error> {
+        let sum: (i64,) =
+            sqlx::query_as("SELECT CAST(SUM(size) AS BIGINT) FROM files WHERE uploader = $1")
+                .bind(user_id)
+                .fetch_one(&self.pool)
+                .await?;
+
+        Ok(sum.0)
+    }
 }
 
 /// sqlx function to map a user row to UserData
@@ -360,6 +372,7 @@ fn file_map(row: sqlx::postgres::PgRow) -> Result<models::file::FileData, sqlx::
         id: row.get("id"),
         uploader: row.get("uploader"),
         name: row.get("name"),
+        original_name: row.get("original_name"),
         hash: row.get("hash"),
         uploaded: row.get("uploaded"),
         size: row.get("size"),

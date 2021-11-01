@@ -3,10 +3,12 @@ use serde::Serialize;
 use chrono::{DateTime, Utc};
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FileData {
     pub id: String,
     pub uploader: String,
     pub name: String,
+    pub original_name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
