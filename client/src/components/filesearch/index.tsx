@@ -1,50 +1,62 @@
 import * as React from "react"
 import "./style.scss"
 
-import FeatherSVG from "assets/icons/search.svg"
 import FileSvg from "assets/icons/file.svg"
 import { FileCard } from "./file"
 import { SearchResult } from "api"
+import { SearchBar } from "components/searchbar"
+import ReactPaginate from "react-paginate"
 
 export const FileSearch: React.FC<{
     onSearch: (page: number, query?: string) => Promise<SearchResult>
 }> = ({ onSearch }) => {
     const [searchResult, setSearchResult] = React.useState<SearchResult | null>(null)
-    
+    const [queryString, setQueryString] = React.useState<string>(null)
+
     React.useEffect(() => {
         onSearch(1, null)
-            .then((v) => {
-                setSearchResult(v)
-                console.log(v)
-            })
+            .then(setSearchResult)
             .catch(() => setSearchResult(null))
     }, [])
 
-    const formSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
-        const form = event.target as HTMLFormElement
-        const search = (form.elements.namedItem("search") as HTMLInputElement).value
+    const searchCallback = React.useCallback(query => {
+        setQueryString(query)
 
-        onSearch(1, search)
+        // Search callback should go back to page 1
+        onSearch(1, query)
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
-    }
-    
+    }, [])
+
+    const paginationCallback = React.useCallback(event => {
+        console.log(event.selected + 1)
+        onSearch(event.selected + 1, queryString)
+            .then(setSearchResult)
+            .catch(() => setSearchResult(null))
+    }, [queryString])
+
     return <div className="file-search">
-        <div className="search-bar">
-            <span className="icon">
-                <FeatherSVG/>
-            </span>
-            <form onSubmit={formSubmit}>
-                <input name="search"/>
-            </form>
-        </div>
+        <SearchBar onSearch={searchCallback}/>
         { searchResult === null ? <div className="no-result">
             <FileSvg/>
-            <p>No files were found</p>
-        </div> :
+            <div className="message">
+                <h2>No files found</h2>
+                <p>No files matched your query</p>
+            </div>
+        </div> : <>
         <div className="file-list">
-            { searchResult.files.map(file => <FileCard file={file}/>) }
-        </div> }
+            { searchResult.files.map(file => <FileCard key={file.id} file={file}/>) }
+        </div>
+        { searchResult.pages > 1 ? <div className="pagination">
+            <ReactPaginate
+                pageCount={searchResult.pages}
+                forcePage={searchResult.page - 1}
+                pageRangeDisplayed={5}
+                marginPagesDisplayed={1}
+                onPageChange={paginationCallback}
+                breakLabel="..."
+                activeLinkClassName="selected"/>
+        </div> : null }
+        </>}
     </div>
 }

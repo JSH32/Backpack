@@ -15,6 +15,7 @@
     "@snowpack/plugin-typescript": "^1.2.1",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
+    "@types/react-paginate": "^7.1.1",
     "@types/react-router-dom": "^5.1.7",
     "@typescript-eslint/eslint-plugin": "^4.19.0",
     "@typescript-eslint/parser": "^4.19.0",
@@ -38,6 +39,7 @@
     "axios": "^0.21.1",
     "http-proxy": "^1.18.1",
     "mobx": "^6.3.2",
-    "mobx-react-lite": "^3.2.0"
+    "mobx-react-lite": "^3.2.0",
+    "react-paginate": "^7.1.5"
   }
 }

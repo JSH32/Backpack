@@ -1,0 +1,28 @@
+.search-bar {
+    position: relative;
+
+    input {
+        border: none;
+        margin: auto;
+        width: 100%;
+        
+        // Darker white
+        border-bottom: 1px solid rgba(255, 255, 255, .5);
+        border-radius: 0;
+        padding-left: 35px;
+        height: 3em;
+
+        &:focus {
+            outline: none;
+            border-bottom: 1px solid white;
+        }
+    }
+
+    svg {
+        position: absolute;
+        top: 12px;
+        left: 0;
+    }
+
+    margin-bottom: 1.5rem;
+}

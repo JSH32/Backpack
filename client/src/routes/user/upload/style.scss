@@ -1,4 +1,14 @@
-#upload .data-label {
-    margin-bottom: 3rem;
-    margin-top: 1rem;
+#upload {
+    .data-label {
+        margin-bottom: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    button {
+        margin-bottom: 1.5em;
+
+        p {
+            margin-left: 2em;
+        }
+    }
 }

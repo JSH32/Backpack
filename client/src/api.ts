@@ -36,6 +36,21 @@ export interface SearchResult {
     page: number
 }
 
+export const uploadFile = async (file: File): Promise<FileData> => {
+    const formData = new FormData()
+    formData.append("uploadFile", file)
+
+    return (await axios.post<FileData>(`${BASE_URL}/file/upload`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    })).data
+}
+
+export const getUsage = async (): Promise<number> => {
+    return (await axios.get(`${BASE_URL}/file/usage`)).data
+}
+
 export const searchFile = async (page: number, query?: string): Promise<SearchResult> => {
     const data = (await axios.get(`${BASE_URL}/file/list/${page}${query !== null ? "?query=" + query : ""}`)).data
     for (const file of data.files)

@@ -1,4 +1,5 @@
 import { FileData } from "api"
+import { dateToString } from "bpkutil"
 import * as React from "react"
 import "./style.scss"
 
@@ -11,23 +12,10 @@ export const FileCard: React.FC<{ file: FileData }> = ({ file }) => {
     return <div className="file-card">
         { imageExts.includes(ext) ? <>
             <img src={file.url}/>
-        </> : <h1 className="placeholder">{ext}</h1> }
+        </> : <div className="placeholder"><h1>{ext !== "" ? ext : "FILE"}</h1></div> }
         <div className="details">
            <p><b>{file.name}</b></p>
            <p className="date">{dateToString(file.uploaded)}</p>
         </div>
     </div>
-}
-
-// Convert a date to a nicely formatted string
-const dateToString = (date: Date): string => {
-    const ampm = date.getUTCHours() >= 12 ? "PM" : "AM"
-    let hours: number = date.getUTCHours() % 12
-    hours = hours ? hours : 12
-    const minutes = 
-        date.getUTCMinutes().toString().length === 1 
-        ? "0"+date.getUTCMinutes().toString() 
-        : date.getUTCMinutes().toString()
-
-    return `${hours}:${minutes}${ampm} ${date.getDay()}/${date.getUTCMonth()}/${date.getUTCFullYear()}`
 }

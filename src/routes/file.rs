@@ -25,6 +25,7 @@ pub fn get_routes() -> Scope {
         .service(upload)
         .service(list)
         .service(delete_file)
+        .service(usage)
 }
 
 #[post("/upload")]
@@ -109,6 +110,21 @@ async fn upload(
             MultipartError::WriteError => MessageResponse::internal_server_error(),
         }),
     }
+}
+
+#[get("/usage")]
+async fn usage(
+    state: web::Data<State>,
+    auth: Auth<auth_role::User, false, true>,
+) -> Result<impl Responder, MessageResponse> {
+    Ok(HttpResponse::Ok().body(
+        state
+            .database
+            .get_user_usage(&auth.user.id)
+            .await
+            .map_err(|_| MessageResponse::internal_server_error())?
+            .to_string(),
+    ))
 }
 
 #[get("/list/{page_number}")]

@@ -5,7 +5,7 @@
 
 const httpProxy = require('http-proxy')
 const proxy = httpProxy.createServer({
-  target: 'http://localhost:8081'
+  target: 'http://localhost:3001'
 })
 
 module.exports = {
@@ -20,13 +20,6 @@ module.exports = {
     {
       src: '/api/.*',
       dest: (req, res) => proxy.web(req, res)
-    },
-    {
-      src: '/file/.*',
-      dest: (req, res) => {
-        req.url = req.url.replace('/file/', '/')
-        return proxy.web(req, res)
-      }
     },
     {
       match: "routes", 
@@ -54,5 +47,6 @@ module.exports = {
     "routes": "./src/routes",
     "assets": "./src/assets",
     "api": "./src/api.ts",
+    "bpkutil": "./src/bpkutil.ts"
   }
 }

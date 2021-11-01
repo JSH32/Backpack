@@ -1,39 +1,37 @@
 .file-search {
-    .search-bar {
-        position: relative;
-
-        input {
-            border: none;
-            margin: auto;
-            width: 100%;
-            
-            // Darker white
-            border-bottom: 1px solid rgba(255, 255, 255, .5);
-            border-radius: 0;
-            padding-left: 35px;
-            height: 3em;
-
-            &:focus {
-                outline: none;
-                border-bottom: 1px solid white;
-            }
-        }
-
-        svg {
-            position: absolute;
-            top: 12px;
-            left: 0;
-        }
-
-        margin-bottom: 1.5rem;
-    }
-
     .file-list {
         display: flex;
         flex-direction: row;
-        justify-content: center;
+        justify-content: space-evenly;
         gap: 1rem;
         flex-wrap: wrap;
+    }
+
+    .pagination {
+        margin: 0 auto;
+        text-align: center;
+
+        ul {
+            list-style-type: none;
+        }
+
+        li {
+            display: inline-block;
+            margin: 0 0.5em;
+        }
+
+        a {
+            color: white;
+            opacity: 0.5;
+        }
+
+        .selected {
+            opacity: 1;
+            color: var(--accent-color);
+        }
+
+        margin-top: 2em;
+        font-size: 1.2em;
     }
 
     .no-result {
@@ -45,20 +43,32 @@
             width: 5rem;
         }
 
-        p {
-            font-size: 1.2rem;
-            margin-top: .5rem;
+        .message {
+            text-align: center;
+        }
+
+        @media screen and (min-width: 700px) {
+            .message {
+                display: inline-block;
+                position: relative;
+                text-align: left;
+                top: -1em;
+            }
+
+            svg {
+                margin-right: 0.5em;
+            }
         }
     }
 }
 
 .file-card {
-    width: 10rem;
+    width: 11rem;
     height: 15rem;
     background-color: var(--darker-bg);
 
     .placeholder, img {
-        width: 10rem;
+        width: 11rem;
         height: 10rem;
         object-fit: cover;
     }
@@ -68,10 +78,25 @@
         background-color: var(--placeholder-bg);
         padding-top: 3.5rem;
         color: var(--placeholder-text);
+        
+        h1 {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 3em;
+            margin: auto;
+        }
     }
 
     .details {
         padding: .8em;
+
+        p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 10em;
+        }
 
         .date {
             color: white;
