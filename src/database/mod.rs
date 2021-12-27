@@ -248,7 +248,7 @@ impl Database {
     }
 
     pub async fn get_file(&self, id: &str) -> Result<FileData, Error> {
-        sqlx::query("SELECT id, name, uploader, hash, uploaded, size FROM files WHERE id = $1")
+        sqlx::query("SELECT id, uploader, name, original_name, hash, size, uploaded FROM files WHERE id = $1")
             .bind(id)
             .try_map(file_map)
             .fetch_one(&self.pool)
