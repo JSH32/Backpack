@@ -1,7 +1,6 @@
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     ffi::OsStr,
-    hash::{Hash, Hasher},
     path::{Path, PathBuf},
 };
 
@@ -9,6 +8,7 @@ use actix_multipart::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 use crate::{
     models::{file::FilePage, FileData, MessageResponse},
@@ -43,14 +43,13 @@ async fn upload(
 
             // New filename, collision not likely with NanoID
             let filename = nanoid!(10) + "." + extension;
-
-            let mut hasher = DefaultHasher::new();
-            file.bytes.hash(&mut hasher);
-            let hash = &hasher.finish().to_string();
+            
+            let hash = &format!("{:x}", Sha256::digest(&file.bytes));
+            println!("{}", hash);
 
             let file_exists = state
                 .database
-                .exist_file_hash(&auth.user.id, hash)
+                .exist_file_hash(&auth.user.id, &hash)
                 .await
                 .map_err(|_| MessageResponse::internal_server_error())?;
 
@@ -79,7 +78,7 @@ async fn upload(
                     &auth.user.id,
                     &filename,
                     &file.filename,
-                    hash,
+                    &hash,
                     file.size as i32,
                     chrono::offset::Utc::now(),
                 )

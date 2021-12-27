@@ -45,7 +45,7 @@ CREATE TABLE files
     name           VARCHAR(32)             NOT NULL UNIQUE,
     original_name  VARCHAR(256)            NOT NULL,
     uploader       sonyflake               NOT NULL,
-    hash           VARCHAR(32)             NOT NULL,
+    hash           VARCHAR(64)             NOT NULL,
     uploaded       timestamptz             NOT NULL,
     size           BIGINT                  NOT NULL,
     
