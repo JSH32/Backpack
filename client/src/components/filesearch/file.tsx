@@ -1,16 +1,13 @@
 import { FileData } from "api"
-import { dateToString } from "bpkutil"
+import { dateToString, getExtension, isExtImage } from "bpkutil"
 import * as React from "react"
 import "./style.scss"
 
-// All image extensions that can be embedded
-const imageExts = ["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"]
+export const FileCard: React.FC<{ file: FileData, onClick: (event: any) => void }> = ({ file, onClick }) => {
+    const ext = getExtension(file.name)
 
-export const FileCard: React.FC<{ file: FileData }> = ({ file }) => {
-    const ext = file.name.substr(file.name.lastIndexOf(".") + 1).toUpperCase()
-
-    return <div className="file-card">
-        { imageExts.includes(ext) ? <>
+    return <div className="file-card" onClick={onClick}>
+        { isExtImage(ext) ? <>
             <img src={file.url}/>
         </> : <div className="placeholder"><h1>{ext !== "" ? ext : "FILE"}</h1></div> }
         <div className="details">

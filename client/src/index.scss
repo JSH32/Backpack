@@ -1,13 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&display=swap');
 
 :root {
-    --background-color: #19171b;
+    --background-color: rgba(25, 23, 27, 1);
     --lighter-bg: rgba(255, 255, 255, 0.04);
     --darker-bg: rgba(14, 12, 18, 1);
     --placeholder-bg: rgba(37, 32, 47, 1);
     --placeholder-text: rgba(85, 73, 84, 1);
     --accent-color: rgba(187, 134, 252, 1);
     --error-color: rgba(250, 77, 80, 1);
+}
+
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) var(--background-color);
+
+    -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
 }
 
 *, *::before, *::after {
@@ -109,7 +126,7 @@ input {
 }
 
 .page {
-    width: 65%;
+    width: 70%;
     margin: 0 auto;
     margin-top: 10em;
     margin-bottom: 2em;
@@ -169,5 +186,97 @@ hr.divider {
         content: '';
         display: block;
         clear: both;
+    }
+}
+
+@mixin notification-label($color, $label) {
+    background-color: var(--darker-bg);
+    padding: 1em;
+    padding-bottom: 0.7em; // Something is up with alignment, this fixes it
+    margin-top: 1em;
+    margin-bottom: 1em;
+    max-width: 500px;
+
+    > * {
+        display: inline-block;
+    }
+
+    svg {
+        width: 1.7em;
+        color: $color;
+    }
+
+    p {
+        position: relative;
+        top: -0.45em;
+        font-weight: bold;
+        opacity: 0.6;
+    }
+
+    p::before {
+        margin-left: 0.5em;
+        color: $color;
+        content: "#{$label}: ";
+    }
+}
+
+.notification-info {
+    @include notification-label($color: #13AAFF, $label: "INFO");
+}
+
+.notification-warning {
+    @include notification-label($color: #ECFF13, $label: "WARNING");
+}
+
+.notification-error {
+    @include notification-label($color: #FF4D57, $label: "ERROR");
+}
+
+.floating-button {
+    position: fixed;
+	width: 60px;
+	height: 60px;
+	bottom: 3em;
+	right: 3em;
+	background-color: var(--accent-color);
+	color: #FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 5px var(--darker-bg);
+    cursor: pointer;
+
+    svg {
+        width: 1.5em;
+        margin-top: 1em;
+    }
+}
+
+.context-menu {
+    font-size: 14px;
+    text-transform: uppercase;
+    background-color: var(--darker-bg);
+    padding: 5px 0 5px 0;
+    width: 150px;
+    height: auto;
+    margin: 0;
+    position: absolute;
+    list-style: none;
+    z-index: 1;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, .5);
+
+    .context-item {
+        padding: 0.5em 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+
+        svg {
+            margin-right: 8px;
+            width: 20px;
+        }
+    }
+
+    .context-item:last-child {
+        color: var(--error-color);
     }
 }

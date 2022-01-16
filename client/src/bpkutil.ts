@@ -30,5 +30,11 @@ export const dateToString = (date: Date): string => {
         ? "0"+date.getUTCMinutes().toString() 
         : date.getUTCMinutes().toString()
 
-    return `${hours}:${minutes}${ampm} ${date.getDay()}/${date.getUTCMonth()}/${date.getUTCFullYear()}`
+    return `${hours}:${minutes}${ampm} ${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`
 }
+
+export const getExtension = (fileName: string): string =>
+    fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase()
+
+export const isExtImage = (ext: string): boolean =>
+    ["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"].includes(ext)

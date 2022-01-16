@@ -1,15 +1,17 @@
 import * as React from "react"
 import DatabaseSVG from "assets/icons/database.svg"
 import UploadSVG from "assets/icons/upload.svg"
+import InfoSVG from "assets/icons/info.svg"
 import { FileSearch } from "components/filesearch"
 import "./style.scss"
 
-import { getUsage, searchFile, uploadFile } from "api"
+import { getUsage, searchFile, uploadFile, deleteFile } from "api"
 import { convertBytes } from "bpkutil"
 
 export const UploadFiles: React.FC = () => {
     const [usage, setUsage] = React.useState<string>()
     const [searchReload, setSearchReload] = React.useState(0)
+    const [currentUploading, setCurrentUploading] = React.useState(0)
     
     React.useEffect(() => {
         getUsage()
@@ -21,11 +23,19 @@ export const UploadFiles: React.FC = () => {
         shadowUploader.current?.click()
     }, [shadowUploader])
 
-    const uploadCallback = React.useCallback(async (event: any) => {
-        for (const file of event.target.files)
-            await uploadFile(file)
-            
-        setSearchReload(searchReload + 1)
+    const uploadCallback = React.useCallback((event: any) => {
+        const uploadPromises = []
+
+        for (const file of event.target.files) {
+            setCurrentUploading(count => count + 1)
+            uploadPromises.push(uploadFile(file)
+                .finally(() => {
+                    setCurrentUploading(count => count - 1)
+                }))
+        }
+
+        Promise.allSettled(uploadPromises)
+            .then(() => setSearchReload(searchReload + 1))
     }, [searchReload])
 
     return <div id="upload" className="page">
@@ -37,11 +47,14 @@ export const UploadFiles: React.FC = () => {
             <hr/>
             <span>{usage}</span>
         </div>
+        {currentUploading > 0 ? <div className="notification-info">
+            <InfoSVG/>
+            <p>Currently uploading {currentUploading} files</p>
+        </div> : <></>}
         <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>
-        <button onClick={uploadButtonCallback}>
+        <FileSearch key={searchReload} onSearch={searchFile} onDelete={deleteFile}/>
+        <a className="floating-button" onClick={uploadButtonCallback}>
             <UploadSVG/>
-            <p>Select a file to upload</p>
-        </button>
-        <FileSearch key={searchReload} onSearch={searchFile}/>
+        </a>
     </div>
 }

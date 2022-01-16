@@ -59,6 +59,10 @@ export const searchFile = async (page: number, query?: string): Promise<SearchRe
     return data
 }
 
+export const deleteFile = async (fileId: number): Promise<void> => {
+    return await axios.delete(`${BASE_URL}/file/delete/${fileId}`)
+}
+
 /**
  * Will log out of the service, httponly cookie will be deleted
  */

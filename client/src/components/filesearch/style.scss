@@ -32,6 +32,7 @@
 
         margin-top: 2em;
         font-size: 1.2em;
+        cursor: pointer;
     }
 
     .no-result {
@@ -60,15 +61,62 @@
             }
         }
     }
+
+    .file-modal {
+        word-break: break-all;
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 1em;
+        }
+
+        .modal-image {
+            margin: 0 auto;
+            display: table;
+
+            img {
+                max-width: 25em;
+                max-height: 25em;
+                object-fit: cover;
+            }
+        }
+
+        table {
+            border-collapse: collapse;
+            margin: 1em 0;
+            font-size: 1em;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            table-layout: auto;
+
+            th, td {
+                padding: 12px 15px;
+            }
+
+            tr {
+                background-color: var(--lighter-bg);
+
+                td:first-child {
+                    text-transform: uppercase;
+                    font-weight: bold;
+                    opacity: 0.5;
+                }
+
+                &:nth-of-type(even) {
+                    background-color: var(--background-color);
+                }
+            }
+        }
+    }
 }
 
 .file-card {
-    width: 11rem;
+    width: 10rem;
     height: 15rem;
     background-color: var(--darker-bg);
 
     .placeholder, img {
-        width: 11rem;
+        width: 10rem;
         height: 10rem;
         object-fit: cover;
     }
