@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::HashMap,
     ffi::OsStr,
     path::{Path, PathBuf},
 };

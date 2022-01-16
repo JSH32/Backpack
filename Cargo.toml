@@ -32,3 +32,5 @@ lettre = { version = "0.10.0-rc.3", features = [ "tokio1-native-tls" ] }
 thiserror = "1.0"
 lazy_static = "1.4.0"
 nanoid = "0.4.0"
+sha2 = "0.10"
+bytes = "1.1.0"
