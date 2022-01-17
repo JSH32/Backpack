@@ -5,7 +5,7 @@
 
 const httpProxy = require('http-proxy')
 const proxy = httpProxy.createServer({
-  target: 'http://localhost:3001'
+  target: 'http://0.0.0.0:3001'
 })
 
 module.exports = {
@@ -14,6 +14,7 @@ module.exports = {
     src: { url: "/dist" },
   },
   devOptions: {
+    hostname: "0.0.0.0",
     port: 3000
   },
   routes: [
