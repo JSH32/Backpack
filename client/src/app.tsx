@@ -69,7 +69,7 @@ export const App: React.FC = () => {
                 <AuthenticatedRoute path="/user/uploads" component={UploadFiles}/>
                 <AuthenticatedRoute path="/user/tokens" component={UserTokens}/>
             </Switch>
-            <Footer />
+            <Footer/>
         </Router>
     </>
 }

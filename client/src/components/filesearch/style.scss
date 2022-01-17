@@ -75,7 +75,7 @@
             display: table;
 
             img {
-                max-width: 25em;
+                max-width: 100%;
                 max-height: 25em;
                 object-fit: cover;
             }
@@ -100,6 +100,7 @@
                     text-transform: uppercase;
                     font-weight: bold;
                     opacity: 0.5;
+                    width: 10em;
                 }
 
                 &:nth-of-type(even) {
