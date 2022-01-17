@@ -20,7 +20,7 @@ export const FileSearch: React.FC<{
 
     const [contextAnchorPoint, setContextAnchorPoint] = React.useState({ x: 0, y: 0 })
     const [showContext, setShowContext] = React.useState(false)
-    const [contextFileData, setContextFileData] = React.useState<FileData>(null)
+    const [currentModalFileData, setCurrentModalFileData] = React.useState<FileData>(null)
     const [fileModalOpen, setFileModalOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -60,7 +60,7 @@ export const FileSearch: React.FC<{
         event.preventDefault()
         // This prevents default event from being called since default event hides the context menu
         event.stopPropagation()
-        setContextFileData(fileData)
+        setCurrentModalFileData(fileData)
         setContextAnchorPoint({ x: event.pageX, y: event.pageY })
         setShowContext(true)
     }, [setContextAnchorPoint, setShowContext])
@@ -73,49 +73,39 @@ export const FileSearch: React.FC<{
             .catch(() => setSearchResult(null))
     }, [])
 
-    const onHashClick = React.useCallback((event) => {
-        const originalText = event.target.innerHTML
-
-        navigator.clipboard.writeText(contextFileData.hash)
-        event.target.innerHTML = "Text copied to clipboard"
-
-        // Change text back to original
-        setTimeout(() => event.target.innerHTML = originalText, 1000)
-    }, [contextFileData])
-
     return <div className="file-search">
         { fileModalOpen ? <div className="file-modal"><Modal onClose={() => setFileModalOpen(false)}>
-            <h1>{contextFileData.name}</h1>
-            { isExtImage(getExtension(contextFileData.name)) ? 
-            <div className="modal-image"><img src={contextFileData.url}/></div> : <></> }
+            <h1>{currentModalFileData.name}</h1>
+            { isExtImage(getExtension(currentModalFileData.name)) ? 
+            <div className="modal-image"><img src={currentModalFileData.url}/></div> : <></> }
             <table>
                 <tr>
                     <td>ID</td>
-                    <td>{contextFileData.id}</td>
+                    <td>{currentModalFileData.id}</td>
                 </tr>
                 <tr>
                     <td>Name</td>
-                    <td>{contextFileData.name}</td>
+                    <td>{currentModalFileData.name}</td>
                 </tr>
                 <tr>
                     <td>Original Name</td>
-                    <td>{contextFileData.originalName}</td>
+                    <td>{currentModalFileData.originalName}</td>
                 </tr>
                 <tr>
                     <td>Size</td>
-                    <td>{convertBytes(contextFileData.size)}</td>
+                    <td>{convertBytes(currentModalFileData.size)}</td>
                 </tr>
                 <tr>
                     <td>Date Uploaded</td>
-                    <td>{dateToString(contextFileData.uploaded)}</td>
+                    <td>{dateToString(currentModalFileData.uploaded)}</td>
                 </tr>
                 <tr>
                     <td>URL</td>
-                    <td><a href={contextFileData.url} target="_blank">{contextFileData.url}</a></td>
+                    <td><a href={currentModalFileData.url} target="_blank">{currentModalFileData.url}</a></td>
                 </tr>
                 <tr>
                     <td>Hash</td>
-                    <td><a onClick={onHashClick}>Click to copy hash</a></td>
+                    <td>{currentModalFileData.hash}</td>
                 </tr>
             </table>
         </Modal></div> : <></>}
@@ -135,11 +125,11 @@ export const FileSearch: React.FC<{
                 <FileSvg/>
                 Details
             </li>
-            <li className="context-item" onClick={() => window.open(contextFileData.url)}>
+            <li className="context-item" onClick={() => window.open(currentModalFileData.url)}>
                 <OpenSvg/>
                 Open in tab
             </li>
-            <li className="context-item" onClick={() => deleteFile(contextFileData.id)}>
+            <li className="context-item" onClick={() => deleteFile(currentModalFileData.id)}>
                 <TrashSvg/>
                 Delete
             </li>
