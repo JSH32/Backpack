@@ -14,6 +14,11 @@ pub struct ApplicationData {
     pub token: Option<String>,
 }
 
+#[derive(Serialize)]
+pub struct TokenResponse {
+    pub token: String,
+}
+
 #[derive(Deserialize)]
 pub struct ApplicationCreateForm {
     pub name: String,

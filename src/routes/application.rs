@@ -12,6 +12,31 @@ pub fn get_routes() -> Scope {
         .service(info)
         .service(create)
         .service(delete)
+        .service(token)
+}
+
+#[get("token/{application_id}")]
+async fn token(
+    state: web::Data<State>,
+    application_id: web::Path<String>,
+    auth: Auth<auth_role::User, false, false>,
+) -> impl Responder {
+    match state.database.get_application_by_id(&application_id).await {
+        Ok(token) => {
+            // Add the token to a JSON field on creation, will only be showed once
+            match create_jwt_string(
+                &auth.user.id,
+                Some(token.id.clone()),
+                "localhost",
+                None,
+                &state.jwt_key,
+            ) {
+                Ok(jwt_string) => HttpResponse::Ok().json(TokenResponse { token: jwt_string }),
+                Err(_) => return MessageResponse::internal_server_error().http_response()
+            }
+        },
+        Err(_) => MessageResponse::internal_server_error().http_response()
+    }
 }
 
 #[get("list")]
@@ -101,19 +126,19 @@ async fn create(
         .await
     {
         Err(_) => return MessageResponse::internal_server_error().http_response(),
-        Ok(mut token) => {
+        Ok(mut token_data) => {
             // Add the token to a JSON field on creation, will only be showed once
             match create_jwt_string(
                 &auth.user.id,
-                Some(token.id.clone()),
+                Some(token_data.id.clone()),
                 "localhost",
                 None,
                 &state.jwt_key,
             ) {
                 Err(_) => return MessageResponse::internal_server_error().http_response(),
                 Ok(jwt_string) => {
-                    token.token = Some(jwt_string);
-                    HttpResponse::Ok().json(token)
+                    token_data.token = Some(jwt_string);
+                    HttpResponse::Ok().json(token_data)
                 }
             }
         }
