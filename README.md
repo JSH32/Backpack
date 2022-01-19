@@ -20,8 +20,6 @@ This project is in heavy development. It is not safe to use yet and is missing c
 
 ### Roadmap
 I know we aren't even at the version one launch yet, but I have some features in mind for version two release. I'm going to list them below, so we have a log. So far, the goal of version one is basic pomf functionality.
-
-Version 2 roadmap
  - [ ] Multiple language support
  - [ ] Paste support (hastebin, pastebin)
  - [ ] Plugin API (Basic scripting to add functionality/callbacks)
