@@ -27,15 +27,18 @@ async fn token(
             match create_jwt_string(
                 &auth.user.id,
                 Some(token.id.clone()),
-                "localhost",
+                &state
+                    .base_url
+                    .host()
+                    .expect("BASE_URL must have host included"),
                 None,
                 &state.jwt_key,
             ) {
                 Ok(jwt_string) => HttpResponse::Ok().json(TokenResponse { token: jwt_string }),
-                Err(_) => return MessageResponse::internal_server_error().http_response()
+                Err(_) => return MessageResponse::internal_server_error().http_response(),
             }
-        },
-        Err(_) => MessageResponse::internal_server_error().http_response()
+        }
+        Err(_) => MessageResponse::internal_server_error().http_response(),
     }
 }
 
@@ -131,7 +134,10 @@ async fn create(
             match create_jwt_string(
                 &auth.user.id,
                 Some(token_data.id.clone()),
-                "localhost",
+                &state
+                    .base_url
+                    .host()
+                    .expect("BASE_URL must have host included"),
                 None,
                 &state.jwt_key,
             ) {

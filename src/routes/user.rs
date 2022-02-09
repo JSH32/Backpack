@@ -122,7 +122,7 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
                     .is_err()
                 {
                     let email = verification_email(
-                        &state.base_url,
+                        &state.base_url.to_string(),
                         &smtp.1,
                         &user_data.email,
                         &random_code,
@@ -181,7 +181,12 @@ async fn change_email(
                 .await
                 .is_err()
             {
-                let email = verification_email(&state.base_url, &smtp.1, &form.email, &random_code);
+                let email = verification_email(
+                    &state.base_url.to_string(),
+                    &smtp.1,
+                    &form.email,
+                    &random_code,
+                );
                 let mailer = smtp.clone().0;
                 tokio::spawn(async move {
                     let _ = mailer.send(email).await;

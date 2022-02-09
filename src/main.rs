@@ -1,3 +1,4 @@
+use actix_http::Uri;
 use config::StorageConfig;
 use models::MessageResponse;
 use tokio::fs;
@@ -110,7 +111,7 @@ async fn main() -> std::io::Result<()> {
         storage: storage,
         jwt_key: config.jwt_key,
         smtp_client: smtp_client,
-        base_url: config.base_url,
+        base_url: config.base_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
         with_client: config.serve_frontend,
         // Convert MB to bytes

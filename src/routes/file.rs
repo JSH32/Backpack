@@ -43,7 +43,7 @@ async fn upload(
 
             // New filename, collision not likely with NanoID
             let filename = nanoid!(10) + "." + extension;
-            
+
             let hash = &format!("{:x}", Sha256::digest(&file.bytes));
             println!("{}", hash);
 

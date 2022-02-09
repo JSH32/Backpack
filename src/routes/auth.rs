@@ -46,7 +46,10 @@ async fn basic(
     let jwt = match create_jwt_string(
         &user_data.id,
         None,
-        &state.base_url,
+        &state
+            .base_url
+            .host()
+            .expect("BASE_URL must have host included"),
         Some(expire_time),
         &state.jwt_key,
     ) {
