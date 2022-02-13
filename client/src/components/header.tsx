@@ -7,10 +7,10 @@ import store from "../store"
 import SunIcon from "../assets/icons/sun.svg"
 import MoonIcon from "../assets/icons/moon.svg"
 
-import UploadIcon from "../assets/icons/upload.svg"
-import SettingsIcon from "../assets/icons/settings.svg"
-import LogOutIcon from "../assets/icons/log-out.svg"
-import KeyIcon from "../assets/icons/key.svg"
+import UploadIcon from "assets/icons/upload.svg"
+import SettingsIcon from "assets/icons/settings.svg"
+import LogOutIcon from "assets/icons/log-out.svg"
+import KeyIcon from "assets/icons/key.svg"
 import { logout } from "api"
 
 import { 

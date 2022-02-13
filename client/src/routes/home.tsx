@@ -1,5 +1,5 @@
 import * as React from "react"
-import UploadIcon from "../../assets/icons/upload.svg"
+import UploadIcon from "assets/icons/upload.svg"
 import { Heading, Icon, Text, VStack } from "@chakra-ui/react"
 import { Page } from "components/page"
 
