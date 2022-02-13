@@ -35,13 +35,11 @@ pub struct UserDeleteForm {
 }
 
 #[derive(Deserialize)]
-pub struct UserEmailForm {
-    pub email: String,
-}
-
-#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PasswordChangeForm {
+pub struct UpdateUserSettings {
+    pub email: Option<String>,
+    pub new_password: Option<String>,
+
+    // Always require old password to change options
     pub current_password: String,
-    pub new_password: String,
 }

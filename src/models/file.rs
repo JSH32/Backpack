@@ -24,3 +24,8 @@ pub struct FilePage {
     pub pages: u32,
     pub files: Vec<FileData>,
 }
+
+#[derive(Serialize)]
+pub struct FileStats {
+    pub usage: i64,
+}

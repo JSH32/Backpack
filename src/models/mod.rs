@@ -8,15 +8,9 @@ use std::fmt::{Debug, Display};
 
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 pub use self::{application::*, auth::*, file::*, user::*};
-
-/// Query for any data with an ID
-#[derive(Deserialize)]
-pub struct IDQuery {
-    pub id: String,
-}
 
 /// Standard message response
 #[derive(Serialize, Debug)]

@@ -40,7 +40,7 @@ export const uploadFile = async (file: File): Promise<FileData> => {
     const formData = new FormData()
     formData.append("uploadFile", file)
 
-    return (await axios.post<FileData>(`${BASE_URL}/file/upload`, formData, {
+    return (await axios.post<FileData>(`${BASE_URL}/file`, formData, {
         headers: {
             "Content-Type": "multipart/form-data"
         }
@@ -48,7 +48,7 @@ export const uploadFile = async (file: File): Promise<FileData> => {
 }
 
 export const getUsage = async (): Promise<number> => {
-    return (await axios.get(`${BASE_URL}/file/usage`)).data
+    return (await axios.get(`${BASE_URL}/file/stats`)).data.usage
 }
 
 export const searchFile = async (page: number, query?: string): Promise<SearchResult> => {
@@ -59,8 +59,12 @@ export const searchFile = async (page: number, query?: string): Promise<SearchRe
     return data
 }
 
-export const deleteFile = async (fileId: number): Promise<void> => {
-    return await axios.delete(`${BASE_URL}/file/delete/${fileId}`)
+export const getFile = async (fileId: string): Promise<FileData> => {
+    return (await axios.get<FileData>(`${BASE_URL}/file/${fileId}`)).data
+}
+
+export const deleteFile = async (fileId: string): Promise<void> => {
+    return await axios.delete(`${BASE_URL}/file/${fileId}`)
 }
 
 /**
@@ -90,7 +94,7 @@ export const passwordLogin = async (auth: string, password: string): Promise<Use
  * @returns user data
  */
 export const getUserData = async (): Promise<UserData> => {
-    return (await axios.get<UserData>(`${BASE_URL}/user/info`)).data
+    return (await axios.get<UserData>(`${BASE_URL}/user`)).data
 }
 
 /**
@@ -102,7 +106,7 @@ export const getUserData = async (): Promise<UserData> => {
  * @returns user data
  */
 export const userCreate = async (username: string, email: string, password: string): Promise<UserData> => {
-    return (await axios.post<UserData>(`${BASE_URL}/user/create`, {
+    return (await axios.post<UserData>(`${BASE_URL}/user`, {
         username: username,
         email: email,
         password: password
@@ -110,11 +114,9 @@ export const userCreate = async (username: string, email: string, password: stri
 }
 
 export const verify = async (code: string): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${BASE_URL}/user/verify/${code}`)
+    return await axios.patch(`${BASE_URL}/user/verify/${code}`)
 }
 
-export const resendCode = async (email: string): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${BASE_URL}/user/verify/resend`, {
-        email: email
-    })
+export const resendCode = async (): Promise<AxiosResponse<any>> => {
+    return await axios.patch(`${BASE_URL}/user/verify/resend`)
 }

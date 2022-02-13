@@ -345,11 +345,12 @@ impl Database {
     }
 
     pub async fn get_user_usage(&self, user_id: &str) -> Result<i64, Error> {
-        let sum: (i64,) =
-            sqlx::query_as("SELECT CAST(SUM(size) AS BIGINT) FROM files WHERE uploader = $1")
-                .bind(user_id)
-                .fetch_one(&self.pool)
-                .await?;
+        let sum: (i64,) = sqlx::query_as(
+            "SELECT COALESCE(CAST(SUM(size) AS BIGINT), 0) FROM files WHERE uploader = $1",
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(sum.0)
     }

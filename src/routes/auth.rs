@@ -13,11 +13,11 @@ use crate::{
 use actix_web::{cookie::Cookie, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 
 pub fn get_routes() -> Scope {
-    web::scope("/auth/").service(basic).service(logout)
+    web::scope("/auth").service(basic).service(logout)
 }
 
 /// Login with email and password
-#[post("basic")]
+#[post("/basic")]
 async fn basic(
     state: web::Data<State>,
     form: web::Json<BasicAuthForm>,
@@ -71,7 +71,7 @@ async fn basic(
 }
 
 /// Remove httponly cookie
-#[post("logout")]
+#[post("/logout")]
 async fn logout(_: Auth<auth_role::User, true, false>) -> impl Responder {
     HttpResponse::Ok()
         .cookie(

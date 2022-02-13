@@ -60,7 +60,7 @@ impl Config {
             database_url: get_env("DATABASE_URL"),
             jwt_key: get_env("JWT_KEY"),
             base_url: get_env("BASEURL"),
-            file_size_limit: get_env("FILE_LIMIT"),
+            file_size_limit: get_env("FILE_SIZE_LIMIT"),
             worker_id: get_env::<u16>("WORKER_ID"),
             serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {

@@ -1,13 +1,13 @@
-use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 
 use crate::{
-    models::{application::*, IDQuery, MessageResponse},
+    models::{application::*, MessageResponse},
     state::State,
     util::auth::{auth_role, create_jwt_string, Auth},
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/application/")
+    web::scope("/applications")
         .service(list)
         .service(info)
         .service(create)
@@ -15,7 +15,7 @@ pub fn get_routes() -> Scope {
         .service(token)
 }
 
-#[get("token/{application_id}")]
+#[get("/{application_id}/token")]
 async fn token(
     state: web::Data<State>,
     application_id: web::Path<String>,
@@ -42,7 +42,7 @@ async fn token(
     }
 }
 
-#[get("list")]
+#[get("")]
 async fn list(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
@@ -53,13 +53,13 @@ async fn list(
     }
 }
 
-#[get("info")]
+#[get("/{application_id}")]
 async fn info(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
-    info: web::Query<IDQuery>,
+    application_id: web::Path<String>,
 ) -> impl Responder {
-    match state.database.get_application_by_id(&info.id).await {
+    match state.database.get_application_by_id(&application_id).await {
         Ok(data) => {
             if data.user_id != auth.user.id {
                 return MessageResponse::unauthorized_error().http_response();
@@ -71,7 +71,7 @@ async fn info(
     }
 }
 
-#[post("create")]
+#[post("")]
 async fn create(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
@@ -151,13 +151,13 @@ async fn create(
     }
 }
 
-#[get("delete")]
+#[delete("/{application_id}")]
 async fn delete(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
-    data: web::Json<IDQuery>,
+    application_id: web::Path<String>,
 ) -> impl Responder {
-    let application_id = match state.database.get_application_by_id(&data.id).await {
+    let application_id = match state.database.get_application_by_id(&application_id).await {
         Ok(application_data) => {
             if application_data.user_id != auth.user.id {
                 return MessageResponse::unauthorized_error();

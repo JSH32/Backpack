@@ -11,7 +11,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    models::{file::FilePage, FileData, MessageResponse},
+    models::{file::FilePage, FileData, FileStats, MessageResponse},
     state::State,
     util::{
         auth::{auth_role, Auth},
@@ -20,15 +20,15 @@ use crate::{
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/file/")
+    web::scope("/file")
+        .service(stats)
+        .service(list)
         .service(info)
         .service(upload)
-        .service(list)
         .service(delete_file)
-        .service(usage)
 }
 
-#[post("/upload")]
+#[post("")]
 async fn upload(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
@@ -45,7 +45,6 @@ async fn upload(
             let filename = nanoid!(10) + "." + extension;
 
             let hash = &format!("{:x}", Sha256::digest(&file.bytes));
-            println!("{}", hash);
 
             let file_exists = state
                 .database
@@ -62,7 +61,7 @@ async fn upload(
                 let mut object = serde_json::Map::new();
                 object.insert(
                     "url".to_string(),
-                    json!(&file_url.as_path().display().to_string()),
+                    json!(&file_url.as_path().display().to_string().replace("\\", "/")),
                 );
 
                 return Err(MessageResponse::new_with_data(
@@ -93,7 +92,7 @@ async fn upload(
             }
 
             file_url.push(&filename);
-            file_data.url = Some(file_url.as_path().display().to_string());
+            file_data.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
 
             Ok(HttpResponse::Ok().json(file_data))
         }
@@ -111,19 +110,18 @@ async fn upload(
     }
 }
 
-#[get("/usage")]
-async fn usage(
+#[get("/stats")]
+async fn stats(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
 ) -> Result<impl Responder, MessageResponse> {
-    Ok(HttpResponse::Ok().body(
-        state
+    Ok(HttpResponse::Ok().json(FileStats {
+        usage: state
             .database
             .get_user_usage(&auth.user.id)
             .await
-            .map_err(|_| MessageResponse::internal_server_error())?
-            .to_string(),
-    ))
+            .map_err(|_| MessageResponse::internal_server_error())?,
+    }))
 }
 
 #[get("/list/{page_number}")]
@@ -165,7 +163,8 @@ async fn list(
                 .map(|mut file| {
                     let mut file_url = storage_url.clone();
                     file_url.push(&file.name);
-                    file.url = Some(file_url.as_path().display().to_string());
+                    file.url = Some(file_url.as_path().display()
+                        .to_string().replace("\\", "/"));
                     file
                 })
                 .collect();
@@ -187,7 +186,7 @@ async fn list(
     }
 }
 
-#[get("/info/{file_id}")]
+#[get("/{file_id}")]
 async fn info(
     state: web::Data<State>,
     file_id: web::Path<String>,
@@ -204,7 +203,7 @@ async fn info(
             } else {
                 let mut file_url = PathBuf::from(&state.storage_url);
                 file_url.push(&v.name);
-                v.url = Some(file_url.as_path().display().to_string());
+                v.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
                 HttpResponse::Ok().json(v)
             }
         }
@@ -214,7 +213,7 @@ async fn info(
     }
 }
 
-#[delete("/delete/{file_id}")]
+#[delete("/{file_id}")]
 async fn delete_file(
     state: web::Data<State>,
     file_id: web::Path<String>,
