@@ -8,7 +8,7 @@ import {
   useHistory
 } from "react-router-dom"
 
-import { Home } from "routes/user/home"
+import { Home } from "routes/home"
 import { UserCreate } from "routes/user/create"
 import { UserLogin } from "routes/user/login"
 import { UserVerify } from "routes/user/verify"
