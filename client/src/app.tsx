@@ -8,12 +8,9 @@ import {
   useHistory
 } from "react-router-dom"
 
-import { Header } from "components/header"
-
-import { Home } from "routes/home"
+import { Home } from "routes/user/home"
 import { UserCreate } from "routes/user/create"
 import { UserLogin } from "routes/user/login"
-import { Footer } from "components/footer"
 import { UserVerify } from "routes/user/verify"
 import { UploadFiles } from "routes/user/upload"
 import { VerificationMessage } from "components/verificationmessage"
@@ -21,6 +18,8 @@ import { getUserData } from "api"
 import store from "./store"
 import { toJS } from "mobx"
 import { UserTokens } from "routes/user/tokens"
+import { Box, useColorModeValue } from "@chakra-ui/react"
+import { FileInfo } from "routes/user/upload/fileInfo"
 
 interface AuthenticatedRouteProps {
     path: string,
@@ -60,16 +59,17 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
 export const App: React.FC = () => {
     return <>
         <Router>
-            <Header/>
-            <Switch>
-                <Route path="/" component={Home} exact/>
-                <Route path="/user/create" component={UserCreate}/>
-                <Route path="/user/login" component={UserLogin}/>
-                {import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED ? <Route path="/user/verify" component={UserVerify}/> : null}
-                <AuthenticatedRoute path="/user/uploads" component={UploadFiles}/>
-                <AuthenticatedRoute path="/user/tokens" component={UserTokens}/>
-            </Switch>
-            <Footer/>
+            <Box bg={useColorModeValue("gray.50", "gray.800")}>
+                <Switch>
+                    <Route path="/" component={Home} exact/>
+                    <Route path="/user/create" component={UserCreate}/>
+                    <Route path="/user/login" component={UserLogin}/>
+                    {import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED ? <Route path="/user/verify" component={UserVerify}/> : null}
+                    <AuthenticatedRoute path="/user/uploads/:id" component={FileInfo}/>
+                    <AuthenticatedRoute path="/user/uploads" component={UploadFiles}/>
+                    <AuthenticatedRoute path="/user/tokens" component={UserTokens}/>
+                </Switch>
+            </Box>
         </Router>
     </>
 }

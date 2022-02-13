@@ -1,16 +1,12 @@
-form#sign-in {
-    h2 {
-        margin: 0.5em 0;
-    }
-
+#login {
     .separator {
         display: grid;
         grid-template-columns: 1fr 2em 1fr;
-        color: white;
         align-items: center;
         opacity: 30%;
         text-transform: uppercase;
         margin: 0.5em 0;
+        text-align: center;
 
         span {
             font-size: 0.9em;
@@ -18,9 +14,7 @@ form#sign-in {
 
         hr {
             width: 100%;
-            border: none;
             height: 1px;
-            background-color: white;
         }
     }
 }

@@ -1,153 +1,88 @@
 import * as React from "react"
-import "./style.scss"
 
-import FileSvg from "assets/icons/file.svg"
-import TrashSvg from "assets/icons/trash.svg"
-import OpenSvg from "assets/icons/open.svg"
 import { FileCard } from "./file"
-import { FileData, SearchResult } from "api"
-import { SearchBar } from "components/searchbar"
-import ReactPaginate from "react-paginate"
-import { Modal } from "components/modal"
-import { convertBytes, dateToString, getExtension, isExtImage } from "bpkutil"
+import { SearchResult } from "api"
+import { SearchIcon } from "@chakra-ui/icons"
+import { useForm } from "react-hook-form"
+import { Pagination } from "components/pagination"
+
+import { 
+    Box, 
+    Flex, 
+    Heading, 
+    Icon, 
+    Input, 
+    InputGroup, 
+    InputLeftElement, 
+    Text 
+} from "@chakra-ui/react"
 
 export const FileSearch: React.FC<{
     onSearch: (page: number, query?: string) => Promise<SearchResult>
-    onDelete: (fileId: number) => Promise<void>
-}> = ({ onSearch, onDelete }) => {
+    onDelete: (fileId: string) => Promise<void>
+    onFileDetails: (fileId: string) => void
+}> = ({ onSearch, onDelete, onFileDetails }) => {
     const [searchResult, setSearchResult] = React.useState<SearchResult | null>(null)
     const [queryString, setQueryString] = React.useState<string>(null)
-
-    const [contextAnchorPoint, setContextAnchorPoint] = React.useState({ x: 0, y: 0 })
-    const [showContext, setShowContext] = React.useState(false)
-    const [currentModalFileData, setCurrentModalFileData] = React.useState<FileData>(null)
-    const [fileModalOpen, setFileModalOpen] = React.useState(false)
+    const [currentPage, setCurrentPage] = React.useState(1)
 
     React.useEffect(() => {
         onSearch(1, null)
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
-
-        // Listen on clicks to remove context menu
-        const clickListener = () => setShowContext(false)
-        document.addEventListener("click", clickListener)
-
-        const visibilityListener = () => setShowContext(false)
-        document.addEventListener("visibilitychange", visibilityListener)
-
-        return () => {
-            document.removeEventListener("click", clickListener)
-            document.removeEventListener("visibilitychange", visibilityListener)
-        }
     }, [])
 
-    const searchCallback = React.useCallback(query => {
-        setQueryString(query)
+    const searchCallback = React.useCallback(form => {
+        setQueryString(form.query)
 
         // Search callback should go back to page 1
-        onSearch(1, query)
+        onSearch(1, form.query)
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
     }, [])
 
-    const paginationCallback = React.useCallback(event => {
-        onSearch(event.selected + 1, queryString)
+    React.useEffect(() => {
+        onSearch(currentPage, queryString)
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
-    }, [queryString])
-
-    const handleContextMenu = React.useCallback((event, fileData) => {
-        event.preventDefault()
-        // This prevents default event from being called since default event hides the context menu
-        event.stopPropagation()
-        setCurrentModalFileData(fileData)
-        setContextAnchorPoint({ x: event.pageX, y: event.pageY })
-        setShowContext(true)
-    }, [setContextAnchorPoint, setShowContext])
+    }, [currentPage])
 
     const deleteFile = React.useCallback(fileId => {
-        console.log(fileId)
         onDelete(fileId)
             .then(() => onSearch(1, queryString))
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
     }, [])
 
-    return <div className="file-search">
-        { fileModalOpen ? <div className="file-modal"><Modal onClose={() => setFileModalOpen(false)}>
-            <h1>{currentModalFileData.name}</h1>
-            { isExtImage(getExtension(currentModalFileData.name)) ? 
-            <div className="modal-image"><img src={currentModalFileData.url}/></div> : <></> }
-            <table>
-                <tr>
-                    <td>ID</td>
-                    <td>{currentModalFileData.id}</td>
-                </tr>
-                <tr>
-                    <td>Name</td>
-                    <td>{currentModalFileData.name}</td>
-                </tr>
-                <tr>
-                    <td>Original Name</td>
-                    <td>{currentModalFileData.originalName}</td>
-                </tr>
-                <tr>
-                    <td>Size</td>
-                    <td>{convertBytes(currentModalFileData.size)}</td>
-                </tr>
-                <tr>
-                    <td>Date Uploaded</td>
-                    <td>{dateToString(currentModalFileData.uploaded)}</td>
-                </tr>
-                <tr>
-                    <td>URL</td>
-                    <td><a href={currentModalFileData.url} target="_blank">{currentModalFileData.url}</a></td>
-                </tr>
-                <tr>
-                    <td>Hash</td>
-                    <td>{currentModalFileData.hash}</td>
-                </tr>
-            </table>
-        </Modal></div> : <></>}
-        <SearchBar onSearch={searchCallback}/>
-        { searchResult === null ? <div className="no-result">
-            <FileSvg/>
-            <div className="message">
-                <h2>No files found</h2>
-                <p>No files matched your query</p>
-            </div>
-        </div> : <>
-        { showContext ? <ul className="context-menu" style={{
-                top: contextAnchorPoint.y, 
-                left: contextAnchorPoint.x
-        }}>
-            <li className="context-item" onClick={() => setFileModalOpen(true)}>
-                <FileSvg/>
-                Details
-            </li>
-            <li className="context-item" onClick={() => window.open(currentModalFileData.url)}>
-                <OpenSvg/>
-                Open in tab
-            </li>
-            <li className="context-item" onClick={() => deleteFile(currentModalFileData.id)}>
-                <TrashSvg/>
-                Delete
-            </li>
-        </ul> : <></>}
-        <div className="file-list">
-            { searchResult.files.map(file => 
-                <FileCard onClick={e => handleContextMenu(e, file)} key={file.id} file={file}/>) }
-        </div>
-        { searchResult.pages > 1 ? <div className="pagination">
-            <ReactPaginate
-                pageCount={searchResult.pages}
-                forcePage={searchResult.page - 1}
-                pageRangeDisplayed={5}
-                marginPagesDisplayed={1}
-                onPageChange={paginationCallback}
-                breakLabel="..."
-                activeLinkClassName="selected"/>
-        </div> : null }
-        </>}
-    </div>
+    const { register, handleSubmit } = useForm()
+
+    return <Box>
+        <form onSubmit={handleSubmit(searchCallback)}>
+            <InputGroup>
+                <InputLeftElement color="gray.500" children={<Icon as={SearchIcon}/>} />
+                <Input variant="filled" {...register("query")} placeholder="Search for files" />
+            </InputGroup>
+        </form>
+
+        { searchResult === null ? <Box color="gray.500" textAlign="center">
+            <Heading size="xl" mt={6} mb={2}>:(</Heading>
+            <Heading as="h2" size="lg">No files found</Heading>
+            <Text>There were no files matched your query</Text>
+        </Box> : <Flex justifyContent="center" gap="20px" wrap="wrap" mt={6}>
+            { searchResult.files.map(file => <FileCard 
+                    key={file.id} 
+                    file={file} 
+                    onDetails={file => onFileDetails(file.id)} 
+                    onDelete={file => deleteFile(file.id)}/>) }
+        </Flex> }
+
+        { searchResult?.pages > 1 ? 
+            <Flex justifyContent="center" mt={5}>
+                <Pagination 
+                    pages={searchResult.pages} 
+                    currentPage={currentPage}
+                    range={3}
+                    onPageSelect={setCurrentPage}/>
+            </Flex> : <></> }
+    </Box>
 }

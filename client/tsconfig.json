@@ -10,7 +10,8 @@
         "target": "es5",
         "moduleResolution": "node",
         "baseUrl": "./src",
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src",
