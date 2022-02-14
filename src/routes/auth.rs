@@ -1,3 +1,4 @@
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use chrono::Utc;
 use time::OffsetDateTime;
 
@@ -24,23 +25,26 @@ async fn basic(
 ) -> Result<HttpResponse, MessageResponse> {
     let user_data = if util::EMAIL_REGEX.is_match(&form.auth) {
         state.database.get_user_by_email(&form.auth).await
+        // TODO: block usernames from having @ or weird characters
     } else {
         state.database.get_user_by_username(&form.auth).await
     }
     .map_err(|_| MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!"))?;
 
     // Check if password is valid to password hash
-    match argon2::verify_encoded(&user_data.password, form.password.as_bytes()) {
-        Ok(matches) => {
-            if !matches {
-                return Err(MessageResponse::new(
-                    StatusCode::BAD_REQUEST,
-                    "Invalid credentials provided!",
-                ));
-            }
-        }
-        Err(_) => return Err(MessageResponse::internal_server_error()),
-    };
+    if Argon2::default()
+        .verify_password(
+            form.password.as_bytes(),
+            &PasswordHash::new(&user_data.password)
+                .map_err(|_| MessageResponse::internal_server_error())?,
+        )
+        .is_ok()
+    {
+        return Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Invalid credentials provided!",
+        ));
+    }
 
     let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();
     let jwt = match create_jwt_string(

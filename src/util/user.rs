@@ -1,6 +1,7 @@
 use actix_web::http::StatusCode;
+use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use lettre::Message;
-use rand::Rng;
+use rand::rngs::OsRng;
 
 use crate::models::MessageResponse;
 
@@ -19,19 +20,10 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
         ));
     }
 
-    // Generate a random salt
-    let salt: String = rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
-        .take(36)
-        .map(char::from)
-        .collect();
-
-    Ok(argon2::hash_encoded(
-        password.as_bytes(),
-        salt.as_bytes(),
-        &argon2::Config::default(),
-    )
-    .map_err(|_| MessageResponse::internal_server_error())?)
+    Ok(Argon2::default()
+        .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
+        .map_err(|_| MessageResponse::internal_server_error())?
+        .to_string())
 }
 
 pub fn validate_username(username: &str) -> Result<(), MessageResponse> {

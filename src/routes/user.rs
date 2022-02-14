@@ -1,4 +1,4 @@
-use argon2;
+use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
 use lettre::AsyncTransport;
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
         self,
         auth::{auth_role, Auth},
         random_string,
-        user::{new_password, verification_email, validate_username},
+        user::{new_password, validate_username, verification_email},
         EMAIL_REGEX,
     },
 };
@@ -40,12 +40,17 @@ async fn settings(
     form: web::Json<UpdateUserSettings>,
 ) -> Result<impl Responder, MessageResponse> {
     // Check if the users password is correct
-    if !argon2::verify_encoded(&auth.user.password, form.current_password.as_bytes())
-        .map_err(|_| MessageResponse::internal_server_error())?
+    if Argon2::default()
+        .verify_password(
+            form.current_password.as_bytes(),
+            &PasswordHash::new(&auth.user.password)
+                .map_err(|_| MessageResponse::internal_server_error())?,
+        )
+        .is_ok()
     {
         return Err(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Incorrect password entered",
+            "Incorrect current password",
         ));
     }
 
@@ -56,7 +61,7 @@ async fn settings(
 
         email: None,
         username: None,
-        new_password: None
+        new_password: None,
     };
 
     if let Some(new_password) = &form.new_password {
@@ -84,7 +89,12 @@ async fn settings(
     if let Some(new_username) = &form.username {
         validate_username(&new_username)?;
 
-        if state.database.get_user_by_username(&new_username).await.is_ok() {
+        if state
+            .database
+            .get_user_by_username(&new_username)
+            .await
+            .is_ok()
+        {
             return Err(MessageResponse::new(
                 StatusCode::CONFLICT,
                 "An account with that username already exists!",
@@ -161,12 +171,18 @@ async fn settings(
 }
 
 #[post("")]
-async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) -> Result<impl Responder, MessageResponse> {
+async fn create(
+    state: web::Data<State>,
+    mut form: web::Json<UserCreateForm>,
+) -> Result<impl Responder, MessageResponse> {
     // Check if username length is within bounds
     validate_username(&form.username)?;
 
     if !EMAIL_REGEX.is_match(&form.email) {
-        return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided"));
+        return Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Invalid email was provided",
+        ));
     }
 
     // Check if user with same email was found
@@ -225,7 +241,10 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         Err(_) => return Err(MessageResponse::internal_server_error()),
     }
 
-    Ok(MessageResponse::new(StatusCode::OK, "User has successfully been created"))
+    Ok(MessageResponse::new(
+        StatusCode::OK,
+        "User has successfully been created",
+    ))
 }
 
 #[patch("/verify/resend")]

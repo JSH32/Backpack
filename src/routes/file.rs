@@ -163,8 +163,7 @@ async fn list(
                 .map(|mut file| {
                     let mut file_url = storage_url.clone();
                     file_url.push(&file.name);
-                    file.url = Some(file_url.as_path().display()
-                        .to_string().replace("\\", "/"));
+                    file.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
                     file
                 })
                 .collect();
