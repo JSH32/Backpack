@@ -34,6 +34,23 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
     .map_err(|_| MessageResponse::internal_server_error())?)
 }
 
+pub fn validate_username(username: &str) -> Result<(), MessageResponse> {
+    let username_length = username.len();
+    if username_length < 4 {
+        Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Username too short (minimum 4 characters)",
+        ))
+    } else if username_length > 15 {
+        Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Username too long (maximum 15 characters)",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 pub fn verification_email(
     base_url: &str,
     from_email: &str,

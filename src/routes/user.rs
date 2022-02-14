@@ -8,7 +8,7 @@ use crate::{
         self,
         auth::{auth_role, Auth},
         random_string,
-        user::{new_password, verification_email},
+        user::{new_password, verification_email, validate_username},
         EMAIL_REGEX,
     },
 };
@@ -18,8 +18,8 @@ use actix_web::{get, http::StatusCode, patch, post, put, web, HttpResponse, Resp
 pub fn get_routes(smtp_verification: bool) -> Scope {
     let scope = web::scope("/user")
         .service(create)
-        .service(info)
-        .service(settings);
+        .service(settings)
+        .service(info);
 
     if smtp_verification {
         scope.service(resend_verify).service(verify)
@@ -54,8 +54,9 @@ async fn settings(
     let mut to_change = UpdateUserSettings {
         current_password: "".to_string(), // Don't change this
 
-        new_password: None,
         email: None,
+        username: None,
+        new_password: None
     };
 
     if let Some(new_password) = &form.new_password {
@@ -78,6 +79,19 @@ async fn settings(
         }
 
         to_change.email = Some(new_email.to_string());
+    }
+
+    if let Some(new_username) = &form.username {
+        validate_username(&new_username)?;
+
+        if state.database.get_user_by_username(&new_username).await.is_ok() {
+            return Err(MessageResponse::new(
+                StatusCode::CONFLICT,
+                "An account with that username already exists!",
+            ));
+        }
+
+        to_change.username = Some(new_username.to_string());
     }
 
     // Update email if change validated
@@ -127,6 +141,15 @@ async fn settings(
             .map_err(|_| MessageResponse::internal_server_error())?;
     }
 
+    // Update username if change validated
+    if let Some(new_username) = to_change.username {
+        state
+            .database
+            .change_username(&auth.user.id, &new_username)
+            .await
+            .map_err(|_| MessageResponse::internal_server_error())?;
+    }
+
     // Send updated user data in case of data change
     Ok(HttpResponse::Ok().json(
         state
@@ -138,31 +161,20 @@ async fn settings(
 }
 
 #[post("")]
-async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) -> impl Responder {
+async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) -> Result<impl Responder, MessageResponse> {
     // Check if username length is within bounds
-    let username_length = form.username.len();
-    if username_length < 4 {
-        return MessageResponse::new(
-            StatusCode::BAD_REQUEST,
-            "Username too short (minimum 4 characters)",
-        );
-    } else if username_length > 15 {
-        return MessageResponse::new(
-            StatusCode::BAD_REQUEST,
-            "Username too long (maximum 15 characters)",
-        );
-    }
+    validate_username(&form.username)?;
 
     if !EMAIL_REGEX.is_match(&form.email) {
-        return MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided");
+        return Err(MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided"));
     }
 
     // Check if user with same email was found
     if state.database.get_user_by_email(&form.email).await.is_ok() {
-        return MessageResponse::new(
+        return Err(MessageResponse::new(
             StatusCode::CONFLICT,
             "An account with that email already exists!",
-        );
+        ));
     }
 
     // Check if user with same username was found
@@ -172,15 +184,15 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
         .await
         .is_ok()
     {
-        return MessageResponse::new(
+        return Err(MessageResponse::new(
             StatusCode::CONFLICT,
             "An account with that username already exists!",
-        );
+        ));
     }
 
     form.password = match new_password(&form.password) {
         Ok(password_hashed) => password_hashed,
-        Err(err) => return err,
+        Err(err) => return Err(err),
     };
 
     match state.database.create_user(&form).await {
@@ -210,10 +222,10 @@ async fn create(state: web::Data<State>, mut form: web::Json<UserCreateForm>) ->
                 let _ = state.database.verify_user(&user_data.id, true).await;
             }
         }
-        Err(_) => return MessageResponse::internal_server_error(),
+        Err(_) => return Err(MessageResponse::internal_server_error()),
     }
 
-    MessageResponse::new(StatusCode::OK, "User has successfully been created")
+    Ok(MessageResponse::new(StatusCode::OK, "User has successfully been created"))
 }
 
 #[patch("/verify/resend")]

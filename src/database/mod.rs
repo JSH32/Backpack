@@ -136,6 +136,16 @@ impl Database {
         Ok(())
     }
 
+    pub async fn change_username(&self, user_id: &str, username: &str) -> Result<(), Error> {
+        sqlx::query("UPDATE users SET username = $1 WHERE id = $2")
+            .bind(username)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
     /// Delete an application by its id
     pub async fn delete_application_by_id(&self, application_id: &str) -> Result<(), Error> {
         sqlx::query("DELETE FROM applications WHERE id = $1")

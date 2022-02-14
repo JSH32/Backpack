@@ -9,6 +9,7 @@ tokio = { version = "1.10.0", features = ["full"] }
 sqlx = { version = "0.5.1", features = [ "runtime-actix-native-tls", "postgres", "chrono" ] }
 serde = "1.0.126"
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
+serde_with = "1.4.0"
 jsonwebtoken = { git = "https://github.com/Riku32/jsonwebtoken" }
 dotenv = "0.15.0"
 # Router does not work after actix-http beta 10, need to force version 9 for http and version 8 for web

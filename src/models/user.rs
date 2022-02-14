@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 #[derive(Serialize)]
 pub struct UserData {
@@ -36,8 +37,10 @@ pub struct UserDeleteForm {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[skip_serializing_none]
 pub struct UpdateUserSettings {
     pub email: Option<String>,
+    pub username: Option<String>,
     pub new_password: Option<String>,
 
     // Always require old password to change options
