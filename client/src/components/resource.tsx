@@ -34,12 +34,12 @@ export const Resource: React.FC<{
                     px={{ base: 4 }}
                     minH="60px"
                     maxW={1000}
-                    width="100vw"
+                    w="100vw"
                     justifyContent="space-between"
                     align="center">
 
                     <HStack spacing={5}>
-                        <Button onClick={() => history.push(backPath)} w={10} h={10}><Icon as={ArrowBackIcon}/></Button>
+                        <Button _hover={{ bg: useColorModeValue("gray.300", "gray.700") }} onClick={() => history.push(backPath)} w={10} h={10}><Icon as={ArrowBackIcon}/></Button>
                         <Stack spacing={0.01}>
                             <Text fontWeight="bold">{title}</Text>
                             <HStack>
@@ -49,7 +49,6 @@ export const Resource: React.FC<{
                         </Stack>
                     </HStack>
                     {right ? right : <></>}
-                    {/* { badge ? <Badge colorScheme={badge.color}>{badge.text}</Badge> : <></> } */}
                 </Flex>
             </Flex>
         </Box>

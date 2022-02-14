@@ -14,19 +14,19 @@ import KeyIcon from "assets/icons/key.svg"
 import { logout } from "api"
 
 import { 
-    Text, 
-    Link, 
-    Box, 
-    Button, 
-    Flex, 
-    Icon, 
-    Popover, 
-    PopoverContent, 
-    PopoverTrigger, 
-    Stack, 
-    useColorModeValue, 
-    useColorMode, 
-    Divider 
+    Text,
+    Link,
+    Box,
+    Button,
+    Flex,
+    Icon,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Stack,
+    useColorModeValue,
+    useColorMode,
+    Divider
 } from "@chakra-ui/react"
 
 import {

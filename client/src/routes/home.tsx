@@ -13,8 +13,8 @@ export const Home: React.FC = () => {
             justifyContent="center"
             textAlign="center">
                 <Heading
-                    bgGradient='linear(to-l, #a061ff, #7d4aff)'
-                    bgClip='text'
+                    bgGradient="linear(to-l, #a061ff, #7d4aff)"
+                    bgClip="text"
                     fontSize="6xl">
                     {import.meta.env.SNOWPACK_PUBLIC_APP_NAME}</Heading>
             <Text fontSize="xl">{import.meta.env.SNOWPACK_PUBLIC_APP_DESCRIPTION}</Text>

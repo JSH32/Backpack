@@ -19,7 +19,7 @@ import {
     StatNumber, 
     ToastId, 
     useToast, 
-    Button 
+    Button
 } from "@chakra-ui/react"
 
 export const UploadFiles: React.FC = () => {
@@ -85,8 +85,8 @@ export const UploadFiles: React.FC = () => {
     }, [searchReload])
 
     return <Page>
-        <Flex minH="100vh" justify="center">
-            <Box w={["90%", "70%"]} mt="8em">
+        <Flex mt="7em" minH="100vh" justify="center">
+            <Box w={["90%", "70%"]}>
                 <Stack spacing={4}>
                     <Heading>Uploads</Heading>
                     <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>

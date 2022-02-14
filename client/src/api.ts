@@ -36,6 +36,22 @@ export interface SearchResult {
     page: number
 }
 
+export interface UpdateUserSettings {
+    email?: string,
+    username?: string,
+    newPassword?: string
+}
+
+export const updateSettings = async (options: UpdateUserSettings, password: string): Promise<UserData> => {
+    console.log({ 
+        ...options, 
+        currentPassword: password})
+    return (await axios.put<UserData>(`${BASE_URL}/user/settings`, { 
+        ...options, 
+        currentPassword: password
+    })).data
+}
+
 export const uploadFile = async (file: File): Promise<FileData> => {
     const formData = new FormData()
     formData.append("uploadFile", file)

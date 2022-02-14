@@ -20,13 +20,15 @@ import { toJS } from "mobx"
 import { UserTokens } from "routes/user/tokens"
 import { Box, useColorModeValue } from "@chakra-ui/react"
 import { FileInfo } from "routes/user/upload/fileInfo"
+import { UserSettings } from "routes/user/settings"
 
 interface AuthenticatedRouteProps {
     path: string,
+    allowUnverified?: boolean,
     component: React.ComponentType<RouteComponentProps<any>> | React.ComponentType<any>
 }
 
-const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component }) => {
+const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component, allowUnverified }) => {
     const history = useHistory()
     const [userData, setUserData] = React.useState(null)
     
@@ -49,7 +51,7 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
         return <></>
 
     // SMTP verification was enabled and the user was not verified
-    if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED && !userData.verified)
+    if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED && !userData.verified && !allowUnverified)
         return <VerificationMessage email={userData.email}/>
 
     // User passed all checks, allow them to go to this route
@@ -65,6 +67,8 @@ export const App: React.FC = () => {
                     <Route path="/user/create" component={UserCreate}/>
                     <Route path="/user/login" component={UserLogin}/>
                     {import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED ? <Route path="/user/verify" component={UserVerify}/> : null}
+                    <AuthenticatedRoute path="/user/settings/:tab" component={UserSettings} allowUnverified/>
+                    <AuthenticatedRoute path="/user/settings" component={UserSettings} allowUnverified/>
                     <AuthenticatedRoute path="/user/uploads/:id" component={FileInfo}/>
                     <AuthenticatedRoute path="/user/uploads" component={UploadFiles}/>
                     <AuthenticatedRoute path="/user/tokens" component={UserTokens}/>
