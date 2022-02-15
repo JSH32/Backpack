@@ -77,7 +77,7 @@ export const FileSearch: React.FC<{
         </Flex> }
 
         { searchResult?.pages > 1 ? 
-            <Flex justifyContent="center" mt={5} mb={5}>
+            <Flex justifyContent="center" mt={5}>
                 <Pagination 
                     pages={searchResult.pages} 
                     currentPage={currentPage}

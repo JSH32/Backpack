@@ -85,8 +85,8 @@ export const UploadFiles: React.FC = () => {
     }, [searchReload])
 
     return <Page>
-        <Flex mt="7em" minH="100vh" justify="center">
-            <Box w={["90%", "70%"]}>
+        <Flex mt="7em" minH="100vh" justify="center" mb={5}>
+            <Box w={{ base: "90vw", md: "70vw" }} maxW="1200px">
                 <Stack spacing={4}>
                     <Heading>Uploads</Heading>
                     <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>

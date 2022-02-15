@@ -4,36 +4,46 @@ import * as React from "react"
 import UserIcon from "assets/icons/user.svg"
 import LockIcon from "assets/icons/lock.svg"
 
-import { 
-    Box, 
-    Icon, 
-    Text, 
-    Flex, 
-    Heading, 
-    Divider, 
-    Stack, 
-    VStack, 
-    Button, 
-    useColorModeValue, 
-    FormControl, 
-    FormLabel, 
-    Input, 
-    useDisclosure, 
-    useToast, 
-    Modal, 
-    ModalOverlay, 
-    ModalBody, 
-    ModalCloseButton, 
-    ModalContent, 
-    ModalFooter, 
-    ModalHeader, 
-    UnorderedList, 
-    ListItem, 
-    InputRightElement, 
-    InputGroup 
+import {
+    Box,
+    Icon,
+    Text,
+    Flex,
+    Heading,
+    Divider,
+    Stack,
+    VStack,
+    Button,
+    useColorModeValue,
+    FormControl,
+    FormLabel,
+    Input,
+    useDisclosure,
+    useToast,
+    Modal,
+    ModalOverlay,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    UnorderedList,
+    ListItem,
+    InputRightElement,
+    InputGroup,
+    Alert,
+    AlertIcon,
+    chakra,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    HStack,
+    MenuGroup
 } from "@chakra-ui/react"
 
 import {
+    ChevronDownIcon,
     ViewIcon,
     ViewOffIcon
 } from "@chakra-ui/icons"
@@ -233,7 +243,7 @@ const tabs: Record<string, SettingsTab> = {
                             <Input
                                 {...register("currentPassword", { required: "Current Password is required" })}
                                 id="currentPassword"
-                                type={viewStatus.current ? "text" : "password"}/>
+                                type={viewStatus.current ? "text" : "password"} />
                             <InputRightElement h="full">
                                 <ViewButton
                                     active={viewStatus.current}
@@ -247,7 +257,7 @@ const tabs: Record<string, SettingsTab> = {
                             <Input
                                 {...register("newPassword", { required: "New Password is required" })}
                                 id="newPassword"
-                                type={viewStatus.new ? "text" : "password"}/>
+                                type={viewStatus.new ? "text" : "password"} />
                             <InputRightElement h="full">
                                 <ViewButton
                                     active={viewStatus.new}
@@ -261,7 +271,7 @@ const tabs: Record<string, SettingsTab> = {
                             <Input
                                 {...register("confirmNewPassword", { required: "New Password confirmation is required" })}
                                 id="confirmNewPassword"
-                                type={viewStatus.confirmNew ? "text" : "password"}/>
+                                type={viewStatus.confirmNew ? "text" : "password"} />
                             <InputRightElement h="full">
                                 <ViewButton
                                     active={viewStatus.confirmNew}
@@ -278,9 +288,11 @@ const tabs: Record<string, SettingsTab> = {
     }
 }
 
-export const UserSettings: React.FC = () => {
+export const UserSettings: React.FC = observer(() => {
     const { tab } = useParams<any>()
     const history = useHistory()
+
+    const userData = toJS(store.userData)
 
     if (tab === undefined || !Object.keys(tabs).includes(tab)) {
         history.push(`/user/settings/${Object.keys(tabs)[0]}`)
@@ -292,9 +304,38 @@ export const UserSettings: React.FC = () => {
             <Box w={{ base: "90vw", md: "700px" }}>
                 <Stack spacing={4}>
                     <Heading>Settings</Heading>
+                    {!userData || userData.verified ? <></> :
+                        <Alert status="warning">
+                            <AlertIcon />
+                            Please check your email at <chakra.span fontWeight="bold" ml={1} mr={1}>{userData.email}</chakra.span> to verify your account
+                        </Alert>}
                     <Divider />
                     <Stack direction={{ base: "column", md: "row" }} spacing={8}>
                         <Box>
+                            <Box display={{ base: "flex", md: "none" }}>
+                                <Menu matchWidth={true} autoSelect={false}>
+                                    <MenuButton textAlign="left" w="full" as={Button} rightIcon={<ChevronDownIcon />}>
+                                        <HStack>
+                                            <Icon color="primary.300" as={tabs[tab].icon} />
+                                            <Text>{tabs[tab].name}</Text>
+                                        </HStack>
+                                    </MenuButton>
+                                    <MenuList>
+                                        <MenuGroup title="My Account">
+                                            {Object.entries(tabs).map(([name, tabData]) => <MenuItem
+                                                icon={<Icon as={tabData.icon} color={tab === name ? "primary.300" : useColorModeValue("gray.600", "gray.400")} />}
+                                                w="100%"
+                                                bg={tab === name ? 
+                                                    useColorModeValue("gray.50", "gray.800") : 
+                                                    useColorModeValue("white", "gray.700" )}
+                                                key={name}
+                                                onClick={() => history.push(`/user/settings/${name}`)}>
+                                                {tabData.name}
+                                            </MenuItem>)}
+                                        </MenuGroup>
+                                    </MenuList>
+                                </Menu>
+                            </Box>
                             <VStack align="left" w="150px" display={{ base: "none", md: "flex" }}>
                                 <Text
                                     fontSize="sm"
@@ -302,6 +343,7 @@ export const UserSettings: React.FC = () => {
                                     ml="4"
                                     color={useColorModeValue("gray.600", "gray.400")}>My Account</Text>
                                 {Object.entries(tabs).map(([name, tabData]) => <Button
+                                    key={name}
                                     onClick={() => history.push(`/user/settings/${name}`)}
                                     variant={tab === name ? "solid" : "ghost"}
                                     justifyContent="flex-start"
@@ -327,4 +369,4 @@ export const UserSettings: React.FC = () => {
             </Box>
         </Flex>
     </Page>
-}
+})
