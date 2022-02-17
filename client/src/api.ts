@@ -25,6 +25,7 @@ export interface FileData {
     name: string,
     originalName: string,
     url: string,
+    thumbnailUrl: string,
     hash: string,
     uploaded: Date,
     size: number

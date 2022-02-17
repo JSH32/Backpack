@@ -1,11 +1,33 @@
-import { userCreate } from "api"
 import * as React from "react"
+import { userCreate } from "api"
 import { Link as RouterLink } from "react-router-dom"
-import { ViewIcon, ViewOffIcon, EmailIcon, CheckCircleIcon } from "@chakra-ui/icons"
-
 import { useForm } from "react-hook-form"
-import { Flex, Link, Heading, Stack, useToast, Text, Box, useColorModeValue, FormControl, FormLabel, Input, InputGroup, InputRightElement, Button, chakra } from "@chakra-ui/react"
 import { Page } from "components/page"
+
+import { 
+    ViewIcon, 
+    ViewOffIcon, 
+    EmailIcon, 
+    CheckCircleIcon 
+} from "@chakra-ui/icons"
+
+import { 
+    Flex, 
+    Link, 
+    Heading, 
+    Stack, 
+    useToast,
+    Text,
+    Box, 
+    useColorModeValue, 
+    FormControl, 
+    FormLabel, 
+    Input, 
+    InputGroup, 
+    InputRightElement, 
+    Button, 
+    chakra 
+} from "@chakra-ui/react"
 
 export const UserCreate: React.FC = () => {
     const [emailPostSignup, setEmailPostSignup] = React.useState(null)
@@ -13,18 +35,6 @@ export const UserCreate: React.FC = () => {
 
     const { register, handleSubmit } = useForm()
     const toast = useToast()
-
-    // const formSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    //     event.preventDefault()
-    //     const form = event.target as HTMLFormElement
-    //     const username = (form.elements.namedItem("username") as HTMLInputElement).value
-    //     const email = (form.elements.namedItem("email") as HTMLInputElement).value
-    //     const password = (form.elements.namedItem("password") as HTMLInputElement).value
-
-    //     userCreate(username, email, password)
-    //         .then(() => setEmailPostSignup(email))
-    //         .catch(error => setErrorMessage(error.response.data.message))
-    // }
     
     const formSubmit = (data: any) => {
         userCreate(data.username, data.email, data.password)

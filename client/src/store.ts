@@ -6,10 +6,10 @@ class Store {
 
     constructor() {
         makeAutoObservable(this)
-        getUserData().then(this.setAppInfo)
+        getUserData().then(this.setUserInfo)
     }
 
-    @action setAppInfo = (value: UserData) => {
+    @action setUserInfo = (value: UserData) => {
         this.userData = value
     }
 }

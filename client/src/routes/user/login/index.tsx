@@ -21,7 +21,7 @@ export const UserLogin: React.FC = () => {
     const formSubmit = (data: any) => {
         passwordLogin(data.auth, data.password)
             .then(userInfo => {
-                store.setAppInfo(userInfo)
+                store.setUserInfo(userInfo)
                 userInfo.verified ? history.replace("/user/uploads") : setPostLoginUnverifiedEmail(userInfo.email)
                 toast({
                     title: "Logged in",

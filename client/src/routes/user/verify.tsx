@@ -2,7 +2,7 @@ import * as React from "react"
 import { verify } from "api"
 import { useLocation } from "react-router-dom"
 
-import store from "../../store"
+import store from "store"
 import { toJS } from "mobx"
 import { Box, Flex, Heading, Text } from "@chakra-ui/react"
 import { CheckCircleIcon, CloseIcon } from "@chakra-ui/icons"
@@ -20,7 +20,7 @@ export const UserVerify: React.FC = () => {
 
                 const userData = toJS(store.userData)
                 if (userData)
-                    store.setAppInfo({ ...userData, verified: true })
+                    store.setUserInfo({ ...userData, verified: true })
             })
             .catch(() => setVerifySuccess(false))
     }, [])
@@ -30,13 +30,13 @@ export const UserVerify: React.FC = () => {
 
     return <Page>
         <Flex minH="100vh"
-                align="center"
-                justify="center">
+            align="center"
+            justify="center">
             <Box py={10} px={6} textAlign="center">
-                { verifySuccess ? <>
-                    <CheckCircleIcon boxSize="50px" color="green.500"/>
+                {verifySuccess ? <>
+                    <CheckCircleIcon boxSize="50px" color="green.500" />
                     <Heading as="h2" size="xl" mt={6} mb={2}>Account verified</Heading>
-                    <Text>Your account was verified. { toJS(store.userData) ? "You may now access your account" : "Please login to access your account" }</Text>
+                    <Text>Your account was verified. {toJS(store.userData) ? "You may now access your account" : "Please login to access your account"}</Text>
                 </> : <>
                     <Box display="inline-block">
                         <Flex
@@ -48,7 +48,7 @@ export const UserVerify: React.FC = () => {
                             w="55px"
                             h="55px"
                             textAlign="center">
-                            <CloseIcon boxSize="20px" color="white"/>
+                            <CloseIcon boxSize="20px" color="white" />
                         </Flex>
                     </Box>
                     <Heading as="h2" size="xl" mt={6} mb={2}>Invalid verification code</Heading>

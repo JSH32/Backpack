@@ -1,7 +1,13 @@
+use std::io::Cursor;
+
 use actix_multipart::Multipart;
+use image::{io::Reader as ImageReader, ImageError};
 use thiserror::Error;
 
 use futures::{AsyncWriteExt, TryStreamExt};
+
+pub const IMAGE_EXTS: &'static [&'static str] =
+    &["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"];
 
 #[derive(Error, Debug)]
 pub enum MultipartError {
@@ -17,6 +23,16 @@ pub struct File {
     pub filename: String,
     pub bytes: Vec<u8>,
     pub size: usize,
+}
+
+pub fn get_thumbnail_image(bytes: &[u8]) -> Result<Vec<u8>, ImageError> {
+    let mut buf = Vec::new();
+
+    image::load_from_memory(&bytes)?
+        .thumbnail(500, 500)
+        .write_to(&mut Cursor::new(&mut buf), image::ImageOutputFormat::Png)?;
+
+    Ok(buf)
 }
 
 pub async fn get_file_from_payload(

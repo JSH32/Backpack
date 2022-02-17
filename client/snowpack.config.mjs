@@ -1,30 +1,36 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+
 // Snowpack Configuration File
 // See all supported options: https://www.snowpack.dev/reference/configuration
 
 /** @type {import("snowpack").SnowpackUserConfig } */
+import proxy from "http2-proxy"
 
-const httpProxy = require('http-proxy')
-const proxy = httpProxy.createServer({
-  target: 'http://0.0.0.0:3001'
-})
-
-module.exports = {
+export default {
   mount: {
     public: { url: "/", static: true },
-    src: { url: "/dist" },
+    src: { url: "/dist" }
   },
   devOptions: {
-    hostname: "0.0.0.0",
+    hostname: "localhost",
     port: 3000
+  },
+  optimize: {
+    // See issue: https://github.com/withastro/snowpack/issues/3403
+    bundle: false,
+    minify: true
   },
   routes: [
     {
-      src: '/api/.*',
-      dest: (req, res) => proxy.web(req, res)
+      src: "/api/.*",
+      dest: (req, res) => proxy.web(req, res, {
+        hostname: "localhost",
+        port: 3001
+      })
     },
     {
-      match: "routes", 
-      src: ".*", 
+      match: "routes",
+      src: ".*",
       dest: "/index.html"
     }
   ],
@@ -35,19 +41,23 @@ module.exports = {
     "snowpack-plugin-relative-css-urls",
     "snowpack-plugin-svgr",
     "@snowpack/plugin-sass",
-    "@snowpack/plugin-dotenv",
-    [
-      "@snowpack/plugin-run-script", {
-        "cmd": "eslint src --ext .js,jsx,.ts,.tsx",
-        "watch": "esw -w --clear src --ext .js,jsx,.ts,.tsx"
-      }
-    ]
+    "@snowpack/plugin-dotenv"
   ],
   alias: {
     "components": "./src/components",
     "routes": "./src/routes",
     "assets": "./src/assets",
+    "store": "./src/store.ts",
     "api": "./src/api.ts",
     "bpkutil": "./src/bpkutil.ts"
+  },
+  packageOptions: {
+    knownEntryPoints: [
+      "@chakra-ui/hooks/use-animation-state",
+      "framesync"
+    ]
+  },
+  buildOptions: {
+    /* ... */
   }
 }

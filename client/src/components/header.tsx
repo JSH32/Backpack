@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
         const onLogout = async() => {
             logout()
                 .then(() => {
-                    store.setAppInfo(null)
+                    store.setUserInfo(null)
                     history.replace("/")
                 })
         }

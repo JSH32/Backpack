@@ -16,11 +16,12 @@ import { UploadFiles } from "routes/user/upload"
 import { VerificationMessage } from "components/verificationmessage"
 import { getUserData } from "api"
 import store from "./store"
-import { toJS } from "mobx"
+import { observe } from "mobx"
 import { UserTokens } from "routes/user/tokens"
 import { Box, useColorModeValue } from "@chakra-ui/react"
 import { FileInfo } from "routes/user/upload/fileInfo"
 import { UserSettings } from "routes/user/settings"
+import { Page } from "components/page"
 
 interface AuthenticatedRouteProps {
     path: string,
@@ -33,25 +34,23 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
     const [userData, setUserData] = React.useState(null)
     
     React.useEffect(() => {
-        const mobXUserData = toJS(store.userData)
-        if (mobXUserData) {
-            setUserData(mobXUserData)
-            return
-        }
-
         // Since this might be loaded on initial page load MobX async constructor might not be done running
         // Make the HTTP request just in case this is the initial load
         getUserData()
             .then(setUserData)
             .catch(() => history.replace("/user/login"))
+
+        // Watch changes so we can reload this componment and re-evaluate if we should lock the route
+        return observe(store, "userData", setUserData)
     }, [])
 
     // While user data was not loaded just send back nothing
-    if (!userData) 
-        return <></>
+    if (!userData || userData.verified === undefined)
+        return <Page></Page>
 
     // SMTP verification was enabled and the user was not verified
-    if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED && !userData.verified && !allowUnverified)
+    console.log(userData.verified)
+    if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED && !allowUnverified && !userData.verified)
         return <VerificationMessage email={userData.email}/>
 
     // User passed all checks, allow them to go to this route

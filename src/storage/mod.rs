@@ -11,4 +11,6 @@ pub trait StorageProvider: Sync + Send {
 
     /// Delete the object/file on the storage source
     async fn delete_object(&self, name: &str) -> Result<(), String>;
+
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, String>;
 }

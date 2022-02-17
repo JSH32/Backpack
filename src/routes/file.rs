@@ -15,7 +15,7 @@ use crate::{
     state::State,
     util::{
         auth::{auth_role, Auth},
-        file::{get_file_from_payload, MultipartError},
+        file::{get_file_from_payload, get_thumbnail_image, MultipartError, IMAGE_EXTS},
     },
 };
 
@@ -52,10 +52,9 @@ async fn upload(
                 .await
                 .map_err(|_| MessageResponse::internal_server_error())?;
 
-            let mut file_url = PathBuf::from(&state.storage_url);
-
             if let Some(name) = file_exists {
                 // Push the existing file name for the matching hash
+                let mut file_url = PathBuf::from(&state.storage_url);
                 file_url.push(name);
 
                 let mut object = serde_json::Map::new();
@@ -91,8 +90,26 @@ async fn upload(
                 return Err(MessageResponse::internal_server_error());
             }
 
-            file_url.push(&filename);
-            file_data.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
+            let root_path = PathBuf::from(&state.storage_url);
+
+            // Create thumbnail
+            if IMAGE_EXTS
+                .into_iter()
+                .any(|ext| ext.eq(&extension.to_uppercase()))
+            {
+                // We don't care if this fails. Thumbnail can fail for whatever reason due to image encoding
+                // User/API caller should not expect thumbnail to ALWAYS exist
+                if let Ok(image) = &get_thumbnail_image(&file.bytes) {
+                    let _ = state
+                        .storage
+                        .put_object(&format!("./thumb/{}", &filename), image)
+                        .await;
+
+                    file_data.set_thumbnail_url(root_path.clone());
+                }
+            }
+
+            file_data.set_url(root_path);
 
             Ok(HttpResponse::Ok().json(file_data))
         }
@@ -151,8 +168,6 @@ async fn list(
         .await
     {
         Ok(total_pages) => {
-            let storage_url = PathBuf::from(&state.storage_url);
-
             let file_list: Vec<FileData> = state
                 .database
                 .get_files(&auth.user.id, PAGE_SIZE, *page_number, &query)
@@ -161,9 +176,10 @@ async fn list(
                 .into_iter()
                 // Attach the URL to each file
                 .map(|mut file| {
-                    let mut file_url = storage_url.clone();
-                    file_url.push(&file.name);
-                    file.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
+                    let storage_url = PathBuf::from(&state.storage_url);
+                    file.set_url(storage_url.clone());
+                    file.set_thumbnail_url(storage_url);
+
                     file
                 })
                 .collect();
@@ -200,9 +216,11 @@ async fn info(
                 )
                 .http_response()
             } else {
-                let mut file_url = PathBuf::from(&state.storage_url);
-                file_url.push(&v.name);
-                v.url = Some(file_url.as_path().display().to_string().replace("\\", "/"));
+                let storage_url = PathBuf::from(&state.storage_url);
+
+                v.set_url(storage_url.clone());
+                v.set_thumbnail_url(storage_url);
+
                 HttpResponse::Ok().json(v)
             }
         }
@@ -234,6 +252,10 @@ async fn delete_file(
 
                 // We dont care about the result of this because of discrepancies
                 let _ = state.storage.delete_object(&v.name).await;
+                let _ = state
+                    .storage
+                    .delete_object(&format!("thumb/{}", &v.name))
+                    .await;
 
                 Ok(MessageResponse::new(
                     StatusCode::OK,

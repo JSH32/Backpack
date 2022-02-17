@@ -22,7 +22,7 @@ export const FileCard: React.FC<{
             w="200px"
             h="200px"
             objectFit="cover"
-            src={file.url}
+            src={file.thumbnailUrl}
             alt={`Picture of ${file.url}`}
             roundedTop="lg"
         /> : <Flex 

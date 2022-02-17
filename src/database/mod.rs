@@ -42,6 +42,11 @@ impl Database {
         }
     }
 
+    /// Get the raw underlying sql client
+    pub fn get_pool(&self) -> &sqlx::Pool<sqlx::Postgres> {
+        &self.pool
+    }
+
     /// Run all pending up migrations
     pub async fn run_migrations(&self, path: &Path) -> Result<(), MigrateError> {
         let migrator = Migrator::new(path).await?;
@@ -388,6 +393,7 @@ fn file_map(row: sqlx::postgres::PgRow) -> Result<models::file::FileData, sqlx::
         uploaded: row.get("uploaded"),
         size: row.get("size"),
         url: None,
+        thumbnail_url: None,
     })
 }
 

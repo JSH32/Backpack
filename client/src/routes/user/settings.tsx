@@ -33,7 +33,6 @@ import {
     InputGroup,
     Alert,
     AlertIcon,
-    chakra,
     Menu,
     MenuButton,
     MenuItem,
@@ -107,7 +106,7 @@ const tabs: Record<string, SettingsTab> = {
                         <form onSubmit={finalSubmitForm.handleSubmit(form => {
                             updateSettings(newData, form.password)
                                 .then(newData => {
-                                    store.setAppInfo(newData)
+                                    store.setUserInfo(newData)
                                     toast({
                                         title: "Settings changed",
                                         description: "Your settings have been changed",
@@ -307,7 +306,7 @@ export const UserSettings: React.FC = observer(() => {
                     {!userData || userData.verified ? <></> :
                         <Alert status="warning">
                             <AlertIcon />
-                            Please check your email at <chakra.span fontWeight="bold" ml={1} mr={1}>{userData.email}</chakra.span> to verify your account
+                            <Text>Please check your email at <Text as="span" fontWeight="bold">{userData.email}</Text> to verify your account</Text>
                         </Alert>}
                     <Divider />
                     <Stack direction={{ base: "column", md: "row" }} spacing={8}>

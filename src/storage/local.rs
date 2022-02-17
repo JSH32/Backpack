@@ -21,13 +21,10 @@ impl StorageProvider for LocalProvider {
         let mut path = self.path.clone();
         path.push(name);
 
-        if path.exists() {
-            return Err("Path exists".to_string());
-        }
-
         let mut file = match tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .await
         {
@@ -49,5 +46,12 @@ impl StorageProvider for LocalProvider {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         }
+    }
+
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, String> {
+        let mut path_buf = self.path.clone();
+        path_buf.push(path);
+
+        tokio::fs::read(path_buf).await.map_err(|e| e.to_string())
     }
 }

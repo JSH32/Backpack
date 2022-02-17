@@ -1,20 +1,17 @@
 {
-    "compilerOptions": {
-        "jsx": "react",
-        "module": "es2020",
-        "noImplicitAny": true,
-        "outDir": "./build/",
-        "preserveConstEnums": true,
-        "removeComments": true,
-        "sourceMap": true,
-        "target": "es5",
-        "moduleResolution": "node",
-        "baseUrl": "./src",
-        "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true
-    },
-    "include": [
-        "src",
-        "src/declarations.d.ts"
-    ]
+  "compilerOptions": {
+    "jsx": "react",
+    "module": "es2020",
+    "noImplicitAny": true,
+    "outDir": "./build/",
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "target": "es5",
+    "moduleResolution": "node",
+    "baseUrl": "./src",
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src", "src/declarations.d.ts"]
 }

@@ -1,10 +1,11 @@
 use super::StorageProvider;
 use async_trait::async_trait;
+use futures::TryStreamExt;
 use infer;
 
 use rusoto_core::{credential, ByteStream, HttpClient, Region};
 
-use rusoto_s3::{DeleteObjectRequest, PutObjectRequest, S3Client, S3};
+use rusoto_s3::{DeleteObjectRequest, GetObjectRequest, PutObjectRequest, S3Client, S3};
 
 pub struct S3Provider {
     bucket: String,
@@ -63,6 +64,28 @@ impl StorageProvider for S3Provider {
             .await
         {
             Ok(_) => Ok(()),
+            Err(err) => Err(err.to_string()),
+        }
+    }
+
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, String> {
+        match self
+            .client
+            .get_object(GetObjectRequest {
+                bucket: self.bucket.clone(),
+                key: path.to_string(),
+                ..Default::default()
+            })
+            .await
+        {
+            Ok(mut v) => match v.body.take() {
+                Some(stream) => stream
+                    .map_ok(|b| b.to_vec())
+                    .try_concat()
+                    .await
+                    .map_err(|e| e.to_string()),
+                None => Err(format!("No file stream found on {}", path)),
+            },
             Err(err) => Err(err.to_string()),
         }
     }

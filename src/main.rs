@@ -1,9 +1,16 @@
 use actix_http::Uri;
+use clap::Parser;
+use colored::*;
 use config::StorageConfig;
 use models::MessageResponse;
+use sqlx::{postgres::PgRow, Row};
+use state::State;
 use tokio::fs;
 
+use util::file::IMAGE_EXTS;
+
 use std::{
+    ffi::OsStr,
     panic,
     path::{Path, PathBuf},
 };
@@ -36,16 +43,29 @@ mod state;
 mod storage;
 mod util;
 
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Client directory location to serve from `/` path
+    #[clap(short, long)]
+    client: Option<String>,
+
+    /// Regenerate image thumbnails
+    #[clap(short, long, takes_value = false)]
+    generate_thumbnails: bool,
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Setup actix log
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
     env_logger::init();
 
     let config = config::Config::new();
+    let args = Args::parse();
 
     // Check if client directory provided has requirements to be served
-    let client_path = match std::env::args().nth(1) {
+    let client_path = match args.client {
         Some(v) => match config.serve_frontend {
             true => {
                 let path = PathBuf::from(v);
@@ -76,6 +96,16 @@ async fn main() -> std::io::Result<()> {
                     "Unable to create {} directory",
                     v.path.to_str().unwrap_or("storage")
                 ));
+            }
+
+            // Thumbnail directory
+            let mut thumb_path = v.path.clone();
+            thumb_path.push("thumb");
+
+            if !thumb_path.exists() {
+                fs::create_dir(&thumb_path)
+                    .await
+                    .expect("Unable to create thumbnail directory");
             }
 
             Box::new(LocalProvider::new(v.path.clone()))
@@ -117,6 +147,12 @@ async fn main() -> std::io::Result<()> {
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
     });
+
+    // If the generate thumbnails flag is enabled
+    if args.generate_thumbnails {
+        generate_thumbnails(&api_state).await.unwrap();
+        return Ok(());
+    }
 
     let storage_path = match &config.storage_provider {
         StorageConfig::Local(v) => {
@@ -208,4 +244,62 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", config.port))?
     .run()
     .await
+}
+
+async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
+    log::info!("Regenerating image thumbnails");
+    let files: Vec<String> = sqlx::query("SELECT name FROM files")
+        .map(|row: PgRow| row.get("name"))
+        .fetch_all(state.database.get_pool())
+        .await?;
+
+    let image_files: Vec<&String> = files
+        .iter()
+        .filter(|file| {
+            let extension = Path::new(&file)
+                .extension()
+                .and_then(OsStr::to_str)
+                .unwrap_or("");
+
+            IMAGE_EXTS
+                .into_iter()
+                .any(|ext| ext.eq(&extension.to_uppercase()))
+        })
+        .collect();
+
+    log::info!(
+        "{} files to generate",
+        image_files.len().to_string().yellow()
+    );
+
+    for file in image_files {
+        let extension = Path::new(&file)
+            .extension()
+            .and_then(OsStr::to_str)
+            .unwrap_or("");
+
+        if IMAGE_EXTS
+            .into_iter()
+            .any(|ext| ext.eq(&extension.to_uppercase()))
+        {
+            match state.storage.get_object(&file).await {
+                Ok(buf) => {
+                    log::info!("Generating thumbnail for {}", file.yellow());
+                    if let Err(err) = state
+                        .storage
+                        .put_object(
+                            &format!("thumb/{}", file),
+                            &util::file::get_thumbnail_image(&buf)?,
+                        )
+                        .await
+                    {
+                        log::error!("Error putting {}: {}", file, err)
+                    }
+                }
+                Err(err) => log::error!("Error getting {}: {}", file, err),
+            }
+        }
+    }
+
+    Ok(())
 }
