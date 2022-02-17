@@ -2,6 +2,7 @@ use actix_http::Uri;
 use clap::Parser;
 use colored::*;
 use config::StorageConfig;
+use figlet_rs::FIGfont;
 use models::MessageResponse;
 use sqlx::{postgres::PgRow, Row};
 use state::State;
@@ -61,6 +62,10 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
     env_logger::init();
 
+    let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
+    let figure = fig_font.convert("Backpack").unwrap();
+    println!("{}", figure.to_string().purple());
+
     let config = config::Config::new();
     let args = Args::parse();
 
@@ -88,6 +93,8 @@ async fn main() -> std::io::Result<()> {
     if let Err(err) = database.run_migrations(Path::new("migrations")).await {
         panic!("{}", err);
     }
+
+    log::info!("Connected to the database");
 
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
@@ -164,6 +171,11 @@ async fn main() -> std::io::Result<()> {
         }
         _ => None,
     };
+
+    log::info!(
+        "Starting webserver on port {}",
+        config.port.to_string().yellow()
+    );
 
     HttpServer::new(move || {
         let mut app = App::new()
