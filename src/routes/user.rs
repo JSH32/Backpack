@@ -2,7 +2,7 @@ use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
 use lettre::AsyncTransport;
 
 use crate::{
-    models::{MessageResponse, UpdateUserSettings, UserCreateForm},
+    models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm},
     state::State,
     util::{
         self,
@@ -38,20 +38,19 @@ async fn settings(
     auth: Auth<auth_role::User, true, true>,
     state: web::Data<State>,
     form: web::Json<UpdateUserSettings>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     // Check if the users password is correct
     if Argon2::default()
         .verify_password(
             form.current_password.as_bytes(),
-            &PasswordHash::new(&auth.user.password)
-                .map_err(|_| MessageResponse::internal_server_error())?,
+            &PasswordHash::new(&auth.user.password)?,
         )
         .is_ok()
     {
-        return Err(MessageResponse::new(
-            StatusCode::BAD_REQUEST,
-            "Incorrect current password",
-        ));
+        return Ok(
+            MessageResponse::new(StatusCode::BAD_REQUEST, "Incorrect current password")
+                .http_response(),
+        );
     }
 
     // We set the properties in here (except current_password) from the if blocks.
@@ -65,29 +64,35 @@ async fn settings(
     };
 
     if let Some(new_password) = &form.new_password {
-        to_change.new_password = Some(util::user::new_password(&new_password)?);
+        to_change.new_password = match util::user::new_password(&new_password) {
+            Ok(v) => Some(v),
+            Err(err) => return Ok(err.http_response()),
+        }
     }
 
     if let Some(new_email) = &form.email {
         if !EMAIL_REGEX.is_match(&new_email) {
-            return Err(MessageResponse::new(
-                StatusCode::BAD_REQUEST,
-                "Invalid email was provided",
-            ));
+            return Ok(
+                MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided")
+                    .http_response(),
+            );
         }
 
         if state.database.get_user_by_email(&new_email).await.is_ok() {
-            return Err(MessageResponse::new(
+            return Ok(MessageResponse::new(
                 StatusCode::CONFLICT,
                 "An account with that email already exists!",
-            ));
+            )
+            .http_response());
         }
 
         to_change.email = Some(new_email.to_string());
     }
 
     if let Some(new_username) = &form.username {
-        validate_username(&new_username)?;
+        if let Err(err) = validate_username(&new_username) {
+            return Ok(err.http_response());
+        }
 
         if state
             .database
@@ -95,10 +100,11 @@ async fn settings(
             .await
             .is_ok()
         {
-            return Err(MessageResponse::new(
+            return Ok(MessageResponse::new(
                 StatusCode::CONFLICT,
                 "An account with that username already exists!",
-            ));
+            )
+            .http_response());
         }
 
         to_change.username = Some(new_username.to_string());
@@ -106,19 +112,11 @@ async fn settings(
 
     // Update email if change validated
     if let Some(email) = to_change.email {
-        state
-            .database
-            .change_email(&auth.user.id, &email)
-            .await
-            .map_err(|_| MessageResponse::internal_server_error())?;
+        state.database.change_email(&auth.user.id, &email).await?;
 
         // If email validation is on we need to resend the email and unverify the user
         if let Some(smtp) = &state.smtp_client {
-            state
-                .database
-                .verify_user(&auth.user.id, false)
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+            state.database.verify_user(&auth.user.id, false).await?;
 
             let random_code = random_string(72);
             if !state
@@ -144,11 +142,15 @@ async fn settings(
 
     // Update password if change validated
     if let Some(new_password) = to_change.new_password {
+        let password = match util::user::new_password(&new_password) {
+            Ok(v) => v,
+            Err(err) => return Ok(err.http_response()),
+        };
+
         state
             .database
-            .change_password(&auth.user.id, &util::user::new_password(&new_password)?)
-            .await
-            .map_err(|_| MessageResponse::internal_server_error())?;
+            .change_password(&auth.user.id, &password)
+            .await?;
     }
 
     // Update username if change validated
@@ -156,30 +158,25 @@ async fn settings(
         state
             .database
             .change_username(&auth.user.id, &new_username)
-            .await
-            .map_err(|_| MessageResponse::internal_server_error())?;
+            .await?;
     }
 
     // Send updated user data in case of data change
-    Ok(HttpResponse::Ok().json(
-        state
-            .database
-            .get_user_by_id(&auth.user.id)
-            .await
-            .map_err(|_| MessageResponse::internal_server_error())?,
-    ))
+    Ok(HttpResponse::Ok().json(state.database.get_user_by_id(&auth.user.id).await?))
 }
 
 #[post("")]
 async fn create(
     state: web::Data<State>,
     mut form: web::Json<UserCreateForm>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     // Check if username length is within bounds
-    validate_username(&form.username)?;
+    if let Err(err) = validate_username(&form.username) {
+        return Ok(err);
+    }
 
     if !EMAIL_REGEX.is_match(&form.email) {
-        return Err(MessageResponse::new(
+        return Ok(MessageResponse::new(
             StatusCode::BAD_REQUEST,
             "Invalid email was provided",
         ));
@@ -187,7 +184,7 @@ async fn create(
 
     // Check if user with same email was found
     if state.database.get_user_by_email(&form.email).await.is_ok() {
-        return Err(MessageResponse::new(
+        return Ok(MessageResponse::new(
             StatusCode::CONFLICT,
             "An account with that email already exists!",
         ));
@@ -200,7 +197,7 @@ async fn create(
         .await
         .is_ok()
     {
-        return Err(MessageResponse::new(
+        return Ok(MessageResponse::new(
             StatusCode::CONFLICT,
             "An account with that username already exists!",
         ));
@@ -208,37 +205,31 @@ async fn create(
 
     form.password = match new_password(&form.password) {
         Ok(password_hashed) => password_hashed,
-        Err(err) => return Err(err),
+        Err(err) => return Ok(err),
     };
 
-    match state.database.create_user(&form).await {
-        Ok(user_data) => {
-            if let Some(smtp) = &state.smtp_client {
-                let random_code = random_string(72);
-                if !state
-                    .database
-                    .create_verification(&user_data.id, &random_code)
-                    .await
-                    .is_err()
-                {
-                    let email = verification_email(
-                        &state.base_url.to_string(),
-                        &smtp.1,
-                        &user_data.email,
-                        &random_code,
-                        state.with_client,
-                    );
-                    let mailer = smtp.clone().0;
-                    tokio::spawn(async move {
-                        let _ = mailer.send(email).await;
-                    });
-                }
-            } else {
-                // If SMTP is disabled we just verify the user
-                let _ = state.database.verify_user(&user_data.id, true).await;
-            }
+    let user_data = state.database.create_user(&form).await?;
+
+    if let Some(smtp) = &state.smtp_client {
+        let random_code = random_string(72);
+        if !state
+            .database
+            .create_verification(&user_data.id, &random_code)
+            .await
+            .is_err()
+        {
+            let email = verification_email(
+                &state.base_url.to_string(),
+                &smtp.1,
+                &user_data.email,
+                &random_code,
+                state.with_client,
+            );
+            let mailer = smtp.clone().0;
+            tokio::spawn(async move {
+                let _ = mailer.send(email).await;
+            });
         }
-        Err(_) => return Err(MessageResponse::internal_server_error()),
     }
 
     Ok(MessageResponse::new(
@@ -251,26 +242,21 @@ async fn create(
 async fn resend_verify(
     state: web::Data<State>,
     auth: Auth<auth_role::User, true, false>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     if auth.user.verified {
-        return Err(MessageResponse::new(
+        return Ok(MessageResponse::new(
             StatusCode::CONFLICT,
             "You are already verified",
         ));
     }
 
-    state
-        .database
-        .delete_verification(&auth.user.id)
-        .await
-        .map_err(|_| MessageResponse::internal_server_error())?;
+    state.database.delete_verification(&auth.user.id).await?;
 
     let random_code = random_string(72);
     state
         .database
         .create_verification(&auth.user.id, &random_code)
-        .await
-        .map_err(|_| MessageResponse::internal_server_error())?;
+        .await?;
 
     let smtp = state.smtp_client.as_ref().unwrap();
     let email = verification_email(
@@ -293,38 +279,27 @@ async fn resend_verify(
 }
 
 #[patch("/verify/{code}")]
-async fn verify(
-    state: web::Data<State>,
-    code: web::Path<String>,
-) -> Result<impl Responder, MessageResponse> {
+async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<impl Responder> {
     match state.database.get_user_from_verification(&code).await {
         Ok(user_data) => {
-            state
-                .database
-                .delete_verification(&user_data.id)
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+            state.database.delete_verification(&user_data.id).await?;
 
             // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
             if user_data.verified {
-                return Err(MessageResponse::new(
+                return Ok(MessageResponse::new(
                     StatusCode::CONFLICT,
                     "User was already verified",
                 ));
             }
 
-            state
-                .database
-                .verify_user(&user_data.id, true)
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+            state.database.verify_user(&user_data.id, true).await?;
 
             Ok(MessageResponse::new(
                 StatusCode::OK,
                 "User has been verified",
             ))
         }
-        Err(_) => return Err(MessageResponse::bad_request()),
+        Err(_) => return Ok(MessageResponse::bad_request()),
     }
 }
 

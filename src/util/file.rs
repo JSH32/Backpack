@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use actix_multipart::Multipart;
-use image::{io::Reader as ImageReader, ImageError};
+use image::ImageError;
 use thiserror::Error;
 
 use futures::{AsyncWriteExt, TryStreamExt};
@@ -15,8 +15,8 @@ pub enum MultipartError {
     FieldNotFound(String),
     #[error("payload was larger than `{0}`")]
     PayloadTooLarge(usize),
-    #[error("there was a problem writing from the payload")]
-    WriteError,
+    #[error("there was a problem writing from the payload: `{0}`")]
+    WriteError(std::io::Error),
 }
 
 pub struct File {
@@ -66,8 +66,8 @@ pub async fn get_file_from_payload(
                     return Err(MultipartError::PayloadTooLarge(size_limit));
                 }
 
-                if let Err(_) = bytes.write(&chunk).await {
-                    return Err(MultipartError::WriteError);
+                if let Err(err) = bytes.write(&chunk).await {
+                    return Err(MultipartError::WriteError(err));
                 }
             }
 

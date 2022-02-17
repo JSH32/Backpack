@@ -159,13 +159,17 @@ async fn get_auth_data(
             }
             None => {
                 // Delete all verifications for the user
-                if let Err(_) = state.database.delete_verification(&user.id).await {
-                    return Err(Error::from(MessageResponse::internal_server_error()));
+                if let Err(err) = state.database.delete_verification(&user.id).await {
+                    return Err(Error::from(MessageResponse::internal_server_error(
+                        &err.to_string(),
+                    )));
                 }
 
                 // Verify the user
-                if let Err(_) = state.database.verify_user(&user.id, true).await {
-                    return Err(Error::from(MessageResponse::internal_server_error()));
+                if let Err(err) = state.database.verify_user(&user.id, true).await {
+                    return Err(Error::from(MessageResponse::internal_server_error(
+                        &err.to_string(),
+                    )));
                 }
 
                 user.verified = true;

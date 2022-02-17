@@ -11,7 +11,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    models::{file::FilePage, FileData, FileStats, MessageResponse},
+    models::{file::FilePage, Error, FileData, FileStats, MessageResponse, Response},
     state::State,
     util::{
         auth::{auth_role, Auth},
@@ -33,7 +33,7 @@ async fn upload(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
     mut payload: Multipart,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     match get_file_from_payload(&mut payload, state.file_size_limit, "uploadFile").await {
         Ok(file) => {
             let extension = Path::new(&file.filename)
@@ -46,11 +46,7 @@ async fn upload(
 
             let hash = &format!("{:x}", Sha256::digest(&file.bytes));
 
-            let file_exists = state
-                .database
-                .exist_file_hash(&auth.user.id, &hash)
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+            let file_exists = state.database.exist_file_hash(&auth.user.id, &hash).await?;
 
             if let Some(name) = file_exists {
                 // Push the existing file name for the matching hash
@@ -63,11 +59,12 @@ async fn upload(
                     json!(&file_url.as_path().display().to_string().replace("\\", "/")),
                 );
 
-                return Err(MessageResponse::new_with_data(
+                return Ok(MessageResponse::new_with_data(
                     StatusCode::CONFLICT,
                     "You have already uploaded this file",
                     serde_json::Value::Object(object),
-                ));
+                )
+                .http_response());
             }
 
             let mut file_data = state
@@ -80,14 +77,17 @@ async fn upload(
                     file.size as i32,
                     chrono::offset::Utc::now(),
                 )
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?;
+                .await?;
 
             // Upload file to storage provider
             // If this fails attempt to delete the file from database
             if let Err(_) = state.storage.put_object(&filename, &file.bytes).await {
                 let _ = state.database.delete_file(&file_data.id).await;
-                return Err(MessageResponse::internal_server_error());
+                return Ok(MessageResponse::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Unable to upload file",
+                )
+                .http_response());
             }
 
             let root_path = PathBuf::from(&state.storage_url);
@@ -113,17 +113,18 @@ async fn upload(
 
             Ok(HttpResponse::Ok().json(file_data))
         }
-        Err(err) => Err(match err {
-            MultipartError::FieldNotFound(_) => MessageResponse::bad_request(),
-            MultipartError::PayloadTooLarge(_) => MessageResponse::new(
+        Err(err) => match err {
+            MultipartError::FieldNotFound(_) => Ok(MessageResponse::bad_request().http_response()),
+            MultipartError::PayloadTooLarge(_) => Ok(MessageResponse::new(
                 StatusCode::PAYLOAD_TOO_LARGE,
                 &format!(
                     "File was larger than the size limit of {}mb",
                     state.file_size_limit / 1000 / 1000
                 ),
-            ),
-            MultipartError::WriteError => MessageResponse::internal_server_error(),
-        }),
+            )
+            .http_response()),
+            MultipartError::WriteError(err) => Err(Error::from(err)),
+        },
     }
 }
 
@@ -131,13 +132,9 @@ async fn upload(
 async fn stats(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     Ok(HttpResponse::Ok().json(FileStats {
-        usage: state
-            .database
-            .get_user_usage(&auth.user.id)
-            .await
-            .map_err(|_| MessageResponse::internal_server_error())?,
+        usage: state.database.get_user_usage(&auth.user.id).await?,
     }))
 }
 
@@ -147,7 +144,7 @@ async fn list(
     page_number: web::Path<u32>,
     auth: Auth<auth_role::User, false, true>,
     query_params: web::Query<HashMap<String, String>>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     let query = match query_params.get("query") {
         Some(str) => Some(str.clone()),
         None => None,
@@ -156,49 +153,44 @@ async fn list(
     const PAGE_SIZE: u32 = 25;
 
     if *page_number < 1 {
-        return Err(MessageResponse::new(
-            StatusCode::BAD_REQUEST,
-            "Pages start at 1",
-        ));
+        return Ok(
+            MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1").http_response(),
+        );
     }
 
-    match state
+    let total_pages = state
         .database
         .get_total_file_pages(&auth.user.id, PAGE_SIZE, &query)
-        .await
-    {
-        Ok(total_pages) => {
-            let file_list: Vec<FileData> = state
-                .database
-                .get_files(&auth.user.id, PAGE_SIZE, *page_number, &query)
-                .await
-                .map_err(|_| MessageResponse::internal_server_error())?
-                .into_iter()
-                // Attach the URL to each file
-                .map(|mut file| {
-                    let storage_url = PathBuf::from(&state.storage_url);
-                    file.set_url(storage_url.clone());
-                    file.set_thumbnail_url(storage_url);
+        .await?;
 
-                    file
-                })
-                .collect();
+    let file_list: Vec<FileData> = state
+        .database
+        .get_files(&auth.user.id, PAGE_SIZE, *page_number, &query)
+        .await?
+        .into_iter()
+        // Attach the URL to each file
+        .map(|mut file| {
+            let storage_url = PathBuf::from(&state.storage_url);
+            file.set_url(storage_url.clone());
+            file.set_thumbnail_url(storage_url);
 
-            if file_list.len() < 1 {
-                return Err(MessageResponse::new(
-                    StatusCode::NOT_FOUND,
-                    &format!("There are only {} pages", total_pages),
-                ));
-            }
+            file
+        })
+        .collect();
 
-            Ok(HttpResponse::Ok().json(FilePage {
-                page: *page_number,
-                pages: total_pages,
-                files: file_list,
-            }))
-        }
-        Err(_) => Err(MessageResponse::internal_server_error()),
+    if file_list.len() < 1 {
+        return Ok(MessageResponse::new(
+            StatusCode::NOT_FOUND,
+            &format!("There are only {} pages", total_pages),
+        )
+        .http_response());
     }
+
+    Ok(HttpResponse::Ok().json(FilePage {
+        page: *page_number,
+        pages: total_pages,
+        files: file_list,
+    }))
 }
 
 #[get("/{file_id}")]
@@ -235,20 +227,16 @@ async fn delete_file(
     state: web::Data<State>,
     file_id: web::Path<String>,
     auth: Auth<auth_role::User, true, true>,
-) -> Result<impl Responder, MessageResponse> {
+) -> Response<impl Responder> {
     match state.database.get_file(&file_id).await {
         Ok(v) => {
             if v.uploader != auth.user.id {
-                Err(MessageResponse::new(
+                Ok(MessageResponse::new(
                     StatusCode::FORBIDDEN,
                     "You are not allowed to access this file",
                 ))
             } else {
-                state
-                    .database
-                    .delete_file(&file_id)
-                    .await
-                    .map_err(|_| MessageResponse::internal_server_error())?;
+                state.database.delete_file(&file_id).await?;
 
                 // We dont care about the result of this because of discrepancies
                 let _ = state.storage.delete_object(&v.name).await;
@@ -263,7 +251,7 @@ async fn delete_file(
                 ))
             }
         }
-        Err(_) => Err(MessageResponse::new(
+        Err(_) => Ok(MessageResponse::new(
             StatusCode::NOT_FOUND,
             "That file was not found",
         )),

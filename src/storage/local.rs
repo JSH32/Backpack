@@ -17,41 +17,33 @@ impl LocalProvider {
 
 #[async_trait]
 impl StorageProvider for LocalProvider {
-    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), String> {
+    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), anyhow::Error> {
         let mut path = self.path.clone();
         path.push(name);
 
-        let mut file = match tokio::fs::OpenOptions::new()
+        let mut file = tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(path)
-            .await
-        {
-            Err(err) => return Err(err.to_string()),
-            Ok(file) => file,
-        };
+            .await?;
 
-        match file.write_all(&data).await {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        }
+        file.write_all(&data).await?;
+        Ok(())
     }
 
-    async fn delete_object(&self, name: &str) -> Result<(), String> {
+    async fn delete_object(&self, name: &str) -> Result<(), anyhow::Error> {
         let mut path = self.path.clone();
         path.push(name);
 
-        match tokio::fs::remove_file(path).await {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        }
+        tokio::fs::remove_file(path).await?;
+        Ok(())
     }
 
-    async fn get_object(&self, path: &str) -> Result<Vec<u8>, String> {
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, anyhow::Error> {
         let mut path_buf = self.path.clone();
         path_buf.push(path);
 
-        tokio::fs::read(path_buf).await.map_err(|e| e.to_string())
+        Ok(tokio::fs::read(path_buf).await?)
     }
 }

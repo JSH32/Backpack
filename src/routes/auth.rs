@@ -3,7 +3,8 @@ use chrono::Utc;
 use time::OffsetDateTime;
 
 use crate::{
-    models::{auth::BasicAuthForm, MessageResponse},
+    database,
+    models::{auth::BasicAuthForm, Error, MessageResponse, Response},
     state::State,
     util::{
         self,
@@ -22,32 +23,48 @@ pub fn get_routes() -> Scope {
 async fn basic(
     state: web::Data<State>,
     form: web::Json<BasicAuthForm>,
-) -> Result<HttpResponse, MessageResponse> {
-    let user_data = if util::EMAIL_REGEX.is_match(&form.auth) {
+) -> Response<impl Responder> {
+    let user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
         state.database.get_user_by_email(&form.auth).await
         // TODO: block usernames from having @ or weird characters
     } else {
         state.database.get_user_by_username(&form.auth).await
-    }
-    .map_err(|_| MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!"))?;
+    } {
+        Ok(v) => v,
+        Err(err) => {
+            // Check if the error was due to not finding or due to something else (worth throwing a 500 for)
+            if let database::error::Error::SqlxError(err) = err {
+                if let sqlx::Error::RowNotFound = err {
+                    return Ok(MessageResponse::new(
+                        StatusCode::BAD_REQUEST,
+                        "Invalid credentials provided!",
+                    )
+                    .http_response());
+                } else {
+                    return Err(Error::from(err));
+                }
+            } else {
+                return Err(Error::from(err));
+            }
+        }
+    };
 
     // Check if password is valid to password hash
     if Argon2::default()
         .verify_password(
             form.password.as_bytes(),
-            &PasswordHash::new(&user_data.password)
-                .map_err(|_| MessageResponse::internal_server_error())?,
+            &PasswordHash::new(&user_data.password)?,
         )
         .is_ok()
     {
-        return Err(MessageResponse::new(
-            StatusCode::BAD_REQUEST,
-            "Invalid credentials provided!",
-        ));
+        return Ok(
+            MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!")
+                .http_response(),
+        );
     }
 
     let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();
-    let jwt = match create_jwt_string(
+    let jwt = create_jwt_string(
         &user_data.id,
         None,
         &state
@@ -56,10 +73,7 @@ async fn basic(
             .expect("BASE_URL must have host included"),
         Some(expire_time),
         &state.jwt_key,
-    ) {
-        Ok(jwt) => jwt,
-        Err(_) => return Err(MessageResponse::internal_server_error()),
-    };
+    )?;
 
     // Set JWT token as cookie
     Ok(HttpResponse::Ok()

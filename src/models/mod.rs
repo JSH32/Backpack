@@ -8,9 +8,33 @@ use std::fmt::{Debug, Display};
 
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 
+use derive_more::Display;
 use serde::Serialize;
+use thiserror::Error;
 
 pub use self::{application::*, auth::*, file::*, user::*};
+
+#[derive(Debug, Display)]
+pub struct Error(anyhow::Error);
+
+pub type Response<T> = Result<T, Error>;
+
+impl ResponseError for Error {
+    fn error_response(&self) -> HttpResponse {
+        log::error!("{}", &self.0.to_string());
+        MessageResponse::internal_server_error(&self.0.to_string()).http_response()
+    }
+}
+
+impl<E: Into<anyhow::Error>> From<E> for Error {
+    fn from(e: E) -> Self {
+        Self(e.into())
+    }
+}
+
+#[derive(Error, Debug)]
+#[error("{0}")]
+pub struct StringError(pub String);
 
 /// Standard message response
 #[derive(Serialize, Debug)]
@@ -19,6 +43,9 @@ pub struct MessageResponse {
     code: StatusCode,
 
     message: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
 
     // Optional data, can be any JSON value
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -32,6 +59,7 @@ impl MessageResponse {
             code: code,
             message: message.to_string(),
             data: None,
+            error: None,
         }
     }
 
@@ -40,15 +68,20 @@ impl MessageResponse {
             code: code,
             message: message.to_string(),
             data: Some(data),
+            error: None,
         }
     }
 
     /// New internal server error response
-    pub fn internal_server_error() -> Self {
-        MessageResponse::new(
+    pub fn internal_server_error(error: &str) -> Self {
+        let mut response = MessageResponse::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "There was a problem processing your request",
-        )
+        );
+
+        response.error = Some(error.to_string());
+
+        response
     }
 
     /// Create new unauthorized error response

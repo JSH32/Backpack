@@ -1,3 +1,5 @@
+use crate::models::StringError;
+
 use super::StorageProvider;
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -29,15 +31,14 @@ impl S3Provider {
 
 #[async_trait]
 impl StorageProvider for S3Provider {
-    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), String> {
+    async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), anyhow::Error> {
         // Attempt to detect content type
         let content_type = match infer::get(&data) {
             Some(kind) => Some(kind.mime_type().to_string()),
             None => None,
         };
 
-        match self
-            .client
+        self.client
             .put_object(PutObjectRequest {
                 bucket: self.bucket.clone(),
                 body: Some(ByteStream::from(data.clone())),
@@ -46,29 +47,24 @@ impl StorageProvider for S3Provider {
                 content_type: content_type,
                 ..Default::default()
             })
-            .await
-        {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        }
+            .await?;
+
+        Ok(())
     }
 
-    async fn delete_object(&self, name: &str) -> Result<(), String> {
-        match self
-            .client
+    async fn delete_object(&self, name: &str) -> Result<(), anyhow::Error> {
+        self.client
             .delete_object(DeleteObjectRequest {
                 bucket: self.bucket.clone(),
                 key: name.to_string(),
                 ..Default::default()
             })
-            .await
-        {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        }
+            .await?;
+
+        Ok(())
     }
 
-    async fn get_object(&self, path: &str) -> Result<Vec<u8>, String> {
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, anyhow::Error> {
         match self
             .client
             .get_object(GetObjectRequest {
@@ -76,17 +72,15 @@ impl StorageProvider for S3Provider {
                 key: path.to_string(),
                 ..Default::default()
             })
-            .await
+            .await?
+            .body
+            .take()
         {
-            Ok(mut v) => match v.body.take() {
-                Some(stream) => stream
-                    .map_ok(|b| b.to_vec())
-                    .try_concat()
-                    .await
-                    .map_err(|e| e.to_string()),
-                None => Err(format!("No file stream found on {}", path)),
-            },
-            Err(err) => Err(err.to_string()),
+            Some(stream) => Ok(stream.map_ok(|b| b.to_vec()).try_concat().await?),
+            None => Err(anyhow::Error::from(StringError(format!(
+                "No file stream found on {}",
+                path
+            )))),
         }
     }
 }

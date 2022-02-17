@@ -22,7 +22,7 @@ pub fn new_password(password: &str) -> Result<String, MessageResponse> {
 
     Ok(Argon2::default()
         .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
-        .map_err(|_| MessageResponse::internal_server_error())?
+        .map_err(|err| MessageResponse::internal_server_error(&err.to_string()))?
         .to_string())
 }
 
