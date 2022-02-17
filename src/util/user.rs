@@ -3,27 +3,26 @@ use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use lettre::Message;
 use rand::rngs::OsRng;
 
-use crate::models::MessageResponse;
+use crate::models::{MessageResponse, Response};
 
 /// Checks and generates a new hashed password
-pub fn new_password(password: &str) -> Result<String, MessageResponse> {
+pub fn new_password(password: &str) -> Response<Result<String, MessageResponse>> {
     let password_length = password.len();
     if password_length < 6 {
-        return Err(MessageResponse::new(
+        return Ok(Err(MessageResponse::new(
             StatusCode::BAD_REQUEST,
             "Password too short (minimum 6 characters)",
-        ));
+        )));
     } else if password_length > 128 {
-        return Err(MessageResponse::new(
+        return Ok(Err(MessageResponse::new(
             StatusCode::BAD_REQUEST,
             "Password too long (maximum 128 characters)",
-        ));
+        )));
     }
 
-    Ok(Argon2::default()
-        .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
-        .map_err(|err| MessageResponse::internal_server_error(&err.to_string()))?
-        .to_string())
+    Ok(Ok(Argon2::default()
+        .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))?
+        .to_string()))
 }
 
 pub fn validate_username(username: &str) -> Result<(), MessageResponse> {

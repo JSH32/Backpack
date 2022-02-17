@@ -64,7 +64,7 @@ async fn settings(
     };
 
     if let Some(new_password) = &form.new_password {
-        to_change.new_password = match util::user::new_password(&new_password) {
+        to_change.new_password = match util::user::new_password(&new_password)? {
             Ok(v) => Some(v),
             Err(err) => return Ok(err.http_response()),
         }
@@ -142,7 +142,7 @@ async fn settings(
 
     // Update password if change validated
     if let Some(new_password) = to_change.new_password {
-        let password = match util::user::new_password(&new_password) {
+        let password = match util::user::new_password(&new_password)? {
             Ok(v) => v,
             Err(err) => return Ok(err.http_response()),
         };
@@ -203,7 +203,7 @@ async fn create(
         ));
     }
 
-    form.password = match new_password(&form.password) {
+    form.password = match new_password(&form.password)? {
         Ok(password_hashed) => password_hashed,
         Err(err) => return Ok(err),
     };
