@@ -6,15 +6,16 @@ import { SearchIcon } from "@chakra-ui/icons"
 import { useForm } from "react-hook-form"
 import { Pagination } from "components/pagination"
 
-import { 
-    Box, 
-    Flex, 
-    Heading, 
-    Icon, 
-    Input, 
-    InputGroup, 
-    InputLeftElement, 
-    Text 
+import {
+    Box,
+    Flex,
+    Heading,
+    Icon,
+    Input,
+    InputGroup,
+    InputLeftElement,
+    Spinner,
+    Text
 } from "@chakra-ui/react"
 
 export const FileSearch: React.FC<{
@@ -25,11 +26,14 @@ export const FileSearch: React.FC<{
     const [searchResult, setSearchResult] = React.useState<SearchResult | null>(null)
     const [queryString, setQueryString] = React.useState<string>(null)
     const [currentPage, setCurrentPage] = React.useState(1)
+    const [initialLoading, setInitialLoading] = React.useState(false)
 
     React.useEffect(() => {
+        setInitialLoading(true)
         onSearch(1, null)
             .then(setSearchResult)
             .catch(() => setSearchResult(null))
+            .finally(() => setInitialLoading(false))
     }, [])
 
     const searchCallback = React.useCallback(form => {
@@ -59,30 +63,32 @@ export const FileSearch: React.FC<{
     return <Box>
         <form onSubmit={handleSubmit(searchCallback)}>
             <InputGroup>
-                <InputLeftElement color="gray.500" children={<Icon as={SearchIcon}/>} />
+                <InputLeftElement color="gray.500" children={<Icon as={SearchIcon} />} />
                 <Input variant="filled" {...register("query")} placeholder="Search for files" />
             </InputGroup>
         </form>
 
-        { searchResult === null ? <Box color="gray.500" textAlign="center">
+        {initialLoading ? <Flex justify="center" align="center" mt={6}>
+            <Spinner size="lg" />
+        </Flex> : searchResult === null ? <Box color="gray.500" textAlign="center">
             <Heading size="xl" mt={6} mb={2}>:(</Heading>
             <Heading as="h2" size="lg">No files found</Heading>
             <Text>There were no files matched your query</Text>
         </Box> : <Flex justifyContent="center" gap="20px" wrap="wrap" mt={6}>
-            { searchResult.files.map(file => <FileCard 
-                    key={file.id} 
-                    file={file} 
-                    onDetails={file => onFileDetails(file.id)} 
-                    onDelete={file => deleteFile(file.id)}/>) }
-        </Flex> }
+            {searchResult.files.map(file => <FileCard
+                key={file.id}
+                file={file}
+                onDetails={file => onFileDetails(file.id)}
+                onDelete={file => deleteFile(file.id)} />)}
+        </Flex>}
 
-        { searchResult?.pages > 1 ? 
+        {searchResult?.pages > 1 ?
             <Flex justifyContent="center" mt={5}>
-                <Pagination 
-                    pages={searchResult.pages} 
+                <Pagination
+                    pages={searchResult.pages}
                     currentPage={currentPage}
                     range={3}
-                    onPageSelect={setCurrentPage}/>
-            </Flex> : <></> }
+                    onPageSelect={setCurrentPage} />
+            </Flex> : <></>}
     </Box>
 }

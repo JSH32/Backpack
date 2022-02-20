@@ -1,10 +1,11 @@
 use actix_http::Uri;
 use lettre::{AsyncSmtpTransport, Tokio1Executor};
+use sea_orm::DatabaseConnection;
 
-use crate::{database::Database, storage::StorageProvider};
+use crate::storage::StorageProvider;
 
 pub struct State {
-    pub database: Database,
+    pub database: DatabaseConnection,
     pub storage: Box<dyn StorageProvider>,
     pub jwt_key: String,
     pub base_url: Uri,

@@ -1,10 +1,11 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use chrono::Utc;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use time::OffsetDateTime;
 
 use crate::{
-    database,
-    models::{auth::BasicAuthForm, Error, MessageResponse, Response},
+    database::entity::users,
+    models::{auth::BasicAuthForm, MessageResponse, Response, UserData},
     state::State,
     util::{
         self,
@@ -25,32 +26,28 @@ async fn basic(
     form: web::Json<BasicAuthForm>,
 ) -> Response<impl Responder> {
     let user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
-        state.database.get_user_by_email(&form.auth).await
-        // TODO: block usernames from having @ or weird characters
+        users::Entity::find()
+            .filter(users::Column::Email.eq(form.auth.to_owned()))
+            .one(&state.database)
+            .await
     } else {
-        state.database.get_user_by_username(&form.auth).await
-    } {
-        Ok(v) => v,
-        Err(err) => {
-            // Check if the error was due to not finding or due to something else (worth throwing a 500 for)
-            if let database::error::Error::SqlxError(err) = err {
-                if let sqlx::Error::RowNotFound = err {
-                    return Ok(MessageResponse::new(
-                        StatusCode::BAD_REQUEST,
-                        "Invalid credentials provided!",
-                    )
-                    .http_response());
-                } else {
-                    return Err(Error::from(err));
-                }
-            } else {
-                return Err(Error::from(err));
-            }
+        users::Entity::find()
+            .filter(users::Column::Username.eq(form.auth.to_owned()))
+            .one(&state.database)
+            .await
+    }? {
+        Some(v) => v,
+        None => {
+            return Ok(MessageResponse::new(
+                StatusCode::BAD_REQUEST,
+                "Invalid credentials provided!",
+            )
+            .http_response());
         }
     };
 
     // Check if password is valid to password hash
-    if Argon2::default()
+    if !Argon2::default()
         .verify_password(
             form.password.as_bytes(),
             &PasswordHash::new(&user_data.password)?,
@@ -85,7 +82,7 @@ async fn basic(
                 .expires(OffsetDateTime::from_unix_timestamp(expire_time))
                 .finish(),
         )
-        .json(user_data))
+        .json(UserData::from(user_data)))
 }
 
 /// Remove httponly cookie

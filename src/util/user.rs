@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use lettre::Message;
 use rand::rngs::OsRng;
+use regex::Regex;
 
 use crate::models::{MessageResponse, Response};
 
@@ -25,17 +26,26 @@ pub fn new_password(password: &str) -> Response<Result<String, MessageResponse>>
         .to_string()))
 }
 
+lazy_static! {
+    static ref USERNAME_REGEX: regex::Regex = Regex::new(r"^[A-Za-z][A-Za-z0-9_]{4,14}$").unwrap();
+}
+
 pub fn validate_username(username: &str) -> Result<(), MessageResponse> {
     let username_length = username.len();
-    if username_length < 4 {
+    if username_length < 5 {
         Err(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Username too short (minimum 4 characters)",
+            "Username too short (minimum 5 characters)",
         ))
     } else if username_length > 15 {
         Err(MessageResponse::new(
             StatusCode::BAD_REQUEST,
             "Username too long (maximum 15 characters)",
+        ))
+    } else if !USERNAME_REGEX.is_match(username) {
+        Err(MessageResponse::new(
+            StatusCode::BAD_REQUEST,
+            "Username may not contain any symbols",
         ))
     } else {
         Ok(())

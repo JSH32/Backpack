@@ -4,10 +4,12 @@ use chrono::Utc;
 
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    models::{user::UserData, MessageResponse, UserRole},
+    database::entity::{applications, users, verifications},
+    models::{MessageResponse, UserRole},
     state::State,
 };
 
@@ -52,7 +54,7 @@ pub mod auth_role {
 }
 
 pub struct Auth<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> {
-    pub user: UserData,
+    pub user: users::Model,
     _r: std::marker::PhantomData<R>,
 }
 
@@ -82,7 +84,7 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
                 return Err(Error::from(MessageResponse::unauthorized_error()));
             }
 
-            if user_data.role < R::LEVEL {
+            if UserRole::from(user_data.role.clone()) < R::LEVEL {
                 return Err(Error::from(MessageResponse::unauthorized_error()));
             }
 
@@ -119,7 +121,7 @@ fn get_token(req: &HttpRequest) -> Option<String> {
 async fn get_auth_data(
     req: HttpRequest,
     allow_unverified: bool,
-) -> Result<(UserData, bool), actix_web::Error> {
+) -> Result<(users::Model, bool), actix_web::Error> {
     let state = req.app_data::<Data<State>>().expect("State was not found");
 
     let jwt_token = get_token(&req).ok_or(Error::from(MessageResponse::unauthorized_error()))?;
@@ -133,11 +135,11 @@ async fn get_auth_data(
     .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?
     .claims;
 
-    let mut user = state
-        .database
-        .get_user_by_id(&claims.user_id)
+    let mut user = users::Entity::find_by_id(claims.user_id)
+        .one(&state.database)
         .await
-        .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?;
+        .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?
+        .ok_or(Error::from(MessageResponse::unauthorized_error()))?;
 
     // Block user out if unverified is false
     if state.smtp_client.is_some() && !user.verified && !allow_unverified {
@@ -158,19 +160,26 @@ async fn get_auth_data(
                 }
             }
             None => {
-                // Delete all verifications for the user
-                if let Err(err) = state.database.delete_verification(&user.id).await {
-                    return Err(Error::from(MessageResponse::internal_server_error(
-                        &err.to_string(),
-                    )));
+                verifications::ActiveModel {
+                    user_id: Set(user.id.to_owned()),
+                    ..Default::default()
                 }
+                .delete(&state.database)
+                .await
+                .map_err(|err| {
+                    Error::from(MessageResponse::internal_server_error(&err.to_string()))
+                })?;
 
-                // Verify the user
-                if let Err(err) = state.database.verify_user(&user.id, true).await {
-                    return Err(Error::from(MessageResponse::internal_server_error(
-                        &err.to_string(),
-                    )));
+                users::ActiveModel {
+                    id: Set(user.id.to_owned()),
+                    verified: Set(true),
+                    ..Default::default()
                 }
+                .update(&state.database)
+                .await
+                .map_err(|err| {
+                    Error::from(MessageResponse::internal_server_error(&err.to_string()))
+                })?;
 
                 user.verified = true;
             }
@@ -181,8 +190,12 @@ async fn get_auth_data(
 
     // Check if it is perm JWT token
     if let Some(application_id) = claims.application_id {
-        match state.database.get_application_by_id(&application_id).await {
-            Ok(application_data) => {
+        match applications::Entity::find_by_id(application_id)
+            .one(&state.database)
+            .await
+            .map_err(|err| Error::from(MessageResponse::internal_server_error(&err.to_string())))?
+        {
+            Some(application_data) => {
                 is_application = true;
 
                 // Check if perm JWT token belongs to user
@@ -191,8 +204,8 @@ async fn get_auth_data(
                 }
             }
             // Application has been deleted so it's ID does not exist anymore, invalid token
-            Err(_) => return Err(Error::from(MessageResponse::unauthorized_error())),
-        };
+            None => return Err(Error::from(MessageResponse::unauthorized_error())),
+        }
     }
 
     Ok((user, is_application))

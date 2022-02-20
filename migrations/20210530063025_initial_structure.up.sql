@@ -46,7 +46,7 @@ CREATE TABLE files
     original_name  VARCHAR(256)            NOT NULL,
     uploader       sonyflake               NOT NULL,
     hash           VARCHAR(64)             NOT NULL,
-    uploaded       timestamptz             NOT NULL,
+    uploaded       timestamptz             NOT NULL DEFAULT CURRENT_TIMESTAMP,
     size           BIGINT                  NOT NULL,
     
     -- Application needs to delete the files from the S3 container. This is precautionary for database

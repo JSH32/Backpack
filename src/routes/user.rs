@@ -1,8 +1,11 @@
+use actix_web::{get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope};
 use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
 use lettre::AsyncTransport;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, Set};
 
 use crate::{
-    models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm},
+    database::entity::{users, verifications},
+    models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm, UserData},
     state::State,
     util::{
         self,
@@ -12,8 +15,6 @@ use crate::{
         EMAIL_REGEX,
     },
 };
-
-use actix_web::{get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope};
 
 pub fn get_routes(smtp_verification: bool) -> Scope {
     let scope = web::scope("/user")
@@ -30,7 +31,7 @@ pub fn get_routes(smtp_verification: bool) -> Scope {
 
 #[get("")]
 async fn info(auth: Auth<auth_role::User, true, true>) -> impl Responder {
-    HttpResponse::Ok().json(auth.user)
+    HttpResponse::Ok().json(UserData::from(auth.user))
 }
 
 #[put("/settings")]
@@ -40,7 +41,7 @@ async fn settings(
     form: web::Json<UpdateUserSettings>,
 ) -> Response<impl Responder> {
     // Check if the users password is correct
-    if Argon2::default()
+    if !Argon2::default()
         .verify_password(
             form.current_password.as_bytes(),
             &PasswordHash::new(&auth.user.password)?,
@@ -78,7 +79,12 @@ async fn settings(
             );
         }
 
-        if state.database.get_user_by_email(&new_email).await.is_ok() {
+        if users::Entity::find()
+            .filter(users::Column::Email.eq(new_email.to_owned()))
+            .one(&state.database)
+            .await?
+            .is_some()
+        {
             return Ok(MessageResponse::new(
                 StatusCode::CONFLICT,
                 "An account with that email already exists!",
@@ -94,11 +100,11 @@ async fn settings(
             return Ok(err.http_response());
         }
 
-        if state
-            .database
-            .get_user_by_username(&new_username)
-            .await
-            .is_ok()
+        if users::Entity::find()
+            .filter(users::Column::Username.eq(new_username.to_owned()))
+            .one(&state.database)
+            .await?
+            .is_some()
         {
             return Ok(MessageResponse::new(
                 StatusCode::CONFLICT,
@@ -110,21 +116,46 @@ async fn settings(
         to_change.username = Some(new_username.to_string());
     }
 
-    // Update email if change validated
-    if let Some(email) = to_change.email {
-        state.database.change_email(&auth.user.id, &email).await?;
+    let mut update_model = users::ActiveModel {
+        id: Set(auth.user.id.to_owned()),
+        ..Default::default()
+    };
 
+    // Update email if change validated
+    if let Some(email) = &to_change.email {
+        update_model.email = Set(email.to_owned());
+        update_model.verified = Set(false);
+    }
+
+    // Update password if change validated
+    if let Some(new_password) = to_change.new_password {
+        update_model.password = Set(new_password);
+    }
+
+    // Update username if change validated
+    if let Some(new_username) = to_change.username {
+        update_model.username = Set(new_username);
+    }
+
+    // Perform all updates
+    update_model.update(&state.database).await?;
+
+    // After the update we need to send the new verification email if the email was updated
+    if let Some(email) = to_change.email {
         // If email validation is on we need to resend the email and unverify the user
         if let Some(smtp) = &state.smtp_client {
-            state.database.verify_user(&auth.user.id, false).await?;
-
             let random_code = random_string(72);
-            if !state
-                .database
-                .create_verification(&auth.user.id, &random_code)
-                .await
-                .is_err()
-            {
+
+            let success = verifications::ActiveModel {
+                user_id: Set(auth.user.id.to_owned()),
+                code: Set(random_code.to_owned()),
+                ..Default::default()
+            }
+            .insert(&state.database)
+            .await
+            .is_err();
+
+            if success {
                 let email = verification_email(
                     &state.base_url.to_string(),
                     &smtp.1,
@@ -140,35 +171,21 @@ async fn settings(
         }
     }
 
-    // Update password if change validated
-    if let Some(new_password) = to_change.new_password {
-        let password = match util::user::new_password(&new_password)? {
-            Ok(v) => v,
-            Err(err) => return Ok(err.http_response()),
-        };
-
-        state
-            .database
-            .change_password(&auth.user.id, &password)
-            .await?;
-    }
-
-    // Update username if change validated
-    if let Some(new_username) = to_change.username {
-        state
-            .database
-            .change_username(&auth.user.id, &new_username)
-            .await?;
-    }
-
     // Send updated user data in case of data change
-    Ok(HttpResponse::Ok().json(state.database.get_user_by_id(&auth.user.id).await?))
+    Ok(HttpResponse::Ok().json(UserData::from(
+        users::Entity::find_by_id(auth.user.id)
+            .one(&state.database)
+            .await?
+            .ok_or(DbErr::Custom(
+                "user was not found even though we just did an update".to_string(),
+            ))?,
+    )))
 }
 
 #[post("")]
 async fn create(
     state: web::Data<State>,
-    mut form: web::Json<UserCreateForm>,
+    form: web::Json<UserCreateForm>,
 ) -> Response<impl Responder> {
     // Check if username length is within bounds
     if let Err(err) = validate_username(&form.username) {
@@ -183,7 +200,12 @@ async fn create(
     }
 
     // Check if user with same email was found
-    if state.database.get_user_by_email(&form.email).await.is_ok() {
+    if users::Entity::find()
+        .filter(users::Column::Email.eq(form.email.to_owned()))
+        .one(&state.database)
+        .await?
+        .is_some()
+    {
         return Ok(MessageResponse::new(
             StatusCode::CONFLICT,
             "An account with that email already exists!",
@@ -191,11 +213,11 @@ async fn create(
     }
 
     // Check if user with same username was found
-    if state
-        .database
-        .get_user_by_username(&form.username)
-        .await
-        .is_ok()
+    if users::Entity::find()
+        .filter(users::Column::Username.eq(form.username.to_owned()))
+        .one(&state.database)
+        .await?
+        .is_some()
     {
         return Ok(MessageResponse::new(
             StatusCode::CONFLICT,
@@ -203,21 +225,31 @@ async fn create(
         ));
     }
 
-    form.password = match new_password(&form.password)? {
-        Ok(password_hashed) => password_hashed,
-        Err(err) => return Ok(err),
-    };
-
-    let user_data = state.database.create_user(&form).await?;
+    let user_data: users::Model = users::ActiveModel {
+        username: Set(form.username.to_owned()),
+        email: Set(form.email.to_owned()),
+        password: Set(match new_password(&form.password)? {
+            Ok(password_hashed) => password_hashed,
+            Err(err) => return Ok(err),
+        }),
+        ..Default::default()
+    }
+    .insert(&state.database)
+    .await?;
 
     if let Some(smtp) = &state.smtp_client {
         let random_code = random_string(72);
-        if !state
-            .database
-            .create_verification(&user_data.id, &random_code)
-            .await
-            .is_err()
-        {
+
+        let success = verifications::ActiveModel {
+            user_id: Set(user_data.id.to_owned()),
+            code: Set(random_code.to_owned()),
+            ..Default::default()
+        }
+        .insert(&state.database)
+        .await
+        .is_ok();
+
+        if success {
             let email = verification_email(
                 &state.base_url.to_string(),
                 &smtp.1,
@@ -250,13 +282,17 @@ async fn resend_verify(
         ));
     }
 
-    state.database.delete_verification(&auth.user.id).await?;
+    let mut verification_model = verifications::ActiveModel {
+        user_id: Set(auth.user.id.to_owned()),
+        ..Default::default()
+    };
 
+    verification_model.clone().delete(&state.database).await?;
+
+    // Update model and create new verification
     let random_code = random_string(72);
-    state
-        .database
-        .create_verification(&auth.user.id, &random_code)
-        .await?;
+    verification_model.code = Set(random_code.to_owned());
+    verification_model.insert(&state.database).await?;
 
     let smtp = state.smtp_client.as_ref().unwrap();
     let email = verification_email(
@@ -280,9 +316,18 @@ async fn resend_verify(
 
 #[patch("/verify/{code}")]
 async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<impl Responder> {
-    match state.database.get_user_from_verification(&code).await {
-        Ok(user_data) => {
-            state.database.delete_verification(&user_data.id).await?;
+    // let (verification, user): (verifications::Model, users::Model)
+    match verifications::Entity::find()
+        .filter(verifications::Column::Code.eq(code.to_owned()))
+        .find_also_related(users::Entity)
+        .one(&state.database)
+        .await?
+    {
+        Some((verification, user_data_opt)) => {
+            // This can't really be None
+            let user_data = user_data_opt.unwrap();
+
+            verification.delete(&state.database).await?;
 
             // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
             if user_data.verified {
@@ -292,14 +337,16 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
                 ));
             }
 
-            state.database.verify_user(&user_data.id, true).await?;
+            let mut active_user: users::ActiveModel = user_data.into();
+            active_user.verified = Set(true);
+            active_user.update(&state.database).await?;
 
             Ok(MessageResponse::new(
                 StatusCode::OK,
                 "User has been verified",
             ))
         }
-        Err(_) => return Ok(MessageResponse::bad_request()),
+        None => return Ok(MessageResponse::bad_request()),
     }
 }
 

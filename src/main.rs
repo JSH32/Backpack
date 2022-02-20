@@ -1,19 +1,24 @@
+use crate::database::entity::files;
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
 use config::StorageConfig;
 use figlet_rs::FIGfont;
+use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
-use sqlx::{postgres::PgRow, Row};
+use sea_orm::{ConnectOptions, Database, EntityTrait};
+use sqlx::{migrate::Migrator, postgres::PgPoolOptions};
 use state::State;
 use tokio::fs;
 
 use util::file::IMAGE_EXTS;
 
 use std::{
+    convert::TryInto,
     ffi::OsStr,
     panic,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use actix_web::{
@@ -86,13 +91,26 @@ async fn main() -> std::io::Result<()> {
         None => None,
     };
 
-    let sonyflake_worker = database::sonyflake::Sonyflake::new(config.worker_id, None)
-        .expect("There was a problem creating the Sonyflake worker");
+    // Create a SQLx pool for running migrations
+    let migrator_pool = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&config.database_url)
+        .await
+        .expect("Could not initialize migrator connection");
 
-    let database = database::Database::new(16, &config.database_url, sonyflake_worker).await;
-    if let Err(err) = database.run_migrations(Path::new("migrations")).await {
-        panic!("{}", err);
-    }
+    let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
+    migrator.run(&migrator_pool).await.unwrap();
+    migrator_pool.close().await;
+
+    let mut opt = ConnectOptions::new(config.database_url.clone());
+    opt.max_connections(100)
+        .min_connections(5)
+        .connect_timeout(Duration::from_secs(8))
+        .idle_timeout(Duration::from_secs(8))
+        .max_lifetime(Duration::from_secs(8))
+        .sqlx_logging(true);
+
+    let database = Database::connect(opt).await.unwrap();
 
     log::info!("Connected to the database");
 
@@ -260,15 +278,13 @@ async fn main() -> std::io::Result<()> {
 
 async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
     log::info!("Regenerating image thumbnails");
-    let files: Vec<String> = sqlx::query("SELECT name FROM files")
-        .map(|row: PgRow| row.get("name"))
-        .fetch_all(state.database.get_pool())
-        .await?;
 
-    let image_files: Vec<&String> = files
+    let files = files::Entity::find().all(&state.database).await?;
+
+    let image_files: Vec<files::Model> = files
         .iter()
         .filter(|file| {
-            let extension = Path::new(&file)
+            let extension = Path::new(&file.name)
                 .extension()
                 .and_then(OsStr::to_str)
                 .unwrap_or("");
@@ -277,6 +293,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
                 .into_iter()
                 .any(|ext| ext.eq(&extension.to_uppercase()))
         })
+        .map(|v| v.clone())
         .collect();
 
     log::info!(
@@ -284,8 +301,19 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
         image_files.len().to_string().yellow()
     );
 
+    let progress = ProgressBar::new(image_files.len().try_into().unwrap());
+    progress.set_style(
+        ProgressStyle::default_bar()
+            .template(&format!(
+                "{}{{elapsed_precise}}{} {{bar:40.cyan/blue}} {{pos:>2}}/{{len:2}} {{msg}}",
+                "[".bright_black(),
+                "]".bright_black()
+            ))
+            .progress_chars("##-"),
+    );
+
     for file in image_files {
-        let extension = Path::new(&file)
+        let extension = Path::new(&file.name)
             .extension()
             .and_then(OsStr::to_str)
             .unwrap_or("");
@@ -294,24 +322,29 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
             .into_iter()
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
-            match state.storage.get_object(&file).await {
+            progress.set_message(file.name.clone());
+            progress.inc(1);
+
+            match state.storage.get_object(&file.name).await {
                 Ok(buf) => {
-                    log::info!("Generating thumbnail for {}", file.yellow());
+                    // log::info!("Generating thumbnail for {}", file.yellow());
                     if let Err(err) = state
                         .storage
                         .put_object(
-                            &format!("thumb/{}", file),
+                            &format!("thumb/{}", file.name),
                             &util::file::get_thumbnail_image(&buf)?,
                         )
                         .await
                     {
-                        log::error!("Error putting {}: {}", file, err)
+                        log::error!("Error putting {}: {}", file.name, err)
                     }
                 }
-                Err(err) => log::error!("Error getting {}: {}", file, err),
+                Err(err) => log::error!("Error getting {}: {}", file.name, err),
             }
         }
     }
+
+    progress.finish_with_message("Finished generating thumbnails");
 
     Ok(())
 }

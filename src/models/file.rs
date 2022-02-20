@@ -9,6 +9,8 @@ use chrono::{DateTime, Utc};
 
 use crate::util::file::IMAGE_EXTS;
 
+use crate::database::entity::files;
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileData {
@@ -26,6 +28,24 @@ pub struct FileData {
     pub hash: String,
     pub uploaded: DateTime<Utc>,
     pub size: i64,
+}
+
+impl From<files::Model> for FileData {
+    fn from(file: files::Model) -> Self {
+        Self {
+            id: file.id,
+            uploader: file.uploader,
+            name: file.name,
+            original_name: file.original_name,
+            hash: file.hash,
+            uploaded: file.uploaded.into(),
+            size: file.size,
+            // These fields are not stored in database
+            // They are filled in by the route returning it
+            url: None,
+            thumbnail_url: None,
+        }
+    }
 }
 
 impl FileData {
@@ -55,8 +75,8 @@ impl FileData {
 
 #[derive(Serialize)]
 pub struct FilePage {
-    pub page: u32,
-    pub pages: u32,
+    pub page: i64,
+    pub pages: i64,
     pub files: Vec<FileData>,
 }
 

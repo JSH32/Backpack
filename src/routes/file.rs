@@ -7,10 +7,18 @@ use std::{
 use actix_multipart::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
+use sea_orm::{
+    sea_query::Query, ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
+    ModelTrait, Order, QueryFilter, QueryTrait, Set, Statement,
+};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use crate::{
+    database::{
+        entity::files,
+        extensions::{QueryResultOptionExtension, QueryResultVecExtension, SelectExtension},
+    },
     models::{file::FilePage, Error, FileData, FileStats, MessageResponse, Response},
     state::State,
     util::{
@@ -46,12 +54,15 @@ async fn upload(
 
             let hash = &format!("{:x}", Sha256::digest(&file.bytes));
 
-            let file_exists = state.database.exist_file_hash(&auth.user.id, &hash).await?;
+            let file_exists = files::Entity::find()
+                .filter(files::Column::Hash.eq(hash.to_owned()))
+                .one(&state.database)
+                .await?;
 
-            if let Some(name) = file_exists {
+            if let Some(file) = file_exists {
                 // Push the existing file name for the matching hash
                 let mut file_url = PathBuf::from(&state.storage_url);
-                file_url.push(name);
+                file_url.push(file.name);
 
                 let mut object = serde_json::Map::new();
                 object.insert(
@@ -67,22 +78,21 @@ async fn upload(
                 .http_response());
             }
 
-            let mut file_data = state
-                .database
-                .create_file(
-                    &auth.user.id,
-                    &filename,
-                    &file.filename,
-                    &hash,
-                    file.size as i32,
-                    chrono::offset::Utc::now(),
-                )
-                .await?;
+            let file_model = files::ActiveModel {
+                uploader: Set(auth.user.id.to_owned()),
+                name: Set(filename.to_owned()),
+                original_name: Set(file.filename.to_owned()),
+                hash: Set(hash.to_owned()),
+                size: Set(file.size as i64),
+                ..Default::default()
+            }
+            .insert(&state.database)
+            .await?;
 
             // Upload file to storage provider
             // If this fails attempt to delete the file from database
             if let Err(_) = state.storage.put_object(&filename, &file.bytes).await {
-                let _ = state.database.delete_file(&file_data.id).await;
+                let _ = file_model.delete(&state.database).await;
                 return Ok(MessageResponse::new(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Unable to upload file",
@@ -91,6 +101,8 @@ async fn upload(
             }
 
             let root_path = PathBuf::from(&state.storage_url);
+
+            let mut file_api = FileData::from(file_model);
 
             // Create thumbnail
             if IMAGE_EXTS
@@ -105,13 +117,13 @@ async fn upload(
                         .put_object(&format!("./thumb/{}", &filename), image)
                         .await;
 
-                    file_data.set_thumbnail_url(root_path.clone());
+                    file_api.set_thumbnail_url(root_path.clone());
                 }
             }
 
-            file_data.set_url(root_path);
+            file_api.set_url(root_path);
 
-            Ok(HttpResponse::Ok().json(file_data))
+            Ok(HttpResponse::Ok().json(file_api))
         }
         Err(err) => match err {
             MultipartError::FieldNotFound(_) => Ok(MessageResponse::bad_request().http_response()),
@@ -133,15 +145,28 @@ async fn stats(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
 ) -> Response<impl Responder> {
+    // Im not using an ORM for this query
+    let usage = state
+        .database
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            r#"SELECT COALESCE(CAST(SUM(size) AS BIGINT), 0) FROM files WHERE uploader = $1"#,
+            vec![auth.user.id.into()],
+        ))
+        .await?;
+
     Ok(HttpResponse::Ok().json(FileStats {
-        usage: state.database.get_user_usage(&auth.user.id).await?,
+        usage: match usage {
+            Some(v) => v.try_get("", "coalesce")?,
+            None => 0,
+        },
     }))
 }
 
 #[get("/list/{page_number}")]
 async fn list(
     state: web::Data<State>,
-    page_number: web::Path<u32>,
+    page_number: web::Path<i64>,
     auth: Auth<auth_role::User, false, true>,
     query_params: web::Query<HashMap<String, String>>,
 ) -> Response<impl Responder> {
@@ -150,7 +175,7 @@ async fn list(
         None => None,
     };
 
-    const PAGE_SIZE: u32 = 25;
+    const PAGE_SIZE: i64 = 25;
 
     if *page_number < 1 {
         return Ok(
@@ -158,23 +183,43 @@ async fn list(
         );
     }
 
-    let total_pages = state
+    let file_count: i64 = state
         .database
-        .get_total_file_pages(&auth.user.id, PAGE_SIZE, &query)
-        .await?;
+        .query_one(
+            Query::select()
+                .from(files::Entity)
+                .count()
+                .search(
+                    files::Column::Name,
+                    &query.clone().unwrap_or("".to_string()),
+                )
+                .and_where(files::Column::Uploader.eq(auth.user.id.clone()))
+                .build_statement(&state.database.get_database_backend()),
+        )
+        .await?
+        .get("count")?;
+
+    let total_pages = (file_count + PAGE_SIZE - 1) / PAGE_SIZE;
 
     let file_list: Vec<FileData> = state
         .database
-        .get_files(&auth.user.id, PAGE_SIZE, *page_number, &query)
+        .query_all(
+            QueryTrait::query(&mut auth.user.find_related(files::Entity))
+                .search(files::Column::Name, &query.unwrap_or("".to_string()))
+                .order_by(files::Column::Uploaded, Order::Desc)
+                .page(PAGE_SIZE as u64, *page_number as u64)
+                .build_statement(&state.database.get_database_backend()),
+        )
         .await?
-        .into_iter()
-        // Attach the URL to each file
-        .map(|mut file| {
+        .model::<files::Model>()
+        .iter()
+        .map(|file| {
+            let mut file_data = FileData::from(file.clone());
             let storage_url = PathBuf::from(&state.storage_url);
-            file.set_url(storage_url.clone());
-            file.set_thumbnail_url(storage_url);
+            file_data.set_url(storage_url.clone());
+            file_data.set_thumbnail_url(storage_url);
 
-            file
+            file_data
         })
         .collect();
 
@@ -198,28 +243,33 @@ async fn info(
     state: web::Data<State>,
     file_id: web::Path<String>,
     auth: Auth<auth_role::User, true, true>,
-) -> impl Responder {
-    match state.database.get_file(&file_id).await {
-        Ok(mut v) => {
-            if v.uploader != auth.user.id {
-                MessageResponse::new(
-                    StatusCode::FORBIDDEN,
-                    "You are not allowed to access this file",
-                )
-                .http_response()
-            } else {
-                let storage_url = PathBuf::from(&state.storage_url);
+) -> Response<impl Responder> {
+    Ok(
+        match files::Entity::find_by_id(file_id.to_string())
+            .one(&state.database)
+            .await?
+        {
+            Some(v) => {
+                if v.uploader != auth.user.id {
+                    MessageResponse::new(
+                        StatusCode::FORBIDDEN,
+                        "You are not allowed to access this file",
+                    )
+                    .http_response()
+                } else {
+                    let storage_url = PathBuf::from(&state.storage_url);
 
-                v.set_url(storage_url.clone());
-                v.set_thumbnail_url(storage_url);
+                    let mut file = FileData::from(v);
+                    file.set_url(storage_url.clone());
+                    file.set_thumbnail_url(storage_url);
 
-                HttpResponse::Ok().json(v)
+                    HttpResponse::Ok().json(file)
+                }
             }
-        }
-        Err(_) => {
-            MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found").http_response()
-        }
-    }
+            None => MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found")
+                .http_response(),
+        },
+    )
 }
 
 #[delete("/{file_id}")]
@@ -228,32 +278,31 @@ async fn delete_file(
     file_id: web::Path<String>,
     auth: Auth<auth_role::User, true, true>,
 ) -> Response<impl Responder> {
-    match state.database.get_file(&file_id).await {
-        Ok(v) => {
-            if v.uploader != auth.user.id {
-                Ok(MessageResponse::new(
-                    StatusCode::FORBIDDEN,
-                    "You are not allowed to access this file",
-                ))
-            } else {
-                state.database.delete_file(&file_id).await?;
+    Ok(
+        match files::Entity::find_by_id(file_id.to_string())
+            .one(&state.database)
+            .await?
+        {
+            Some(v) => {
+                if v.uploader != auth.user.id {
+                    MessageResponse::new(
+                        StatusCode::FORBIDDEN,
+                        "You are not allowed to access this file",
+                    )
+                } else {
+                    v.clone().delete(&state.database).await?;
 
-                // We dont care about the result of this because of discrepancies
-                let _ = state.storage.delete_object(&v.name).await;
-                let _ = state
-                    .storage
-                    .delete_object(&format!("thumb/{}", &v.name))
-                    .await;
+                    // We dont care about the result of this because of discrepancies
+                    let _ = state.storage.delete_object(&v.name).await;
+                    let _ = state
+                        .storage
+                        .delete_object(&format!("thumb/{}", &v.name))
+                        .await;
 
-                Ok(MessageResponse::new(
-                    StatusCode::OK,
-                    &format!("File {} was deleted", v.name),
-                ))
+                    MessageResponse::new(StatusCode::OK, &format!("File {} was deleted", v.name))
+                }
             }
-        }
-        Err(_) => Ok(MessageResponse::new(
-            StatusCode::NOT_FOUND,
-            "That file was not found",
-        )),
-    }
+            None => MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found"),
+        },
+    )
 }

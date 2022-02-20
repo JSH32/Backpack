@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::database::entity::{
+    sea_orm_active_enums::Role,
+    users::{self},
+};
+
 #[derive(Serialize)]
 pub struct UserData {
     pub id: String,
@@ -13,13 +18,34 @@ pub struct UserData {
     pub role: UserRole,
 }
 
+impl From<users::Model> for UserData {
+    fn from(user: users::Model) -> Self {
+        Self {
+            id: user.id,
+            password: user.password,
+            username: user.username,
+            email: user.email,
+            verified: user.verified,
+            role: UserRole::from(user.role),
+        }
+    }
+}
+
 /// User access level
-#[derive(Serialize, Deserialize, sqlx::Type, Eq, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
-#[sqlx(type_name = "role", rename_all = "lowercase")]
 pub enum UserRole {
     User,
     Admin,
+}
+
+impl From<Role> for UserRole {
+    fn from(role: Role) -> Self {
+        match role {
+            Role::Admin => UserRole::Admin,
+            Role::User => UserRole::User,
+        }
+    }
 }
 
 #[derive(Deserialize)]

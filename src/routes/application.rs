@@ -1,6 +1,10 @@
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter, Set,
+};
 
 use crate::{
+    database::entity::applications,
     models::{application::*, MessageResponse, Response},
     state::State,
     util::auth::{auth_role, create_jwt_string, Auth},
@@ -21,24 +25,28 @@ async fn token(
     application_id: web::Path<String>,
     auth: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
-    Ok(HttpResponse::Ok().json(TokenResponse {
-        token: create_jwt_string(
-            &auth.user.id,
-            Some(
-                state
-                    .database
-                    .get_application_by_id(&application_id)
-                    .await?
-                    .id,
-            ),
-            &state
-                .base_url
-                .host()
-                .expect("BASE_URL must have host included"),
-            None,
-            &state.jwt_key,
-        )?,
-    }))
+    Ok(
+        match applications::Entity::find_by_id(application_id.to_string())
+            .belongs_to(&auth.user)
+            .one(&state.database)
+            .await?
+        {
+            Some(v) => HttpResponse::Ok().json(TokenResponse {
+                token: create_jwt_string(
+                    &auth.user.id,
+                    Some(v.id),
+                    &state
+                        .base_url
+                        .host()
+                        .expect("BASE_URL must have host included"),
+                    None,
+                    &state.jwt_key,
+                )?,
+            }),
+            None => MessageResponse::new(StatusCode::NOT_FOUND, "That application was not found")
+                .http_response(),
+        },
+    )
 }
 
 #[get("")]
@@ -46,7 +54,16 @@ async fn list(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
-    Ok(HttpResponse::Ok().json(state.database.get_all_applications(&auth.user.id).await?))
+    let applications: Vec<ApplicationData> = auth
+        .user
+        .find_related(applications::Entity)
+        .all(&state.database)
+        .await?
+        .iter()
+        .map(|e| ApplicationData::from(e.to_owned()))
+        .collect();
+
+    Ok(HttpResponse::Ok().json(applications))
 }
 
 #[get("/{application_id}")]
@@ -54,17 +71,19 @@ async fn info(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
     application_id: web::Path<String>,
-) -> impl Responder {
-    match state.database.get_application_by_id(&application_id).await {
-        Ok(data) => {
-            if data.user_id != auth.user.id {
-                return MessageResponse::unauthorized_error().http_response();
-            }
-            return HttpResponse::Ok().json(data);
-        }
-        // Return unauthorized so people cannot see which IDs exist and which don't
-        Err(_) => return MessageResponse::unauthorized_error().http_response(),
-    }
+) -> Response<impl Responder> {
+    Ok(
+        match auth
+            .user
+            .find_related(applications::Entity)
+            .filter(applications::Column::Id.eq(application_id.as_str()))
+            .one(&state.database)
+            .await?
+        {
+            Some(data) => HttpResponse::Ok().json(ApplicationData::from(data)),
+            None => MessageResponse::unauthorized_error().http_response(),
+        },
+    )
 }
 
 #[post("")]
@@ -73,8 +92,11 @@ async fn create(
     auth: Auth<auth_role::User, false, false>,
     form: web::Json<ApplicationCreateForm>,
 ) -> Response<impl Responder> {
-    // Check if application count is over 5
-    let application_count = state.database.application_count(&auth.user.id).await?;
+    let application_count = applications::Entity::find()
+        .belongs_to(&auth.user)
+        .count(&state.database)
+        .await?;
+
     if application_count > 5 {
         return Ok(
             MessageResponse::new(StatusCode::BAD_REQUEST, "The token limit per user is 5")
@@ -96,9 +118,10 @@ async fn create(
         .http_response());
     }
 
-    if state
-        .database
-        .application_exist(&auth.user.id, &form.name)
+    if let Some(_) = applications::Entity::find()
+        .belongs_to(&auth.user)
+        .filter(applications::Column::Name.eq(form.name.to_owned()))
+        .one(&state.database)
         .await?
     {
         return Ok(MessageResponse::new(
@@ -109,10 +132,15 @@ async fn create(
     }
 
     // Create an application token and send JWT to user
-    let mut token_data = state
-        .database
-        .create_application(&auth.user.id, &form.name)
-        .await?;
+    let mut token_data = ApplicationData::from(
+        applications::ActiveModel {
+            user_id: Set(auth.user.id.to_owned()),
+            name: Set(form.name.to_owned()),
+            ..Default::default()
+        }
+        .insert(&state.database)
+        .await?,
+    );
 
     token_data.token = Some(create_jwt_string(
         &auth.user.id,
@@ -134,23 +162,18 @@ async fn delete(
     auth: Auth<auth_role::User, false, false>,
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
-    let application_id = match state.database.get_application_by_id(&application_id).await {
-        Ok(application_data) => {
-            if application_data.user_id != auth.user.id {
-                return Ok(MessageResponse::unauthorized_error());
+    Ok(
+        match applications::Entity::find()
+            .belongs_to(&auth.user)
+            .filter(applications::Column::Id.eq(application_id.to_string()))
+            .one(&state.database)
+            .await?
+        {
+            Some(v) => {
+                v.delete(&state.database).await?;
+                MessageResponse::new(StatusCode::OK, "Application was successfully deleted")
             }
-            application_data.id
-        }
-        Err(_) => return Ok(MessageResponse::unauthorized_error()),
-    };
-
-    state
-        .database
-        .delete_application_by_id(&application_id)
-        .await?;
-
-    Ok(MessageResponse::new(
-        StatusCode::OK,
-        "Application was successfully deleted",
-    ))
+            None => MessageResponse::unauthorized_error(),
+        },
+    )
 }
