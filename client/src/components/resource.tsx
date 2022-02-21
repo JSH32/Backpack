@@ -28,7 +28,10 @@ export const Resource: React.FC<{
             <Flex 
                 justifyContent="center" 
                 w="100%" 
-                bg={useColorModeValue("gray.200", "gray.900")}>
+                borderBottom={1}
+                borderStyle="solid"
+                borderColor={useColorModeValue("gray.200", "gray.900")}
+                bg={useColorModeValue("gray.50", "gray.800")}>
                 <Flex
                     py={{ base: 2 }}
                     px={{ base: 4 }}

@@ -115,7 +115,9 @@ export const Header: React.FC = () => {
             px={{ base: 4 }}
             borderBottom={1}
             minH="60px"
-            bg={useColorModeValue("gray.200", "gray.900")}
+            borderStyle="solid"
+            borderColor={useColorModeValue("gray.200", "gray.900")}
+            bg={useColorModeValue("gray.50", "gray.800")}
             align="center">
 
             <Flex flex={{ base: 1 }} justify={{ md: "start" }}>

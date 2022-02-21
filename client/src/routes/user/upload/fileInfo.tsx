@@ -79,7 +79,7 @@ export const FileInfo: React.FC = () => {
                     {isExtImage(getExtension(fileInfo.name)) ?
                         <Image mb="10px" maxH="500px" src={fileInfo.url} alt={fileInfo.name} /> : <></>}
                     <Divider />
-                    <Table wordBreak="break-all">
+                    <Table wordBreak="break-all" sx={{ "font-variant-numeric": "unset;" }}>
                         <Tr>
                             <Td>ID</Td>
                             <Td>{fileInfo.id}</Td>

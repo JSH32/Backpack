@@ -60,7 +60,7 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
 export const App: React.FC = () => {
     return <>
         <Router>
-            <Box bg={useColorModeValue("gray.50", "gray.800")}>
+            <Box>
                 <Switch>
                     <Route path="/" component={Home} exact/>
                     <Route path="/user/create" component={UserCreate}/>

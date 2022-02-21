@@ -1,0 +1,98 @@
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-RegularOblique.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-LightOblique.woff') format('woff');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-Light.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF Extra';
+    src: url('/fonts/GreycliffCF-ExtraBold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-MediumOblique.woff') format('woff');
+    font-weight: 500;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF Demi';
+    src: url('/fonts/GreycliffCF-DemiBoldOblique.woff') format('woff');
+    font-weight: 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-HeavyOblique.woff') format('woff');
+    font-weight: 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-Heavy.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF Demi';
+    src: url('/fonts/GreycliffCF-DemiBold.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Greycliff CF';
+    src: url('/fonts/GreycliffCF-BoldOblique.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Greycliff CF Extra';
+    src: url('/fonts/GreycliffCF-ExtraBoldOblique.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+}
+
