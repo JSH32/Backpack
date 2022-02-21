@@ -17,6 +17,20 @@ pub use self::{application::*, auth::*, file::*, user::*};
 #[derive(Debug, Display)]
 pub struct Error(anyhow::Error);
 
+/// # Response
+/// 
+/// Utility type for error reporting.
+/// 
+/// The error variant accepts any error as it wraps [`anyhow::Error`].
+/// This type should be returned from an Actix route handler. 
+/// Error variant should only be used when returning an exceptional case.
+/// 
+/// # Usage
+/// ```
+/// fn route() -> Response<()> {
+///     Err("This could be any error type")
+/// }
+/// ```
 pub type Response<T> = Result<T, Error>;
 
 impl ResponseError for Error {
