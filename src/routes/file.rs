@@ -8,18 +8,18 @@ use actix_multipart::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use sea_orm::{
-    sea_query::Query, ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
-    ModelTrait, Order, QueryFilter, QueryTrait, Set, Statement,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
+    ModelTrait, Order, QueryFilter, Set, Statement,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
+use crate::util::use_paginate;
 use crate::{
     database::{
         entity::files,
-        extensions::{QueryResultOptionExtension, QueryResultVecExtension, SelectExtension},
     },
-    models::{file::FilePage, Error, FileData, FileStats, MessageResponse, Response},
+    models::{Error, FileData, FileStats, MessageResponse, Response},
     state::State,
     util::{
         auth::{auth_role, Auth},
@@ -166,76 +166,35 @@ async fn stats(
 #[get("/list/{page_number}")]
 async fn list(
     state: web::Data<State>,
-    page_number: web::Path<i64>,
+    page_number: web::Path<u64>,
     auth: Auth<auth_role::User, false, true>,
     query_params: web::Query<HashMap<String, String>>,
 ) -> Response<impl Responder> {
     let query = match query_params.get("query") {
-        Some(str) => Some(str.clone()),
+        Some(str) => Some((files::Column::Uploaded, str.clone())),
         None => None,
     };
 
-    const PAGE_SIZE: i64 = 25;
+    let storage_url = PathBuf::from(state.storage_url.clone());
 
-    if *page_number < 1 {
-        return Ok(
-            MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1").http_response(),
-        );
-    }
+    Ok(use_paginate(
+        files::Entity,
+        &state.database,
+        25,
+        *page_number,
+        Some(files::Column::Uploader.eq(auth.user.id.clone())),
+        Some((files::Column::Uploaded, Order::Desc)),
+        query,
+        move |f: &files::Model| {
+            let mut file_data = FileData::from(f.to_owned());
 
-    let file_count: i64 = state
-        .database
-        .query_one(
-            Query::select()
-                .from(files::Entity)
-                .count()
-                .search(
-                    files::Column::Name,
-                    &query.clone().unwrap_or("".to_string()),
-                )
-                .and_where(files::Column::Uploader.eq(auth.user.id.clone()))
-                .build_statement(&state.database.get_database_backend()),
-        )
-        .await?
-        .get("count")?;
-
-    let total_pages = (file_count + PAGE_SIZE - 1) / PAGE_SIZE;
-
-    let file_list: Vec<FileData> = state
-        .database
-        .query_all(
-            QueryTrait::query(&mut auth.user.find_related(files::Entity))
-                .search(files::Column::Name, &query.unwrap_or("".to_string()))
-                .order_by(files::Column::Uploaded, Order::Desc)
-                .page(PAGE_SIZE as u64, *page_number as u64)
-                .build_statement(&state.database.get_database_backend()),
-        )
-        .await?
-        .model::<files::Model>()
-        .iter()
-        .map(|file| {
-            let mut file_data = FileData::from(file.clone());
-            let storage_url = PathBuf::from(&state.storage_url);
             file_data.set_url(storage_url.clone());
-            file_data.set_thumbnail_url(storage_url);
+            file_data.set_thumbnail_url(storage_url.clone());
 
-            file_data
-        })
-        .collect();
-
-    if file_list.len() < 1 {
-        return Ok(MessageResponse::new(
-            StatusCode::NOT_FOUND,
-            &format!("There are only {} pages", total_pages),
-        )
-        .http_response());
-    }
-
-    Ok(HttpResponse::Ok().json(FilePage {
-        page: *page_number,
-        pages: total_pages,
-        files: file_list,
-    }))
+            json!(file_data)
+        },
+    )
+    .await?)
 }
 
 #[get("/{file_id}")]

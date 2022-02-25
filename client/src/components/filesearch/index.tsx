@@ -1,7 +1,7 @@
 import * as React from "react"
 
 import { FileCard } from "./file"
-import { SearchResult } from "api"
+import { FileData, SearchResult } from "api"
 import { SearchIcon } from "@chakra-ui/icons"
 import { useForm } from "react-hook-form"
 import { Pagination } from "components/pagination"
@@ -19,11 +19,11 @@ import {
 } from "@chakra-ui/react"
 
 export const FileSearch: React.FC<{
-    onSearch: (page: number, query?: string) => Promise<SearchResult>
+    onSearch: (page: number, query?: string) => Promise<SearchResult<FileData>>
     onDelete: (fileId: string) => Promise<void>
     onFileDetails: (fileId: string) => void
 }> = ({ onSearch, onDelete, onFileDetails }) => {
-    const [searchResult, setSearchResult] = React.useState<SearchResult | null>(null)
+    const [searchResult, setSearchResult] = React.useState<SearchResult<FileData> | null>(null)
     const [queryString, setQueryString] = React.useState<string>(null)
     const [currentPage, setCurrentPage] = React.useState(1)
     const [initialLoading, setInitialLoading] = React.useState(false)
@@ -75,7 +75,7 @@ export const FileSearch: React.FC<{
             <Heading as="h2" size="lg">No files found</Heading>
             <Text>There were no files matched your query</Text>
         </Box> : <Flex justifyContent="center" gap="20px" wrap="wrap" mt={6}>
-            {searchResult.files.map(file => <FileCard
+            {searchResult.list.map(file => <FileCard
                 key={file.id}
                 file={file}
                 onDetails={file => onFileDetails(file.id)}

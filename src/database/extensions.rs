@@ -1,32 +1,18 @@
 use sea_orm::{
     sea_query::{Expr, SelectStatement},
-    ColumnTrait, DbBackend, DbErr, FromQueryResult, QueryResult, Statement, StatementBuilder,
+    DbErr, FromQueryResult, QueryResult,
     TryGetable,
 };
 
+
 pub trait SelectExtension {
-    fn build_statement(&self, backend: &DbBackend) -> Statement;
     fn count(&mut self) -> &mut Self;
-    fn search<C: ColumnTrait>(&mut self, column: C, query: &str) -> &mut Self;
-    fn page(&mut self, page_size: u64, page: u64) -> &mut Self;
 }
 
 impl SelectExtension for SelectStatement {
-    fn build_statement(&self, backend: &DbBackend) -> Statement {
-        StatementBuilder::build(self, backend)
-    }
-
     fn count(&mut self) -> &mut Self {
         self.expr(Expr::cust("COUNT(*)"))
             .expr(Expr::expr(Expr::cust("*")).count())
-    }
-
-    fn search<C: ColumnTrait>(&mut self, column: C, query: &str) -> &mut Self {
-        self.and_where(column.like(&format!("%{}%", &query)))
-    }
-
-    fn page(&mut self, page_size: u64, page: u64) -> &mut Self {
-        self.limit(page_size).offset((page - 1) * page_size)
     }
 }
 

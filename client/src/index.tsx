@@ -5,7 +5,7 @@ import "./index.scss"
 import { mode } from "@chakra-ui/theme-tools"
 
 
-import { ChakraProvider, extendTheme, useColorModeValue } from "@chakra-ui/react"
+import { ChakraProvider, extendTheme } from "@chakra-ui/react"
 
 const theme = extendTheme({
     fonts: {

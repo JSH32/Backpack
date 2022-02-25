@@ -31,10 +31,10 @@ export interface FileData {
     size: number
 }
 
-export interface SearchResult {
-    files: FileData[],
+export interface SearchResult<T> {
+    page: number,
     pages: number,
-    page: number
+    list: T[]
 }
 
 export interface UpdateUserSettings {
@@ -68,9 +68,9 @@ export const getUsage = async (): Promise<number> => {
     return (await axios.get(`${BASE_URL}/file/stats`)).data.usage
 }
 
-export const searchFile = async (page: number, query?: string): Promise<SearchResult> => {
+export const searchFile = async (page: number, query?: string): Promise<SearchResult<FileData>> => {
     const data = (await axios.get(`${BASE_URL}/file/list/${page}${query !== null ? "?query=" + query : ""}`)).data
-    for (const file of data.files)
+    for (const file of data.list)
         file.uploaded = new Date(file.uploaded)
 
     return data
