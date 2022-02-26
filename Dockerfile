@@ -16,4 +16,4 @@ RUN npm install && npm run build
 WORKDIR /usr/src
 COPY --from=builder /usr/src/backpack/target/release/backpack .
 
-ENTRYPOINT ["/bin/sh", "-c" , "node /usr/src/scripts/check.js && /usr/src/backpack /usr/src/client/build"]
+ENTRYPOINT ["/bin/sh", "-c" , "node /usr/src/scripts/check.js && /usr/src/backpack --client /usr/src/client/build"]
