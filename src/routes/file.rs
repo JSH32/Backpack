@@ -8,18 +8,15 @@ use actix_multipart::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
-    ModelTrait, Order, QueryFilter, Set, Statement,
+    sea_query::SimpleExpr, ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
+    ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, Set, Statement,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
-use crate::util::use_paginate;
 use crate::{
-    database::{
-        entity::files,
-    },
-    models::{Error, FileData, FileStats, MessageResponse, Response},
+    database::entity::files,
+    models::{Error, FileData, FileStats, MessageResponse, Page, Response},
     state::State,
     util::{
         auth::{auth_role, Auth},
@@ -166,35 +163,54 @@ async fn stats(
 #[get("/list/{page_number}")]
 async fn list(
     state: web::Data<State>,
-    page_number: web::Path<u64>,
+    page_number: web::Path<usize>,
     auth: Auth<auth_role::User, false, true>,
     query_params: web::Query<HashMap<String, String>>,
 ) -> Response<impl Responder> {
     let query = match query_params.get("query") {
-        Some(str) => Some((files::Column::Uploaded, str.clone())),
-        None => None,
+        Some(str) => files::Column::Name.like(&format!("%{}%", str)),
+        None => SimpleExpr::Custom("true".to_string()),
     };
+
+    if *page_number < 1 {
+        return Ok(
+            MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1").http_response(),
+        );
+    }
+
+    let paginator = files::Entity::find()
+        .filter(files::Column::Uploader.eq(auth.user.id.to_owned()))
+        .filter(query)
+        .order_by_desc(files::Column::Uploaded)
+        .paginate(&state.database, 25);
+
+    let pages = paginator.num_pages().await?;
+
+    if pages < 1 {
+        return Ok(MessageResponse::new(
+            StatusCode::NOT_FOUND,
+            &format!("There are only {} pages", pages),
+        )
+        .http_response());
+    }
 
     let storage_url = PathBuf::from(state.storage_url.clone());
 
-    Ok(use_paginate(
-        files::Entity,
-        &state.database,
-        25,
-        *page_number,
-        Some(files::Column::Uploader.eq(auth.user.id.clone())),
-        Some((files::Column::Uploaded, Order::Desc)),
-        query,
-        move |f: &files::Model| {
-            let mut file_data = FileData::from(f.to_owned());
-
-            file_data.set_url(storage_url.clone());
-            file_data.set_thumbnail_url(storage_url.clone());
-
-            json!(file_data)
-        },
-    )
-    .await?)
+    Ok(HttpResponse::Ok().json(Page {
+        page: *page_number,
+        pages,
+        list: paginator
+            .fetch_page(*page_number - 1)
+            .await?
+            .iter()
+            .map(|model| {
+                let mut file_data = FileData::from(model.to_owned());
+                file_data.set_url(storage_url.clone());
+                file_data.set_thumbnail_url(storage_url.clone());
+                file_data
+            })
+            .collect(),
+    }))
 }
 
 #[get("/{file_id}")]
