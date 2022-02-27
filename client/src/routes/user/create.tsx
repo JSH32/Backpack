@@ -6,9 +6,7 @@ import { Page } from "components/page"
 
 import { 
     ViewIcon, 
-    ViewOffIcon, 
-    EmailIcon, 
-    CheckCircleIcon 
+    ViewOffIcon
 } from "@chakra-ui/icons"
 
 import { 
@@ -25,9 +23,10 @@ import {
     Input, 
     InputGroup, 
     InputRightElement, 
-    Button, 
-    chakra 
+    Button
 } from "@chakra-ui/react"
+
+import { VerificationMessage } from "components/verificationmessage"
 
 export const UserCreate: React.FC = () => {
     const [emailPostSignup, setEmailPostSignup] = React.useState(null)
@@ -56,28 +55,9 @@ export const UserCreate: React.FC = () => {
                 isClosable: true
             }))
     }
-
-    if (emailPostSignup !== null) {
-        return <Flex minH="100vh"
-                    align="center"
-                    justify="center">
-            <Box py={10} px={6} textAlign="center">
-                { import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED === "true" ? <>
-                    <EmailIcon boxSize={"50px"} color={"primary.500"} />
-                    <Heading as="h2" size="xl" mt={6} mb={2}>Verify your email</Heading>
-                    <Text>
-                        An email was sent previously to <chakra.span fontWeight="bold">{emailPostSignup}</chakra.span>. Please click the link to verify and activate your account
-                    </Text>
-                </> : <>
-                    <CheckCircleIcon boxSize={"50px"} color={"green.500"} />
-                    <Heading as="h2" size="xl" mt={6} mb={2}>Account created</Heading>
-                    <Text>
-                        Your account has been created. Please login to your account
-                    </Text>
-                </> }
-            </Box>
-        </Flex>
-    }
+    
+    if (emailPostSignup !== null)
+        return <VerificationMessage email={emailPostSignup}/>
 
     return <Page>
         <Flex

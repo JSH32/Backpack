@@ -45,7 +45,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
                 </Heading>
                 <Box color="gray.500">
                     <Text>
-                        An email was sent previously to <chakra.span fontWeight="bold">{email}</chakra.span>. Please click the link to verify and activate your account
+                        An email was sent to <chakra.span fontWeight="bold">{email}</chakra.span>. Please click the link to verify and activate your account
                     </Text>
                     <Text>
                         If you did not get a link please click <Link onClick={resendEmail} color="primary.300">here</Link> to resend

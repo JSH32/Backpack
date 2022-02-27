@@ -41,7 +41,7 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
             .catch(() => history.replace("/user/login"))
 
         // Watch changes so we can reload this componment and re-evaluate if we should lock the route
-        return observe(store, "userData", setUserData)
+        return observe(store, "userData", data => setUserData(data.newValue))
     }, [])
 
     // While user data was not loaded just send back nothing
@@ -49,7 +49,6 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ path, component
         return <Page></Page>
 
     // SMTP verification was enabled and the user was not verified
-    console.log(userData.verified)
     if (import.meta.env.SNOWPACK_PUBLIC_APP_SMTP_ENABLED && !allowUnverified && !userData.verified)
         return <VerificationMessage email={userData.email}/>
 
