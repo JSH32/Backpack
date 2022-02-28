@@ -1,12 +1,12 @@
 /* eslint-disable react/no-children-prop */
 /* eslint-disable react-hooks/exhaustive-deps */
-import * as React from "react";
+import * as React from "react"
 
-import { FileData, SearchResult } from "helpers/api";
-import { SearchIcon } from "@chakra-ui/icons";
-import { useForm } from "react-hook-form";
-import { Pagination } from "../Pagination";
-import FileCard from "./FileCard";
+import { FileData, SearchResult } from "helpers/api"
+import { SearchIcon } from "@chakra-ui/icons"
+import { useForm } from "react-hook-form"
+import { Pagination } from "../Pagination"
+import FileCard from "./FileCard"
 import {
   Box,
   Flex,
@@ -16,51 +16,51 @@ import {
   InputLeftElement,
   Icon,
   Spinner,
-  Text,
-} from "@chakra-ui/react";
+  Text
+} from "@chakra-ui/react"
 
 export const FileSearch: React.FC<{
-  onSearch: (page: number, query?: string) => Promise<SearchResult<FileData>>;
-  onDelete: (fileId: string) => Promise<void>;
-  onFileDetails: (fileId: string) => void;
+  onSearch: (page: number, query?: string) => Promise<SearchResult<FileData>>
+  onDelete: (fileId: string) => Promise<void>
+  onFileDetails: (fileId: string) => void
 }> = ({ onSearch, onDelete, onFileDetails }) => {
   const [searchResult, setSearchResult] =
-    React.useState<SearchResult<FileData> | null>(null);
-  const [queryString, setQueryString] = React.useState<string>("");
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [initialLoading, setInitialLoading] = React.useState(false);
+    React.useState<SearchResult<FileData> | null>(null)
+  const [queryString, setQueryString] = React.useState<string>("")
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [initialLoading, setInitialLoading] = React.useState(false)
 
   React.useEffect(() => {
-    setInitialLoading(true);
+    setInitialLoading(true)
     onSearch(1, undefined)
       .then(setSearchResult)
       .catch(() => setSearchResult(null))
-      .finally(() => setInitialLoading(false));
-  }, []);
+      .finally(() => setInitialLoading(false))
+  }, [])
 
   const searchCallback = React.useCallback((form) => {
-    setQueryString(form.query);
+    setQueryString(form.query)
 
     // Search callback should go back to page 1
     onSearch(1, form.query)
       .then(setSearchResult)
-      .catch(() => setSearchResult(null));
-  }, []);
+      .catch(() => setSearchResult(null))
+  }, [])
 
   React.useEffect(() => {
     onSearch(currentPage, queryString)
       .then(setSearchResult)
-      .catch(() => setSearchResult(null));
-  }, [currentPage]);
+      .catch(() => setSearchResult(null))
+  }, [currentPage])
 
   const deleteFile = React.useCallback((fileId) => {
     onDelete(fileId)
       .then(() => onSearch(1, queryString))
       .then(setSearchResult)
-      .catch(() => setSearchResult(null));
-  }, []);
+      .catch(() => setSearchResult(null))
+  }, [])
 
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit } = useForm()
 
   return (
     <Box>
@@ -120,5 +120,5 @@ export const FileSearch: React.FC<{
         <></>
       )}
     </Box>
-  );
-};
+  )
+}

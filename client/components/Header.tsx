@@ -1,17 +1,17 @@
-import { toJS } from "mobx";
-import { observer } from "mobx-react-lite";
-import * as React from "react";
-import Router from "next/router";
-import store from "helpers/store";
+import { toJS } from "mobx"
+import { observer } from "mobx-react-lite"
+import * as React from "react"
+import Router from "next/router"
+import store from "helpers/store"
 import Image from "next/image"
-import { logout } from "helpers/api";
+import { logout } from "helpers/api"
 
-const SunIcon = "/assets/icons/sun.svg";
-const MoonIcon = "/assets/icons/moon.svg";
-const UploadIcon = "/assets/icons/upload.svg";
-const SettingsIcon = "/assets/icons/settings.svg";
-const LogOutIcon = "/assets/icons/log-out.svg";
-const KeyIcon = "/assets/icons/key.svg";
+import SunIcon from "/assets/icons/sun.svg"
+import MoonIcon from "/assets/icons/moon.svg"
+import UploadIcon from "/assets/icons/upload.svg"
+import SettingsIcon from "/assets/icons/settings.svg"
+import LogOutIcon from "/assets/icons/log-out.svg"
+import KeyIcon from "/assets/icons/key.svg"
 
 import {
   Text,
@@ -26,51 +26,51 @@ import {
   Stack,
   useColorModeValue,
   useColorMode,
-  Divider,
-} from "@chakra-ui/react";
+  Divider
+} from "@chakra-ui/react"
 
-import RouteLink from "next/link";
+import RouteLink from "next/link"
 
 const NAV_ITEMS: NavItem[] = [
   {
     label: "Uploads",
     subLabel: "Access your file uploads",
     icon: UploadIcon,
-    to: "/user/uploads",
+    to: "/user/uploads"
   },
   {
     label: "Settings",
     subLabel: "Account user settings",
     icon: SettingsIcon,
-    to: "/user/settings",
+    to: "/user/settings"
   },
   {
     label: "Tokens",
     subLabel: "Manage tokens and applications",
     icon: KeyIcon,
-    to: "/user/tokens",
-  },
-];
+    to: "/user/tokens"
+  }
+]
 
 interface NavItem {
   label: string;
   subLabel?: string;
   to?: string;
-  icon: string;
+  icon: any;
 }
 
 const Header: React.FC = () => {
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode } = useColorMode()
 
   const User = observer(() => {
     const onLogout = async () => {
       logout().then(() => {
-        store.setUserInfo();
-        Router.push("/");
-      });
-    };
+        store.setUserInfo()
+        Router.push("/")
+      })
+    }
 
-    const userData = toJS(store.userData);
+    const userData = toJS(store.userData)
     return !userData ? (
       <>
         <Button as="a" variant="link">
@@ -95,7 +95,7 @@ const Header: React.FC = () => {
                 item={{
                   label: "Log Out",
                   subLabel: "Sign out of your account",
-                  icon: LogOutIcon,
+                  icon: LogOutIcon
                 }}
                 onClick={onLogout}
               />
@@ -103,8 +103,8 @@ const Header: React.FC = () => {
           </PopoverContent>
         </Popover>
       </>
-    );
-  });
+    )
+  })
 
   return (
     <Box pos="fixed" w="100%" bg="white.500" zIndex={3}>
@@ -131,19 +131,16 @@ const Header: React.FC = () => {
           spacing={6}
         >
           <Button onClick={toggleColorMode} variant="ghost">
-            {colorMode === "light" ? (
-              <Image src={MoonIcon} height={95} width={95} alt={"MoonIcon"} />
-            ) : (
-              <Image src={SunIcon} height={95} width={95} alt={"SunIcon"} />
-            )}
+              {colorMode === "light" ? <Icon as={MoonIcon} /> : <Icon as={SunIcon} />}
           </Button>
           <User />
         </Stack>
       </Flex>
     </Box>
-  );
-};
-export default Header;
+  )
+}
+
+export default Header
 
 const UserNavCard: React.FC<{
   item: NavItem;
@@ -183,17 +180,11 @@ const UserNavCard: React.FC<{
               align={"center"}
               flex={1}
             >
-              <Image
-                color={lastItem ? "red.500" : "primary.400"}
-                width={5}
-                height={5}
-                src={item.icon}
-                alt={""}
-              />
+              <Icon color={ lastItem ? "red.500" : "primary.400" } w={5} h={5} as={item.icon} />
             </Flex>
           </Stack>
         </Link>
       </RouteLink>
     </>
-  );
-};
+  )
+}

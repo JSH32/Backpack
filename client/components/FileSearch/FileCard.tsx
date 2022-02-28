@@ -75,4 +75,4 @@ const FileCard: React.FC<{
         </Box>
     </Box>
 }
-export default FileCard;
+export default FileCard

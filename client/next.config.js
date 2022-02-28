@@ -8,6 +8,14 @@ const nextConfig = {
         destination: 'http://0.0.0.0:3001/api/:path*' // Proxy to Backend
       }
     ]
+  },
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"]
+    });
+
+    return config
   }
 }
 

@@ -1,20 +1,19 @@
-import { EmailIcon } from "@chakra-ui/icons";
-import { resendCode } from "helpers/api";
-import * as React from "react";
+import { EmailIcon } from "@chakra-ui/icons"
+import { resendCode } from "helpers/api"
+import * as React from "react"
 
 import {
   Box,
-  chakra,
   Flex,
   Heading,
   Link,
   Text,
-  useToast,
-} from "@chakra-ui/react";
-import { Page } from "./Page";
+  useToast
+} from "@chakra-ui/react"
+import { Page } from "./Page"
 
 export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
-  const toast = useToast();
+  const toast = useToast()
 
   const resendEmail = React.useCallback(() => {
     resendCode()
@@ -24,7 +23,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
           description: res.data.message,
           status: "success",
           duration: 5000,
-          isClosable: true,
+          isClosable: true
         })
       )
       .catch((error) =>
@@ -33,10 +32,10 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
           description: error.response.data.message,
           status: "error",
           duration: 5000,
-          isClosable: true,
+          isClosable: true
         })
-      );
-  }, []);
+      )
+  }, [])
 
   return (
     <Page>
@@ -48,20 +47,20 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
           </Heading>
           <Box color="gray.500">
             <Text>
-              An email was sent previously to{" "}
-              <chakra.span fontWeight="bold">{email}</chakra.span>. Please click
+              An email was sent to
+              <Text as="span" fontWeight="bold"> {email}</Text>. Please click
               the link to verify and activate your account
             </Text>
             <Text>
-              If you did not get a link please click{" "}
-              <Link onClick={resendEmail} color="primary.300">
+              If you did not get a link please click
+              <Link onClick={resendEmail} color="primary.300" m={1}>
                 here
-              </Link>{" "}
+              </Link>
               to resend
             </Text>
           </Box>
         </Box>
       </Flex>
     </Page>
-  );
-};
+  )
+}
