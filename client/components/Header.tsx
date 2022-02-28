@@ -3,15 +3,15 @@ import { observer } from "mobx-react-lite";
 import * as React from "react";
 import Router from "next/router";
 import store from "helpers/store";
-
-import SunIcon from "public/assets/icons/sun.svg";
-import MoonIcon from "public/assets/icons/moon.svg";
-
-import UploadIcon from "public/assets/icons/upload.svg";
-import SettingsIcon from "public/assets/icons/settings.svg";
-import LogOutIcon from "public/assets/icons/log-out.svg";
-import KeyIcon from "public/assets/icons/key.svg";
+import Image from "next/image"
 import { logout } from "helpers/api";
+
+const SunIcon = "/assets/icons/sun.svg";
+const MoonIcon = "/assets/icons/moon.svg";
+const UploadIcon = "/assets/icons/upload.svg";
+const SettingsIcon = "/assets/icons/settings.svg";
+const LogOutIcon = "/assets/icons/log-out.svg";
+const KeyIcon = "/assets/icons/key.svg";
 
 import {
   Text,
@@ -56,7 +56,7 @@ interface NavItem {
   label: string;
   subLabel?: string;
   to?: string;
-  icon: React.FC<React.SVGProps<SVGElement>>;
+  icon: string;
 }
 
 const Header: React.FC = () => {
@@ -132,9 +132,9 @@ const Header: React.FC = () => {
         >
           <Button onClick={toggleColorMode} variant="ghost">
             {colorMode === "light" ? (
-              <Icon as={MoonIcon} />
+              <Image src={MoonIcon} height={95} width={95} alt={"MoonIcon"} />
             ) : (
-              <Icon as={SunIcon} />
+              <Image src={SunIcon} height={95} width={95} alt={"SunIcon"} />
             )}
           </Button>
           <User />
@@ -183,11 +183,12 @@ const UserNavCard: React.FC<{
               align={"center"}
               flex={1}
             >
-              <Icon
+              <Image
                 color={lastItem ? "red.500" : "purple.400"}
-                w={5}
-                h={5}
-                as={item.icon}
+                width={5}
+                height={5}
+                src={item.icon}
+                alt={""}
               />
             </Flex>
           </Stack>
