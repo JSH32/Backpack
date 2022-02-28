@@ -160,14 +160,14 @@ const UserNavCard: React.FC<{
           display="block"
           p={2}
           rounded="md"
-          _hover={{ bg: useColorModeValue("purple.50", "gray.900") }}
+          _hover={{ bg: useColorModeValue("primary.50", "gray.900") }}
         >
           <Stack direction="row" align="center">
             <Box>
               <Text
                 color={lastItem ? "red.300" : "grey.200"}
                 transition="all .3s ease"
-                _groupHover={{ color: lastItem ? "red.500" : "purple.400" }}
+                _groupHover={{ color: lastItem ? "red.500" : "primary.400" }}
                 fontWeight={500}
               >
                 {item.label}
@@ -184,7 +184,7 @@ const UserNavCard: React.FC<{
               flex={1}
             >
               <Image
-                color={lastItem ? "red.500" : "purple.400"}
+                color={lastItem ? "red.500" : "primary.400"}
                 width={5}
                 height={5}
                 src={item.icon}

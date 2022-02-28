@@ -4,7 +4,7 @@ use chrono::Utc;
 
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
-use sea_orm::{ActiveModelTrait, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -160,15 +160,13 @@ async fn get_auth_data(
                 }
             }
             None => {
-                verifications::ActiveModel {
-                    user_id: Set(user.id.to_owned()),
-                    ..Default::default()
-                }
-                .delete(&state.database)
-                .await
-                .map_err(|err| {
-                    Error::from(MessageResponse::internal_server_error(&err.to_string()))
-                })?;
+                verifications::Entity::delete_many()
+                    .filter(verifications::Column::UserId.eq(user.id.to_owned()))
+                    .exec(&state.database)
+                    .await
+                    .map_err(|err| {
+                        Error::from(MessageResponse::internal_server_error(&err.to_string()))
+                    })?;
 
                 users::ActiveModel {
                     id: Set(user.id.to_owned()),

@@ -124,7 +124,10 @@ async fn settings(
     // Update email if change validated
     if let Some(email) = &to_change.email {
         update_model.email = Set(email.to_owned());
-        update_model.verified = Set(false);
+
+        if let Some(_) = &state.smtp_client {
+            update_model.verified = Set(false)
+        }
     }
 
     // Update password if change validated
@@ -141,33 +144,31 @@ async fn settings(
     update_model.update(&state.database).await?;
 
     // After the update we need to send the new verification email if the email was updated
-    if let Some(email) = to_change.email {
+    if let (Some(email), Some(smtp)) = (to_change.email, &state.smtp_client) {
         // If email validation is on we need to resend the email and unverify the user
-        if let Some(smtp) = &state.smtp_client {
-            let random_code = random_string(72);
+        let random_code = random_string(72);
 
-            let success = verifications::ActiveModel {
-                user_id: Set(auth.user.id.to_owned()),
-                code: Set(random_code.to_owned()),
-                ..Default::default()
-            }
-            .insert(&state.database)
-            .await
-            .is_err();
+        let success = verifications::ActiveModel {
+            user_id: Set(auth.user.id.to_owned()),
+            code: Set(random_code.to_owned()),
+            ..Default::default()
+        }
+        .insert(&state.database)
+        .await
+        .is_err();
 
-            if success {
-                let email = verification_email(
-                    &state.base_url.to_string(),
-                    &smtp.1,
-                    &email,
-                    &random_code,
-                    state.with_client,
-                );
-                let mailer = smtp.clone().0;
-                tokio::spawn(async move {
-                    let _ = mailer.send(email).await;
-                });
-            }
+        if success {
+            let email = verification_email(
+                &state.base_url.to_string(),
+                &smtp.1,
+                &email,
+                &random_code,
+                state.with_client,
+            );
+            let mailer = smtp.clone().0;
+            tokio::spawn(async move {
+                let _ = mailer.send(email).await;
+            });
         }
     }
 

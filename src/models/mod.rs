@@ -147,3 +147,10 @@ impl Responder for MessageResponse {
         HttpResponse::from(self)
     }
 }
+
+#[derive(Serialize)]
+pub struct Page<T> {
+    pub page: usize,
+    pub pages: usize,
+    pub list: Vec<T>,
+}

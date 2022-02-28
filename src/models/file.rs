@@ -74,13 +74,6 @@ impl FileData {
 }
 
 #[derive(Serialize)]
-pub struct FilePage {
-    pub page: i64,
-    pub pages: i64,
-    pub files: Vec<FileData>,
-}
-
-#[derive(Serialize)]
 pub struct FileStats {
     pub usage: i64,
 }
