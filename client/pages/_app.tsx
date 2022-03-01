@@ -23,10 +23,12 @@ const theme = extendTheme({
 
 theme.colors.primary = theme.colors.purple
 
-export default ({ Component, pageProps }: AppProps) => {
+const App = ({ Component, pageProps }: AppProps) => {
   return (
     <ChakraProvider theme={theme}>
       <Component {...pageProps} />
     </ChakraProvider>
   )
 }
+
+export default App

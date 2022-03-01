@@ -119,7 +119,7 @@ const UserCreate: NextPage = () => {
                                 Sign up
                             </Button>
                             <Text textAlign="center" >
-                                Already have an account? <RouterLink href="/user/login"><Link color="primary.300">Sign in</Link></RouterLink>
+                                Already have an account? <RouterLink href="/user/login" passHref><Link color="primary.300">Sign in</Link></RouterLink>
                             </Text>
                         </Stack>
                     </form>

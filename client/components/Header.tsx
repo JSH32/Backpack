@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite"
 import * as React from "react"
 import Router from "next/router"
 import store from "helpers/store"
-import Image from "next/image"
 import { logout } from "helpers/api"
 
 import SunIcon from "/assets/icons/sun.svg"
@@ -88,7 +87,7 @@ const Header: React.FC = () => {
           <PopoverContent border={0} boxShadow="xl" p={4} rounded="xl" minW="m">
             <Stack>
               {NAV_ITEMS.map((item, index) => (
-                <UserNavCard key={`${index}\'s Nav Card`} item={item} />
+                <UserNavCard key={`navIndex${index}`} item={item} />
               ))}
               <UserNavCard
                 lastItem={true}

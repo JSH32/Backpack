@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-import { Box, Button, Flex, Heading, HStack, Text, Icon, Tooltip, useColorModeValue, Image } from "@chakra-ui/react"
+import { Box, Button, Flex, Heading, HStack, Text, Tooltip, useColorModeValue, Image } from "@chakra-ui/react"
 import { FileData } from "helpers/api"
 import NextImage from "next/image"
 import { dateToString, getExtension, isExtImage } from "helpers/util"

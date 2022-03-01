@@ -19,7 +19,7 @@ import {
     ModalFooter,
     ModalHeader,
     UnorderedList,
-    ListItem,
+    ListItem
 
 } from "@chakra-ui/react"
 
@@ -91,7 +91,7 @@ const Profile: NextPage = observer(() => {
                         <ModalBody>
                             <Text fontWeight="bold">This will change the following</Text>
                             <UnorderedList>
-                                {Object.keys(newData).map(field => <ListItem>{field}</ListItem>)}
+                                {Object.keys(newData).map(field => <ListItem key={field}>{field}</ListItem>)}
                                 <FormControl mt={"20px"} isRequired>
                                     <FormLabel>Current password</FormLabel>
                                     <Input id="password" type="password" {...finalSubmitForm.register("password")} />

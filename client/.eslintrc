@@ -9,6 +9,8 @@
     "semi": ["error", "never"],
     "quotes": ["error", "double"],
     "comma-dangle": ["error"],
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/rules-of-hooks": "off",
+    "react-hooks/exhaustive-deps": "off"
   }
 }

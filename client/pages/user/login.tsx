@@ -2,7 +2,26 @@ import { VerificationMessage } from "components/VerificationMessage"
 import type { NextPage } from "next"
 
 import * as React from "react"
-import { Box, Button, Center, chakra, Divider, Flex, FormControl, FormLabel, Heading, Icon, Input, Link, Stack, Text, useColorModeValue, useToast, VStack } from "@chakra-ui/react"
+
+import { 
+    Box, 
+    Button, 
+    Center, 
+    chakra,
+    Divider, 
+    Flex, 
+    FormControl, 
+    FormLabel, 
+    Heading, 
+    Icon,
+    Input, 
+    Link, 
+    Stack, 
+    Text, 
+    useColorModeValue, 
+    useToast 
+} from "@chakra-ui/react"
+
 import { Page } from "components/Page"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
@@ -111,7 +130,7 @@ const Login: NextPage = () => {
                                 Sign in
                             </Button>
                             <Text textAlign="center" >
-                                Dont have an account? <RouterLink href="/user/create"><Link color="primary.300">Sign up</Link></RouterLink>
+                                Dont have an account? <RouterLink href="/user/create" passHref><Link color="primary.300">Sign up</Link></RouterLink>
                             </Text>
                         </Stack>
                     </form>

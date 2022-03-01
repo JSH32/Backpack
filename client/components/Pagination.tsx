@@ -34,9 +34,9 @@ export const Pagination: React.FC<{
 
         { currentPage - range > 1 ? <Text color="gray.500">...</Text> : <></> }
 
-        { prePages.map((pg, index) => <Button key={`${index}\'s Pagination`} onClick={() => onPageSelect(pg)}>{pg}</Button>) }
+        { prePages.map((pg, index) => <Button key={`pgIndex${index}'`} onClick={() => onPageSelect(pg)}>{pg}</Button>) }
         <Button bg={useColorModeValue("gray.300", "gray.600")}>{currentPage}</Button>
-        { postPages.map((pg, index) => <Button key={`${index}\'s Pagination`} onClick={() => onPageSelect(pg)}>{pg}</Button>) }
+        { postPages.map((pg, index) => <Button key={`pgIndex${index}`} onClick={() => onPageSelect(pg)}>{pg}</Button>) }
 
         { currentPage + range < pages ? <Text color="gray.500">...</Text> : <></> }
 
