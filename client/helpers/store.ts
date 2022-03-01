@@ -1,4 +1,4 @@
-import { getUserData, UserData } from "helpers/api"
+import { AppInfo, getAppInfo, getUserData, UserData } from "helpers/api"
 import { action, makeAutoObservable, observable } from "mobx"
 
 class Store {

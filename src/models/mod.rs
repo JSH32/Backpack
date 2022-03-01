@@ -9,8 +9,11 @@ use std::fmt::{Debug, Display};
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 
 use derive_more::Display;
+use sea_orm::ActiveEnum;
 use serde::Serialize;
 use thiserror::Error;
+
+use crate::database::entity::settings;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -153,4 +156,22 @@ pub struct Page<T> {
     pub page: usize,
     pub pages: usize,
     pub list: Vec<T>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppInfo {
+    pub app_name: String,
+    pub app_description: String,
+    pub color: String,
+}
+
+impl From<settings::Model> for AppInfo {
+    fn from(settings: settings::Model) -> Self {
+        Self {
+            app_name: settings.app_name,
+            app_description: settings.app_description,
+            color: settings.color.to_value(),
+        }
+    }
 }

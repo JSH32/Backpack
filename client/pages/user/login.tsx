@@ -22,7 +22,7 @@ import {
     useToast 
 } from "@chakra-ui/react"
 
-import { Page } from "components/Page"
+import { Page } from "layouts/Page"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
 import { passwordLogin } from "helpers/api"
@@ -130,7 +130,7 @@ const Login: NextPage = () => {
                                 Sign in
                             </Button>
                             <Text textAlign="center" >
-                                Dont have an account? <RouterLink href="/user/create" passHref><Link color="primary.300">Sign up</Link></RouterLink>
+                                Dont have an account? <RouterLink href="/user/create"><Link color="primary.300">Sign up</Link></RouterLink>
                             </Text>
                         </Stack>
                     </form>

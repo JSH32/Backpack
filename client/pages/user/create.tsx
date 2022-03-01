@@ -2,7 +2,7 @@ import * as React from "react"
 import { userCreate } from "helpers/api"
 import { default as RouterLink } from "next/link"
 import { useForm } from "react-hook-form"
-import { Page } from "components/Page"
+import { Page } from "layouts/Page"
 
 import { 
     ViewIcon, 
@@ -119,7 +119,7 @@ const UserCreate: NextPage = () => {
                                 Sign up
                             </Button>
                             <Text textAlign="center" >
-                                Already have an account? <RouterLink href="/user/login" passHref><Link color="primary.300">Sign in</Link></RouterLink>
+                                Already have an account? <RouterLink href="/user/login"><Link color="primary.300">Sign in</Link></RouterLink>
                             </Text>
                         </Stack>
                     </form>

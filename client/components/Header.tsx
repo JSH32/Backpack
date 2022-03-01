@@ -29,6 +29,7 @@ import {
 } from "@chakra-ui/react"
 
 import RouteLink from "next/link"
+import { useAppInfo } from "helpers/info"
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -41,7 +42,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Settings",
     subLabel: "Account user settings",
     icon: SettingsIcon,
-    to: "/user/settings"
+    to: "/user/settings/profile"
   },
   {
     label: "Tokens",
@@ -60,6 +61,7 @@ interface NavItem {
 
 const Header: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode()
+  const appInfo = useAppInfo()
 
   const User = observer(() => {
     const onLogout = async () => {
@@ -119,7 +121,7 @@ const Header: React.FC = () => {
       >
         <Flex flex={{ base: 1 }} justify={{ md: "start" }}>
           <Text fontSize="2xl" fontWeight="bold">
-            <RouteLink href="/">Backpack</RouteLink>
+            <RouteLink href="/">{appInfo?.appName}</RouteLink>
           </Text>
         </Flex>
 
@@ -149,7 +151,7 @@ const UserNavCard: React.FC<{
   return (
     <>
       {lastItem ? <Divider /> : <></>}
-      <RouteLink href={item.to ? item.to : "#"} passHref>
+      <RouteLink href={item.to ? item.to : "#"}>
         <Link
           onClick={onClick}
           role="group"

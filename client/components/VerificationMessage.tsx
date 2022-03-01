@@ -10,7 +10,7 @@ import {
   Text,
   useToast
 } from "@chakra-ui/react"
-import { Page } from "./Page"
+import { Page } from "layouts/Page"
 
 export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
   const toast = useToast()

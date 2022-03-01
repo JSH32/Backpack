@@ -1,6 +1,6 @@
 import { Box, Flex } from "@chakra-ui/react"
 import * as React from "react"
-import Header from "./Header"
+import Header from "components/Header"
 
 export const Page: React.FC<{
     children?: JSX.Element | JSX.Element[]

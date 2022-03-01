@@ -20,7 +20,6 @@ import {
     ModalHeader,
     UnorderedList,
     ListItem
-
 } from "@chakra-ui/react"
 
 import { updateSettings } from "helpers/api"

@@ -3,7 +3,7 @@ import store from "helpers/store"
 import { observe } from "mobx"
 import { useRouter } from "next/router"
 import * as React from "react"
-import { Page } from "./Page"
+import { Page } from "layouts/Page"
 import { VerificationMessage } from "./VerificationMessage"
 
 export const Authenticated: React.FC<{
