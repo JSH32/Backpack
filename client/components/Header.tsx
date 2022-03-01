@@ -74,7 +74,7 @@ const Header: React.FC = () => {
     const userData = toJS(store.userData)
     return !userData ? (
       <>
-        <Button as="a" variant="link">
+        <Button variant="link">
           <RouteLink href="/user/login">Sign in</RouteLink>
         </Button>
       </>
@@ -120,7 +120,7 @@ const Header: React.FC = () => {
         align="center"
       >
         <Flex flex={{ base: 1 }} justify={{ md: "start" }}>
-          <Text fontSize="2xl" fontWeight="bold">
+          <Text fontSize="2xl" fontWeight="bold" bgGradient="linear(to-r, primary.400, primary.300)" bgClip="text">
             <RouteLink href="/">{appInfo?.appName}</RouteLink>
           </Text>
         </Flex>

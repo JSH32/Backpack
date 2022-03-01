@@ -1,7 +1,5 @@
 /* eslint-disable react/no-children-prop */
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as React from "react"
-
 import { FileData, SearchResult } from "helpers/api"
 import { SearchIcon } from "@chakra-ui/icons"
 import { useForm } from "react-hook-form"
@@ -29,10 +27,9 @@ export const FileSearch: React.FC<{
   const [queryString, setQueryString] = React.useState<string>("")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [initialLoading, setInitialLoading] = React.useState(false)
-
   React.useEffect(() => {
     setInitialLoading(true)
-    onSearch(1, undefined)
+    onSearch(1, "")
       .then(setSearchResult)
       .catch(() => setSearchResult(null))
       .finally(() => setInitialLoading(false))
@@ -40,7 +37,6 @@ export const FileSearch: React.FC<{
 
   const searchCallback = React.useCallback((form) => {
     setQueryString(form.query)
-
     // Search callback should go back to page 1
     onSearch(1, form.query)
       .then(setSearchResult)

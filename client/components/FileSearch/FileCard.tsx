@@ -1,10 +1,9 @@
-import { Box, Button, Flex, Heading, HStack, Text, Tooltip, useColorModeValue, Image } from "@chakra-ui/react"
+import { Box, Button, Flex, Heading, HStack, Text, Tooltip, useColorModeValue, Icon, Image } from "@chakra-ui/react"
 import { FileData } from "helpers/api"
-import NextImage from "next/image"
 import { dateToString, getExtension, isExtImage } from "helpers/util"
 import * as React from "react"
-const DeleteIcon = "/assets/icons/trash.svg"
-const InfoIcon = "/assets/icons/info.svg"
+import InfoIcon from "assets/icons/info.svg"
+import DeleteIcon from "assets/icons/trash.svg"
 
 const FileCard: React.FC<{ 
     file: FileData, 
@@ -55,7 +54,7 @@ const FileCard: React.FC<{
                             onClick={() => onDetails(file)}
                             variant="ghost"
                             size="s">
-                            <NextImage alt={"InfoIcon"} src={InfoIcon} height={95} width={95} />
+                            <Icon as={InfoIcon} />
                         </Button>
                     </Tooltip>
                     <Tooltip
@@ -65,7 +64,7 @@ const FileCard: React.FC<{
                             color="red.500"
                             variant="ghost" 
                             size="s">
-                            <NextImage alt={"DeleteIcon"} src={DeleteIcon} height={95} width={95} />
+                            <Icon as={DeleteIcon} />
                         </Button>
                     </Tooltip>
                 </HStack>

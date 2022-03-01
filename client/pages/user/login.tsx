@@ -32,7 +32,7 @@ import { default as RouterLink } from "next/link"
 import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
 
-import styles from "styles/login.module.css"
+import styles from "styles/login.module.scss"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
