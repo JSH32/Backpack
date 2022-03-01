@@ -7,7 +7,7 @@ import { FileSearch } from "components/FileSearch"
 import { Page } from "layouts/Page"
 import Router from "next/router"
 import UploadIcon from "assets/icons/upload.svg"
-
+import { Authenticated } from "components/Authenticated"
 import { 
     Box, 
     Divider, 
@@ -34,6 +34,7 @@ const UploadFiles: React.FC = () => {
     React.useEffect(() => {
         getUsage()
             .then(bytes => setUsage(convertBytes(bytes)))
+            .catch(() => setUsage("0 Bytes"))
     }, [searchReload])
 
     const shadowUploader = React.useRef(null)
@@ -84,45 +85,47 @@ const UploadFiles: React.FC = () => {
             })
     }, [searchReload])
 
-    return <Page>
-        <Flex mt="7em" minH="100vh" justify="center" mb={5}>
-            <Box w={{ base: "90vw", md: "70vw" }} maxW="1200px">
-                <Stack spacing={4}>
-                    <Heading>Uploads</Heading>
-                    <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>
-                    <Button 
-                        onClick={uploadButtonCallback}
-                        bg="primary.500"
-                        _hover={{
-                            bg: "primary.600"
-                        }}
-                        color="white"
-                        position="fixed"
-                        bottom="3em"
-                        right="3em"
-                        borderRadius="50px"
-                        w="60px"
-                        h="60px"
-                        zIndex={4}>
-                            <Icon w={5} h={5} as={UploadIcon}/>
-                        </Button>
-                    <Divider/>
-                    <Box>
-                        <Stat>
-                            <StatLabel>Usage</StatLabel>
-                            <StatNumber>{usage}</StatNumber>
-                        </Stat>
-                    </Box>
-                    <Divider/>
-                    <FileSearch 
-                        key={searchReload} 
-                        onSearch={searchFile} 
-                        onDelete={deleteFile} 
-                        onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
-                </Stack>
-            </Box>
-        </Flex>
-    </Page>
+    return <Authenticated allowUnverified>
+         <Page>
+            <Flex mt="7em" minH="100vh" justify="center" mb={5}>
+                <Box w={{ base: "90vw", md: "70vw" }} maxW="1200px">
+                    <Stack spacing={4}>
+                        <Heading>Uploads</Heading>
+                        <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>
+                        <Button
+                            onClick={uploadButtonCallback}
+                            bg="primary.500"
+                            _hover={{
+                                bg: "primary.600"
+                            }}
+                            color="white"
+                            position="fixed"
+                            bottom="3em"
+                            right="3em"
+                            borderRadius="50px"
+                            w="60px"
+                            h="60px"
+                            zIndex={4}>
+                                <Icon w={5} h={5} as={UploadIcon}/>
+                            </Button>
+                        <Divider/>
+                        <Box>
+                            <Stat>
+                                <StatLabel>Usage</StatLabel>
+                                <StatNumber>{usage}</StatNumber>
+                            </Stat>
+                        </Box>
+                        <Divider/>
+                        <FileSearch
+                            key={searchReload}
+                            onSearch={searchFile}
+                            onDelete={deleteFile}
+                            onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
+                    </Stack>
+                </Box>
+            </Flex>
+        </Page>
+    </Authenticated>
 }
 
 export default UploadFiles

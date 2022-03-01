@@ -63,6 +63,13 @@ export interface UpdateUserSettings {
     newPassword?: string;
 }
 
+export interface ApplicationData {
+    id: string;
+    name: string;
+    userId: string;
+    token?: string;
+}
+
 export const updateSettings = async (
     options: UpdateUserSettings,
     password: string
@@ -185,4 +192,26 @@ export const verify = async (code: string): Promise<AxiosResponse<any>> => {
 
 export const resendCode = async (): Promise<AxiosResponse<any>> => {
     return await axios.patch(`${BASE_URL}/user/verify/resend`)
+}
+
+export const getAllApplications = async (): Promise<ApplicationData[]> => {
+    return (await axios.get<ApplicationData[]>(`${BASE_URL}/applications`)).data
+}
+
+export const getApplication = async (application_id: string): Promise<ApplicationData> => {
+    return (await axios.get<ApplicationData>(`${BASE_URL}/applications/${application_id}`)).data     
+}
+
+export const getApplicationToken = async (application_id: string): Promise<{ token: string }> => {
+    return (await axios.get<{ token: string }>(`${BASE_URL}/applications/${application_id}/token`)).data
+}
+
+export const applicationCreate = async (name: string): Promise<ApplicationData> => {
+    return (await axios.post<ApplicationData>(`${BASE_URL}/applications`, {
+        name: name
+    })).data
+}
+
+export const deleteApplication = async (application_id: string): Promise<void> => {
+    return await axios.delete(`${BASE_URL}/applications/${application_id}`)
 }

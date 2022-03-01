@@ -1,7 +1,7 @@
 import { getUserData, UserData } from "helpers/api"
 import store from "helpers/store"
 import { observe } from "mobx"
-import { useRouter } from "next/router"
+import Router from "next/router"
 import * as React from "react"
 import { Page } from "layouts/Page"
 import { VerificationMessage } from "./VerificationMessage"
@@ -10,7 +10,6 @@ export const Authenticated: React.FC<{
     allowUnverified?: boolean,
     children: React.ReactNode
 }> = ({ allowUnverified, children }) => {
-    const router = useRouter()
     const [userData, setUserData] = React.useState<UserData | null>(store.userData || null)
     
     React.useEffect(() => {
@@ -18,7 +17,7 @@ export const Authenticated: React.FC<{
         // Make the HTTP request just in case this is the initial load
         getUserData()
             .then(setUserData)
-            .catch(() => router.replace("/user/login"))
+            .catch(() => Router.replace("/user/login"))
 
         // Watch changes so we can reload this componment and re-evaluate if we should lock the route
         return observe(store, "userData", data => setUserData(data.newValue as UserData))
