@@ -85,7 +85,7 @@ const UploadFiles: React.FC = () => {
             })
     }, [searchReload])
 
-    return <Authenticated allowUnverified>
+    return <Authenticated>
          <Page>
             <Flex mt="7em" minH="100vh" justify="center" mb={5}>
                 <Box w={{ base: "90vw", md: "70vw" }} maxW="1200px">
