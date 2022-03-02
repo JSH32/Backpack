@@ -1,6 +1,6 @@
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter, Set,
+    ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFilter, Set,
 };
 
 use crate::{
@@ -26,8 +26,9 @@ async fn token(
     auth: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
     Ok(
-        match applications::Entity::find_by_id(application_id.to_string())
-            .belongs_to(&auth.user)
+        match auth.user
+            .find_related(applications::Entity)
+            .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
             .await?
         {
@@ -92,8 +93,9 @@ async fn create(
     auth: Auth<auth_role::User, false, false>,
     form: web::Json<ApplicationCreateForm>,
 ) -> Response<impl Responder> {
-    let application_count = applications::Entity::find()
-        .belongs_to(&auth.user)
+    let application_count = auth
+        .user
+        .find_related(applications::Entity)
         .count(&state.database)
         .await?;
 
@@ -118,8 +120,9 @@ async fn create(
         .http_response());
     }
 
-    if let Some(_) = applications::Entity::find()
-        .belongs_to(&auth.user)
+    if let Some(_) = auth
+        .user
+        .find_related(applications::Entity)
         .filter(applications::Column::Name.eq(form.name.to_owned()))
         .one(&state.database)
         .await?
@@ -163,8 +166,8 @@ async fn delete(
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
-        match applications::Entity::find()
-            .belongs_to(&auth.user)
+        match auth.user
+            .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
             .await?
