@@ -99,7 +99,7 @@ async fn create(
         .count(&state.database)
         .await?;
 
-    if application_count > 5 {
+    if application_count >= 5 {
         return Ok(
             MessageResponse::new(StatusCode::BAD_REQUEST, "The token limit per user is 5")
                 .http_response(),
@@ -115,7 +115,7 @@ async fn create(
     } else if (&form).name.len() < 4 {
         return Ok(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Token name too short (maximum 4 characters)",
+            "Token name too short (minimum 4 characters)",
         )
         .http_response());
     }

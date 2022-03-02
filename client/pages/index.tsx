@@ -13,7 +13,7 @@ const Home: NextPage = observer(() => {
 
     const appInfo = useAppInfo()
 
-    return <Page>
+    return <Page title={appInfo?.appName}>
         <VStack 
             h="100vh"
             justifyContent="center"

@@ -31,5 +31,5 @@ export const Authenticated: React.FC<{
     if (process.env.NEXT_PUBLIC_APP_SMTP_ENABLED && !allowUnverified && !userData.verified)
         return <VerificationMessage email={userData.email}/>
 
-    return <>{children}</>
+    return <Page>{children}</Page>
 }

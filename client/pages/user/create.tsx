@@ -66,7 +66,7 @@ const UserCreate: NextPage = () => {
     if (emailPostSignup !== null)
         return <VerificationMessage email={emailPostSignup}/>
 
-    return <Page>
+    return <Page title="Signup">
         <Flex
             minH="100vh"
             align="center"

@@ -73,7 +73,7 @@ const Login: NextPage = () => {
     if (postLoginUnverifiedEmail != null)
         return <VerificationMessage email={postLoginUnverifiedEmail} />
 
-        return <Page>
+        return <Page title="Login">
         <Flex
             id="login"
             minH="100vh"
