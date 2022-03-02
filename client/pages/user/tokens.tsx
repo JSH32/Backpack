@@ -24,7 +24,12 @@ import {
   Thead,
   Tr,
   Td,
-  Tbody
+  Tbody,
+  Menu,
+  MenuButton,
+  MenuItem, 
+  MenuList,
+  useClipboard
 } from "@chakra-ui/react"
 import type { NextPage } from "next"
 import { Authenticated } from "components/Authenticated"
@@ -33,7 +38,6 @@ import {
   applicationCreate,
   ApplicationData,
   getAllApplications,
-  getApplication,
   getApplicationToken,
   deleteApplication
 } from "helpers/api"
@@ -43,8 +47,57 @@ const Tokens: NextPage = () => {
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [applications, setApplications] = React.useState<ApplicationData[]>([])
-  const [applicationName, setApplicationName] = React.useState("")
+  const [applicationName, setApplicationName] = React.useState<string>("")
+  const [copyToken, setCopyToken] = React.useState<string>("")
+  const { onCopy } = useClipboard(copyToken, 15000)
 
+  const deleteApplicationEvent = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, id: string) => {
+    try {
+      await deleteApplication(id)
+      setApplications(applications.filter((app) => app.id !== id))
+      toast({
+        title: "Success",
+        description: "Application deleted",
+        status: "success",
+        duration: 5000,
+        isClosable: true
+      })
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: `${err.response?.data?.message ??
+          "An unknown error occured"
+          }`,
+        status: "error",
+        duration: 9000,
+        isClosable: true
+      })
+    }
+  }
+  const copyTokenEvent = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, id: string) => {
+    try {
+      const data = applications.find(application => application.id === id)?.token || (await getApplicationToken(id))?.token
+      setCopyToken(data)
+      onCopy()
+      toast({
+        title: "Token copied",
+        description: "Token copied to clipboard",
+        status: "success",
+        duration: 5000,
+        isClosable: true
+      })
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: `${err.response?.data?.message ??
+          "An unknown error occured"
+          }`,
+        status: "error",
+        duration: 9000,
+        isClosable: true
+      })
+    }
+  }
   React.useEffect(() => {
     getAllApplications()
       .then((data) => setApplications(data))
@@ -158,6 +211,7 @@ const Tokens: NextPage = () => {
                         <Td>Name</Td>
                         <Th>ID</Th>
                         <Th>Last Accessed</Th>
+                        <Th>Actions</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -169,6 +223,17 @@ const Tokens: NextPage = () => {
                             <Td>{application.name}</Td>
                             <Td>{application.id}</Td>
                             <Td>15days ago</Td>
+                            <Td>
+                              <Menu>
+                                <MenuButton as={Button}>
+                                  Actions
+                                </MenuButton>
+                                <MenuList>
+                                  <MenuItem _hover={{ bg: "primary.500" }} onClick={(event) => copyTokenEvent(event, application.id)} >📋  Copy Token</MenuItem>
+                                  <MenuItem  _hover={{ bg: "primary.500" }} onClick={(event) => deleteApplicationEvent(event, application.id)}>💣  Delete</MenuItem>
+                                </MenuList>
+                              </Menu>
+                            </Td>
                           </Tr>
                       ))}
                     </Tbody>
