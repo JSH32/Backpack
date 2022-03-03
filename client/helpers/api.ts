@@ -12,8 +12,6 @@ enum UserRole {
 }
 
 export type ThemeColor =
-    | "black"
-    | "white"
     | "gray"
     | "red"
     | "orange"
