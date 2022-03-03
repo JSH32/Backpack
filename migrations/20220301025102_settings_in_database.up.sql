@@ -1,7 +1,5 @@
 
 CREATE TYPE theme_color AS ENUM (
-    'black',
-    'white',
     'gray',
     'red',
     'orange',
