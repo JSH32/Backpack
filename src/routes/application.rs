@@ -1,7 +1,5 @@
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFilter, Set};
 
 use crate::{
     database::entity::applications,
@@ -26,8 +24,10 @@ async fn token(
     auth: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
     Ok(
-        match applications::Entity::find_by_id(application_id.to_string())
-            .belongs_to(&auth.user)
+        match auth
+            .user
+            .find_related(applications::Entity)
+            .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
             .await?
         {
@@ -92,34 +92,36 @@ async fn create(
     auth: Auth<auth_role::User, false, false>,
     form: web::Json<ApplicationCreateForm>,
 ) -> Response<impl Responder> {
-    let application_count = applications::Entity::find()
-        .belongs_to(&auth.user)
+    let application_count = auth
+        .user
+        .find_related(applications::Entity)
         .count(&state.database)
         .await?;
 
-    if application_count > 5 {
+    if application_count >= 5 {
         return Ok(
             MessageResponse::new(StatusCode::BAD_REQUEST, "The token limit per user is 5")
                 .http_response(),
         );
     }
 
-    if (&form).name.len() > 32 {
+    if (&form).name.len() > 16 {
         return Ok(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Token name too long (maximum 32 characters)",
+            "Token name too long (maximum 16 characters)",
         )
         .http_response());
     } else if (&form).name.len() < 4 {
         return Ok(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Token name too short (maximum 4 characters)",
+            "Token name too short (minimum 4 characters)",
         )
         .http_response());
     }
 
-    if let Some(_) = applications::Entity::find()
-        .belongs_to(&auth.user)
+    if let Some(_) = auth
+        .user
+        .find_related(applications::Entity)
         .filter(applications::Column::Name.eq(form.name.to_owned()))
         .one(&state.database)
         .await?
@@ -163,8 +165,9 @@ async fn delete(
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
-        match applications::Entity::find()
-            .belongs_to(&auth.user)
+        match auth
+            .user
+            .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
             .await?

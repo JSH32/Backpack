@@ -18,9 +18,10 @@ CREATE TABLE users
 -- API token table for applications
 CREATE TABLE applications
 (
-    id          sonyflake  PRIMARY KEY  NOT NULL UNIQUE,
-    user_id     sonyflake               NOT NULL,
-    name        VARCHAR(32)             NOT NULL,
+    id            sonyflake   PRIMARY KEY   NOT NULL UNIQUE,
+    user_id       sonyflake                 NOT NULL,
+    name          VARCHAR(16)               NOT NULL,
+    last_accessed timestamptz DEFAULT now() NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );

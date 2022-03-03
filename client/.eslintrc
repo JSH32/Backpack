@@ -1,17 +1,17 @@
 {
-    "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-        "semi": ["error", "never"],
-        "quotes": ["error", "double"],
-        "comma-dangle": ["error"],
-        "@typescript-eslint/no-explicit-any": "off"
-    },
-    "ignorePatterns": [
-        "snowpack.config.js",
-        "build/"
-    ]
+  "extends": [
+    "eslint:recommended",
+    "next/core-web-vitals",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "semi": ["error", "never"],
+    "quotes": ["error", "double"],
+    "comma-dangle": ["error"],
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/rules-of-hooks": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "@next/next/link-passhref": "off"
+  }
 }

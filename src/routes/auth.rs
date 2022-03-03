@@ -9,7 +9,7 @@ use crate::{
     state::State,
     util::{
         self,
-        auth::{auth_role, create_jwt_string, Auth},
+        auth::{auth_role, create_jwt_string, verify_user, Auth},
     },
 };
 
@@ -25,7 +25,7 @@ async fn basic(
     state: web::Data<State>,
     form: web::Json<BasicAuthForm>,
 ) -> Response<impl Responder> {
-    let user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
+    let mut user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
         users::Entity::find()
             .filter(users::Column::Email.eq(form.auth.to_owned()))
             .one(&state.database)
@@ -58,6 +58,11 @@ async fn basic(
             MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid credentials provided!")
                 .http_response(),
         );
+    }
+
+    // Verify user if SMTP is disabled
+    if let (None, false) = (&state.smtp_client, user_data.verified) {
+        verify_user(&mut user_data, &state.database).await?;
     }
 
     let expire_time = (Utc::now() + chrono::Duration::weeks(1)).timestamp();

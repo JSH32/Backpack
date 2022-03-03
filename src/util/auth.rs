@@ -4,7 +4,10 @@ use chrono::Utc;
 
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait,
+    QueryFilter, Set,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -159,32 +162,13 @@ async fn get_auth_data(
                     )));
                 }
             }
-            None => {
-                verifications::Entity::delete_many()
-                    .filter(verifications::Column::UserId.eq(user.id.to_owned()))
-                    .exec(&state.database)
-                    .await
-                    .map_err(|err| {
-                        Error::from(MessageResponse::internal_server_error(&err.to_string()))
-                    })?;
-
-                users::ActiveModel {
-                    id: Set(user.id.to_owned()),
-                    verified: Set(true),
-                    ..Default::default()
-                }
-                .update(&state.database)
+            None => verify_user(&mut user, &state.database)
                 .await
-                .map_err(|err| {
-                    Error::from(MessageResponse::internal_server_error(&err.to_string()))
-                })?;
-
-                user.verified = true;
-            }
+                .map_err(|e| Error::from(MessageResponse::internal_server_error(&e.to_string())))?,
         }
     }
 
-    let mut is_application = false;
+    let mut application = None;
 
     // Check if it is perm JWT token
     if let Some(application_id) = claims.application_id {
@@ -194,7 +178,7 @@ async fn get_auth_data(
             .map_err(|err| Error::from(MessageResponse::internal_server_error(&err.to_string())))?
         {
             Some(application_data) => {
-                is_application = true;
+                application = Some(application_data.id);
 
                 // Check if perm JWT token belongs to user
                 if application_data.user_id != user.id {
@@ -206,7 +190,41 @@ async fn get_auth_data(
         }
     }
 
-    Ok((user, is_application))
+    // Update last accessed
+    if let Some(application_id) = &application {
+        applications::ActiveModel {
+            id: Set(application_id.to_owned()),
+            last_accessed: Set(Utc::now()),
+            ..Default::default()
+        }
+        .update(&state.database)
+        .await
+        .map_err(|err| Error::from(MessageResponse::internal_server_error(&err.to_string())))?;
+    }
+
+    Ok((user, application.is_some()))
+}
+
+pub async fn verify_user(
+    user: &mut users::Model,
+    db: &DatabaseConnection,
+) -> Result<(), anyhow::Error> {
+    verifications::Entity::delete_many()
+        .filter(verifications::Column::UserId.eq(user.id.to_owned()))
+        .exec(db)
+        .await?;
+
+    users::ActiveModel {
+        id: Set(user.id.to_owned()),
+        verified: Set(true),
+        ..Default::default()
+    }
+    .update(db)
+    .await?;
+
+    user.verified = true;
+
+    Ok(())
 }
 
 // Sign a JWT token and get a string

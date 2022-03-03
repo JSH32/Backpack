@@ -1,6 +1,8 @@
 /.env
 target
 .vscode
-uploads
+/uploads
+test
+*_archive
 docker-compose.yml
 *.code-workspace

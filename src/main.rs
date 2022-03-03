@@ -204,7 +204,8 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::user::get_routes(smtp_enabled))
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
-                    .service(routes::file::get_routes()),
+                    .service(routes::file::get_routes())
+                    .service(routes::get_routes()),
             )
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
