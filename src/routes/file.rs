@@ -119,7 +119,6 @@ async fn upload(
             }
 
             file_api.set_url(root_path.clone());
-            file_api.set_delete_url(root_path);
             Ok(HttpResponse::Ok().json(file_api))
         }
         Err(err) => match err {
