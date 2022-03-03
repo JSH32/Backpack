@@ -85,11 +85,11 @@ export const DataListCell: React.FC<DataListCellProps> = ({
     )
 }
 
-export const DataListAccordion = ({ ...rest }) => {
+export const DataListAccordion: React.FC = ({ ...rest }) => {
     return <AccordionItem border="none" {...rest} />
 }
 
-export const DataListAccordionButton = ({ ...rest }) => {
+export const DataListAccordionButton: React.FC = ({ ...rest }) => {
     return (
         <AccordionButton
             role="group"
@@ -102,7 +102,7 @@ export const DataListAccordionButton = ({ ...rest }) => {
     )
 }
 
-export const DataListAccordionIcon = ({ ...rest }) => {
+export const DataListAccordionIcon: React.FC = ({ ...rest }) => {
     return (
         <AccordionIcon
             borderRadius="full"
@@ -112,7 +112,7 @@ export const DataListAccordionIcon = ({ ...rest }) => {
     )
 }
 
-export const DataListAccordionPanel = ({ ...rest }) => {
+export const DataListAccordionPanel: React.FC = ({ ...rest }) => {
     return (
         <AccordionPanel
             boxShadow="inner"
