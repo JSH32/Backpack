@@ -1,7 +1,5 @@
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFilter, Set};
 
 use crate::{
     database::entity::applications,
@@ -26,7 +24,8 @@ async fn token(
     auth: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
     Ok(
-        match auth.user
+        match auth
+            .user
             .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
@@ -106,10 +105,10 @@ async fn create(
         );
     }
 
-    if (&form).name.len() > 32 {
+    if (&form).name.len() > 16 {
         return Ok(MessageResponse::new(
             StatusCode::BAD_REQUEST,
-            "Token name too long (maximum 32 characters)",
+            "Token name too long (maximum 16 characters)",
         )
         .http_response());
     } else if (&form).name.len() < 4 {
@@ -166,7 +165,8 @@ async fn delete(
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
-        match auth.user
+        match auth
+            .user
             .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)

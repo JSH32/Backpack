@@ -10,6 +10,7 @@ pub struct Model {
     pub id: String,
     pub user_id: String,
     pub name: String,
+    pub last_accessed: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
