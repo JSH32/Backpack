@@ -33,7 +33,6 @@ import {
 } from "layouts/SettingsLayout"
 
 const Profile: NextPage = observer(() => {
-
     const changeForm = useForm()
     const finalSubmitForm = useForm()
 
@@ -98,7 +97,7 @@ const Profile: NextPage = observer(() => {
                             </UnorderedList>
                         </ModalBody>
                         <ModalFooter>
-                            <Button variant='ghost' mr={3} onClick={closeFinalForm}>
+                            <Button variant="ghost" mr={3} onClick={closeFinalForm}>
                                 Close
                             </Button>
                             <Button colorScheme="primary" type="submit">Submit</Button>

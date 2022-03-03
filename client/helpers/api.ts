@@ -64,8 +64,9 @@ export interface UpdateUserSettings {
 }
 
 export interface ApplicationData {
-    id: string;
     name: string;
+    id: string;
+    lastAccessed: string;
     userId: string;
     token?: string;
 }

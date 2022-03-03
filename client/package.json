@@ -17,6 +17,7 @@
     "@svgr/webpack": "^6.2.1",
     "axios": "^0.26.0",
     "framer-motion": "^6",
+    "javascript-time-ago": "^2.3.13",
     "mobx": "^6.4.2",
     "mobx-react-lite": "^3.3.0",
     "next": "12.1.0",

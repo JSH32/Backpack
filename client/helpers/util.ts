@@ -1,3 +1,11 @@
+import TimeAgo from "javascript-time-ago"
+import en from "javascript-time-ago/locale/en.json"
+TimeAgo.addLocale(en)
+
+// Global timeAgo instance
+// NOTE: When adding multiple language support this will need to become another context
+export const timeAgo = new TimeAgo("en_US")
+
 /**
  * Convert bytes to string with size unit
  * 
@@ -5,7 +13,7 @@
  * @param decimals decimal places
  * @returns formatted string with unit
  */
- export const convertBytes = (usage: number, decimals = 0): string => {
+export const convertBytes = (usage: number, decimals = 0): string => {
     if (usage === 0) return "0 Bytes"
     const places = decimals < 0 ? 0 : decimals
     const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
@@ -23,10 +31,10 @@ export const dateToString = (date: Date): string => {
     const ampm = date.getUTCHours() >= 12 ? "PM" : "AM"
     let hours: number = date.getUTCHours() % 12
     hours = hours ? hours : 12
-    const minutes = 
-        date.getUTCMinutes().toString().length === 1 
-        ? "0"+date.getUTCMinutes().toString() 
-        : date.getUTCMinutes().toString()
+    const minutes =
+        date.getUTCMinutes().toString().length === 1
+            ? "0" + date.getUTCMinutes().toString()
+            : date.getUTCMinutes().toString()
 
     return `${hours}:${minutes}${ampm} ${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`
 }
