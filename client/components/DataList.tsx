@@ -75,7 +75,7 @@ export const DataListCell: React.FC<DataListCellProps> = ({
             minW={!isWidthUnitless ? cellWidth : 0}
             flexBasis={isWidthUnitless ? `${+cellWidth * 100}%` : cellWidth}
             py="2"
-            px="3"
+            px="4"
             align="flex-start"
             justifyContent="center"
             {...cellProps}

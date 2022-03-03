@@ -5,7 +5,7 @@ import Head from "next/head"
 
 export const Page: React.FC<{
     title?: string
-    children?: JSX.Element | JSX.Element[]
+    children?: JSX.Element | JSX.Element[] | React.ReactNode
 }> = ({ title, children }) => {
     return <>
     <Head>

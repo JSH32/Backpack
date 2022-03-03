@@ -25,6 +25,9 @@ pub struct FileData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail_url: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delete_url: Option<String>,
+
     pub hash: String,
     pub uploaded: DateTime<Utc>,
     pub size: i64,
@@ -44,6 +47,7 @@ impl From<files::Model> for FileData {
             // They are filled in by the route returning it
             url: None,
             thumbnail_url: None,
+            delete_url: None,
         }
     }
 }
@@ -70,6 +74,12 @@ impl FileData {
             root_path.push(format!("thumb/{}", &self.name));
             self.thumbnail_url = Some(root_path.as_path().display().to_string().replace("\\", "/"));
         }
+    }
+    
+    /// Computes and sets the URL based on root storage path
+    pub fn set_delete_url(&mut self, mut root_path: PathBuf) {
+        root_path.push(format!("delete/{}", &self.name));
+        self.delete_url = Some(root_path.as_path().display().to_string().replace("\\", "/"))
     }
 }
 
