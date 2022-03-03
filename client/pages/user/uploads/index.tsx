@@ -85,6 +85,13 @@ const UploadFiles: React.FC = () => {
             })
     }, [searchReload])
 
+    const deleteCallback = React.useCallback((id: string) => {
+        return deleteFile(id)
+            .then(getUsage)
+            .then(bytes => setUsage(convertBytes(bytes)))
+            .catch(() => setUsage("0 Bytes"))
+    }, [])
+
     return <Authenticated>
          <Page title="Uploads">
             <Flex mt="7em" minH="100vh" justify="center" mb={5}>
@@ -119,7 +126,7 @@ const UploadFiles: React.FC = () => {
                         <FileSearch
                             key={searchReload}
                             onSearch={searchFile}
-                            onDelete={deleteFile}
+                            onDelete={deleteCallback}
                             onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
                     </Stack>
                 </Box>
