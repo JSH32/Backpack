@@ -5,6 +5,7 @@ use crate::{
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::EntityTrait;
+use std::env;
 
 pub mod application;
 pub mod auth;
@@ -18,10 +19,12 @@ pub fn get_routes() -> Scope {
 
 #[get("info")]
 async fn info(state: web::Data<State>) -> Response<impl Responder> {
-    Ok(HttpResponse::Ok().json(AppInfo::from(
+    let mut data = AppInfo::from(
         settings::Entity::find_by_id(true)
             .one(&state.database)
             .await?
             .unwrap(),
-    )))
+    );
+    data.set_commit(env::var("COMMIT").unwrap_or(String::from("0000000000000000000000000000000")));
+    Ok(HttpResponse::Ok().json(data))
 }

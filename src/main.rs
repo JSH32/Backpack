@@ -19,6 +19,8 @@ use std::{
     panic,
     path::{Path, PathBuf},
     time::Duration,
+    process::Command,
+    env
 };
 
 use actix_web::{
@@ -162,10 +164,10 @@ async fn main() -> std::io::Result<()> {
     let smtp_enabled = smtp_client.is_some();
 
     let api_state = Data::new(state::State {
-        database: database,
-        storage: storage,
+        database,
+        storage,
         jwt_key: config.jwt_key,
-        smtp_client: smtp_client,
+        smtp_client,
         base_url: config.base_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
         with_client: config.serve_frontend,
@@ -194,7 +196,13 @@ async fn main() -> std::io::Result<()> {
         "Starting webserver on port {}",
         config.port.to_string().yellow()
     );
-
+    let commit_output = Command::new("git")
+        .args(&["rev-parse", "HEAD"])
+        .output();
+    if let Ok(commit) = commit_output {
+        env::set_var("COMMIT", String::from_utf8_lossy(&commit.stdout).trim());
+        log::info!("Running commit {}", env::var("COMMIT").unwrap_or("".to_string()).yellow());
+    }
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Logger::default())

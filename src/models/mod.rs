@@ -8,7 +8,6 @@ use core::fmt;
 use std::fmt::{Debug, Display};
 
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
-
 use derive_more::Display;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
@@ -165,6 +164,8 @@ pub struct AppInfo {
     pub app_name: String,
     pub app_description: String,
     pub color: String,
+    pub version: Option<String>,
+    pub commit: Option<String>,
 }
 
 impl From<settings::Model> for AppInfo {
@@ -173,6 +174,17 @@ impl From<settings::Model> for AppInfo {
             app_name: settings.app_name,
             app_description: settings.app_description,
             color: settings.color.to_value(),
+            version: None,
+            commit: None,
         }
     }
+}
+
+impl AppInfo {
+    pub fn set_commit(&mut self, commit: String) {
+       self.commit = Some(commit);
+    }
+    // pub fn set_version(&mut self, version: String) {
+    //     self.version = Some(version);
+    // }
 }

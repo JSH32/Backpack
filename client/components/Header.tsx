@@ -62,7 +62,6 @@ interface NavItem {
 const Header: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode()
   const appInfo = useAppInfo()
-
   const User = observer(() => {
     const onLogout = async () => {
       logout().then(() => {
