@@ -328,7 +328,6 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
 
             match state.storage.get_object(&file.name).await {
                 Ok(buf) => {
-                    // log::info!("Generating thumbnail for {}", file.yellow());
                     if let Err(err) = state
                         .storage
                         .put_object(
