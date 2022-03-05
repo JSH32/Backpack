@@ -2,6 +2,7 @@ pub mod application;
 pub mod auth;
 pub mod file;
 pub mod user;
+pub mod registration_key;
 
 use core::fmt;
 use std::fmt::{Debug, Display};

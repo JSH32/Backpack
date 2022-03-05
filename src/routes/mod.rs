@@ -10,6 +10,7 @@ pub mod application;
 pub mod auth;
 pub mod file;
 pub mod user;
+pub mod registration_key;
 
 pub fn get_routes() -> Scope {
     web::scope("/").service(info)
