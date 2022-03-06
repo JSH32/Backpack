@@ -27,6 +27,7 @@ export interface AppInfo {
     appName: string;
     appDescription: string;
     color: ThemeColor;
+    commit: string;
 }
 
 export interface UserData {

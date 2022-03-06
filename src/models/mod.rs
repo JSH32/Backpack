@@ -8,10 +8,13 @@ use core::fmt;
 use std::fmt::{Debug, Display};
 
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
-
 use derive_more::Display;
+use git_version::git_version;
+use sea_orm::ActiveEnum;
 use serde::Serialize;
 use thiserror::Error;
+
+use crate::database::entity::settings;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -156,6 +159,8 @@ pub struct Page<T> {
     pub list: Vec<T>,
 }
 
+const GIT_VERSION: &str = git_version!();
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
@@ -163,4 +168,17 @@ pub struct AppInfo {
     pub app_description: String,
     pub color: String,
     pub invite_only: bool,
+    pub git_version: String,
+}
+
+impl AppInfo {
+    pub fn new(settings_model: settings::Model, invite_only: bool) -> Self {
+        Self {
+            app_name: settings_model.app_name,
+            app_description: settings_model.app_description,
+            color: settings_model.color.to_value(),
+            invite_only: invite_only,
+            git_version: GIT_VERSION.to_string(),
+        }
+    }
 }

@@ -15,9 +15,11 @@ use util::file::IMAGE_EXTS;
 
 use std::{
     convert::TryInto,
+    env,
     ffi::OsStr,
     panic,
     path::{Path, PathBuf},
+    process::Command,
     time::Duration,
 };
 
@@ -164,10 +166,10 @@ async fn main() -> std::io::Result<()> {
     let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
-        database: database,
-        storage: storage,
+        database,
+        storage,
         jwt_key: config.jwt_key,
-        smtp_client: smtp_client,
+        smtp_client,
         base_url: config.base_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
         with_client: config.serve_frontend,
@@ -197,7 +199,7 @@ async fn main() -> std::io::Result<()> {
         "Starting webserver on port {}",
         config.port.to_string().yellow()
     );
-
+    
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Logger::default())
