@@ -1,8 +1,8 @@
+pub mod admin;
 pub mod application;
 pub mod auth;
 pub mod file;
 pub mod user;
-pub mod registration_key;
 
 use core::fmt;
 use std::fmt::{Debug, Display};
@@ -10,11 +10,8 @@ use std::fmt::{Debug, Display};
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 
 use derive_more::Display;
-use sea_orm::ActiveEnum;
 use serde::Serialize;
 use thiserror::Error;
-
-use crate::database::entity::settings;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -32,7 +29,7 @@ pub struct Error(anyhow::Error);
 /// # Usage
 /// ```
 /// fn route() -> Response<()> {
-///     Err("This could be any error type")
+///     Err(StringError("This could be any error type"))
 /// }
 /// ```
 pub type Response<T> = Result<T, Error>;
@@ -165,14 +162,5 @@ pub struct AppInfo {
     pub app_name: String,
     pub app_description: String,
     pub color: String,
-}
-
-impl From<settings::Model> for AppInfo {
-    fn from(settings: settings::Model) -> Self {
-        Self {
-            app_name: settings.app_name,
-            app_description: settings.app_description,
-            color: settings.color.to_value(),
-        }
-    }
+    pub invite_only: bool,
 }

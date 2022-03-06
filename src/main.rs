@@ -23,6 +23,7 @@ use std::{
 
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse},
+    error::JsonPayloadError,
     http::StatusCode,
     middleware::Logger,
     web::{self, Data},
@@ -160,6 +161,7 @@ async fn main() -> std::io::Result<()> {
 
     // Get setting as single boolean before client gets moved
     let smtp_enabled = smtp_client.is_some();
+    let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
         database: database,
@@ -171,6 +173,7 @@ async fn main() -> std::io::Result<()> {
         with_client: config.serve_frontend,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
+        invite_only: config.invite_only,
     });
 
     // If the generate thumbnails flag is enabled
@@ -205,12 +208,17 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
                     .service(routes::file::get_routes())
-                    .service(routes::get_routes())
-                    .service(routes::registration_key::get_routes()),
+                    .service(routes::admin::get_routes(invite_only))
+                    .service(routes::get_routes()),
             )
             // Error handler when json body deserialization failed
-            .app_data(web::JsonConfig::default().error_handler(|_, _| {
-                actix_web::Error::from(models::MessageResponse::bad_request())
+            .app_data(web::JsonConfig::default().error_handler(|err, _| {
+                actix_web::Error::from(match err {
+                    JsonPayloadError::Deserialize(json_err) => {
+                        models::MessageResponse::new(StatusCode::BAD_REQUEST, &json_err.to_string())
+                    }
+                    _ => models::MessageResponse::bad_request(),
+                })
             }));
 
         let base_storage_path = storage_path.clone();

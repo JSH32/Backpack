@@ -21,6 +21,7 @@ use crate::{
     util::{
         auth::{auth_role, Auth},
         file::{get_file_from_payload, get_thumbnail_image, MultipartError, IMAGE_EXTS},
+        validate_paginate,
     },
 };
 
@@ -171,12 +172,6 @@ async fn list(
         None => SimpleExpr::Custom("true".to_string()),
     };
 
-    if *page_number < 1 {
-        return Ok(
-            MessageResponse::new(StatusCode::BAD_REQUEST, "Pages start at 1").http_response(),
-        );
-    }
-
     let paginator = files::Entity::find()
         .filter(files::Column::Uploader.eq(auth.user.id.to_owned()))
         .filter(query)
@@ -184,13 +179,8 @@ async fn list(
         .paginate(&state.database, 25);
 
     let pages = paginator.num_pages().await?;
-
-    if pages < 1 {
-        return Ok(MessageResponse::new(
-            StatusCode::NOT_FOUND,
-            &format!("There are only {} pages", pages),
-        )
-        .http_response());
+    if let Some(err) = validate_paginate(*page_number, pages) {
+        return Ok(err.http_response());
     }
 
     let storage_url = PathBuf::from(state.storage_url.clone());

@@ -1,18 +1,18 @@
-use serde::Serialize;
 use crate::database::entity::registration_keys;
-use sea_orm::prelude::{Uuid, DateTimeUtc};
+use sea_orm::prelude::{DateTimeUtc, Uuid};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrationKeyData {
     pub id: String,
+    pub iss_user: String,
+    // Since admin is the only one who can access this
+    // There is no point in hiding it
     pub code: Uuid,
-
+    pub uses_left: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<DateTimeUtc>,
-    pub iss_user: String,
-    pub used: i32,
-    pub max_uses: i32,
 }
 
 impl From<registration_keys::Model> for RegistrationKeyData {
@@ -20,15 +20,15 @@ impl From<registration_keys::Model> for RegistrationKeyData {
         Self {
             id: model.id.to_string(),
             code: model.code,
-            expiry_date: model.expiry_date.into(),
+            expiry_date: model.expiry_date,
             iss_user: model.iss_user,
-            used: model.used,
-            max_uses: model.max_uses,
+            uses_left: model.uses_left,
         }
     }
 }
 
-pub struct RegisterKeyCreateData {
-    pub max_uses: i32,
-    // we need to take expires in.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistrationKeyParams {
+    pub max_uses: Option<i32>,
 }
