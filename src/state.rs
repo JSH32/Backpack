@@ -14,4 +14,5 @@ pub struct State {
     pub with_client: bool,
     pub file_size_limit: usize,
     pub invite_only: bool,
+    pub git_version: String
 }

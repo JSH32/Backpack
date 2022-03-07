@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use rusoto_core::Region;
+use last_git_commit::LastGitCommit;
 use std::{
     env,
     fmt::Debug,
@@ -20,6 +21,7 @@ pub struct Config {
     pub storage_provider: StorageConfig,
     pub smtp_config: Option<SMTPConfig>,
     pub invite_only: bool,
+    pub git_version: String,
 }
 
 #[derive(Clone)]
@@ -55,6 +57,9 @@ pub enum StorageConfig {
 impl Config {
     pub fn new() -> Self {
         dotenv().ok();
+        let lgc = LastGitCommit::new().build().unwrap();
+        let long_ver = lgc.id().long();
+
         Config {
             port: get_env("PORT"),
             storage_url: get_env("STORAGE_BASEURL"),
@@ -64,6 +69,7 @@ impl Config {
             file_size_limit: get_env("FILE_SIZE_LIMIT"),
             worker_id: get_env::<u16>("WORKER_ID"),
             invite_only: get_env_or("INVITE_ONLY", false),
+            git_version: long_ver,
             serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
