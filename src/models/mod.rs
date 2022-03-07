@@ -13,7 +13,7 @@ use sea_orm::ActiveEnum;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::database::entity::settings;
+use crate::{database::entity::settings, util::GIT_VERSION};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -170,13 +170,13 @@ pub struct AppInfo {
 }
 
 impl AppInfo {
-    pub fn new(settings_model: settings::Model, invite_only: bool, git_ver: String) -> Self {
+    pub fn new(settings_model: settings::Model, invite_only: bool) -> Self {
         Self {
             app_name: settings_model.app_name,
             app_description: settings_model.app_description,
             color: settings_model.color.to_value(),
             invite_only: invite_only,
-            git_version: git_ver,
+            git_version: GIT_VERSION.to_string(),
         }
     }
 }

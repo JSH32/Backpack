@@ -23,5 +23,5 @@ async fn info(state: web::Data<State>) -> Response<impl Responder> {
         .await?
         .unwrap();
 
-    Ok(HttpResponse::Ok().json(AppInfo::new(model, state.invite_only, state.git_version.to_owned())))
+    Ok(HttpResponse::Ok().json(AppInfo::new(model, state.invite_only)))
 }

@@ -1,12 +1,15 @@
 use actix_http::StatusCode;
 use rand::Rng;
 use regex::Regex;
+use git_version::git_version;
 
 use crate::models::MessageResponse;
 
 pub mod auth;
 pub mod file;
 pub mod user;
+
+pub const GIT_VERSION: &str = git_version!();
 
 lazy_static! {
     pub static ref EMAIL_REGEX: regex::Regex = Regex::new(

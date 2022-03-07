@@ -1,4 +1,4 @@
-use crate::database::entity::files;
+use crate::{database::entity::files, util::GIT_VERSION};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -71,6 +71,7 @@ async fn main() -> std::io::Result<()> {
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
     println!("{}", figure.to_string().purple());
+    println!("Running Backpack on version: {}", GIT_VERSION.to_string().yellow());
 
     let config = config::Config::new();
     let args = Args::parse();
@@ -114,7 +115,6 @@ async fn main() -> std::io::Result<()> {
     let database = Database::connect(opt).await.unwrap();
 
     log::info!("Connected to the database");
-    log::info!("Running Backpack on version: {}", config.git_version.clone().yellow());
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
             if !v.path.exists() {
@@ -173,9 +173,9 @@ async fn main() -> std::io::Result<()> {
         with_client: config.serve_frontend,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
-        invite_only: config.invite_only,
-        git_version: config.git_version,
+        invite_only: config.invite_only
     });
+
     // If the generate thumbnails flag is enabled
     if args.generate_thumbnails {
         generate_thumbnails(&api_state).await.unwrap();
