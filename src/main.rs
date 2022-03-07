@@ -15,11 +15,9 @@ use util::file::IMAGE_EXTS;
 
 use std::{
     convert::TryInto,
-    env,
     ffi::OsStr,
     panic,
     path::{Path, PathBuf},
-    process::Command,
     time::Duration,
 };
 

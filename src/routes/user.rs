@@ -4,7 +4,7 @@ use lettre::AsyncTransport;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, Set};
 
 use crate::{
-    database::entity::{users, verifications},
+    database::entity::{users, verifications, registration_keys},
     models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm, UserData},
     state::State,
     util::{
@@ -199,7 +199,26 @@ async fn create(
             "Invalid email was provided",
         ));
     }
-
+    if state.invite_only {
+        let key_data = match registration_keys::Entity::find()
+        .filter(registration_keys::Column::Code.eq(form.registration_key.to_owned()))
+        .one(&state.database)
+        .await? {
+            Some(v) => v,
+            None => return Ok(MessageResponse::new(
+                StatusCode::BAD_REQUEST,
+                "Invalid registration code",
+            )),
+        };
+        // Decrease the amount of uses or delete the key if it the value is one
+        if key_data.uses_left == 1 {
+            key_data.delete(&state.database).await?;
+        } else {
+            let mut new_key_data: registration_keys::ActiveModel = key_data.clone().into();
+            new_key_data.uses_left = Set(--key_data.uses_left);
+            new_key_data.update(&state.database).await?;
+        }
+    }
     // Check if user with same email was found
     if users::Entity::find()
         .filter(users::Column::Email.eq(form.email.to_owned()))

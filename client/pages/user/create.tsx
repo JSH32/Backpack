@@ -39,7 +39,7 @@ const UserCreate: NextPage = () => {
     const router = useRouter()
     
     const formSubmit = (data: any) => {
-        userCreate(data.username, data.email, data.password)
+        userCreate(data.username, data.email, data.password, data.registration_key)
             .then(() => {
                 if (process.env.NEXT_PUBLIC_APP_SMTP_ENABLED === "true")
                     setEmailPostSignup(data.email)
@@ -56,7 +56,7 @@ const UserCreate: NextPage = () => {
             })
             .catch(error => toast({
                 title: "Error",
-                description: error.response.data.message,
+                description: error.response?.data?.message || error.message,
                 status: "error",
                 duration: 5000,
                 isClosable: true
@@ -95,6 +95,14 @@ const UserCreate: NextPage = () => {
                                     <FormLabel>Email</FormLabel>
                                     <Input {...register("email")} />
                                 </FormControl>
+                                {
+                                    process.env.NEXT_PUBLIC_APP_INVITE_ONLY === "true" && (
+                                        <FormControl isRequired>
+                                            <FormLabel>Registration key</FormLabel>
+                                            <Input {...register("registration_key")} />
+                                        </FormControl>
+                                    )
+                                }
                                 <FormControl isRequired>
                                     <FormLabel>Password</FormLabel>
                                     <InputGroup>

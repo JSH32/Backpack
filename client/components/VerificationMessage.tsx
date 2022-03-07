@@ -29,7 +29,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
       .catch((error) =>
         toast({
           title: "Error",
-          description: error.response.data.message,
+          description: error.response?.data?.message || error.message,
           status: "error",
           duration: 5000,
           isClosable: true

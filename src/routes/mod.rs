@@ -4,7 +4,7 @@ use crate::{
     state::State,
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
-use sea_orm::{ActiveEnum, EntityTrait};
+use sea_orm::{EntityTrait};
 
 pub mod admin;
 pub mod application;

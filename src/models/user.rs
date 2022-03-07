@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::entity::{
     sea_orm_active_enums::Role,
-    users::{self},
+    users,
 };
 
 #[derive(Serialize)]
@@ -53,6 +53,7 @@ pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub registration_key: Option<uuid::Uuid>
 }
 
 #[derive(Deserialize)]

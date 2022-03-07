@@ -135,7 +135,7 @@ export const logout = async (): Promise<void> => {
 /**
  * Log in with password authentication, key will be stored as httponly
  *
- * @param email email
+ * @param auth email
  * @param password password
  * @returns user data
  */
@@ -171,13 +171,15 @@ export const getUserData = async (): Promise<UserData> => {
 export const userCreate = async (
     username: string,
     email: string,
-    password: string
+    password: string,
+    registration_key?: string
 ): Promise<UserData> => {
     return (
         await axios.post<UserData>(`${BASE_URL}/user`, {
             username: username,
             email: email,
-            password: password
+            password: password,
+            registration_key: registration_key
         })
     ).data
 }
