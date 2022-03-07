@@ -188,6 +188,28 @@ async fn create(
     state: web::Data<State>,
     form: web::Json<UserCreateForm>,
 ) -> Response<impl Responder> {
+    let registration_key: Option<registration_keys::ActiveModel> = if state.invite_only {
+        if let Some(key) = &form.registration_key {
+            match registration_keys::Entity::find()
+                .filter(registration_keys::Column::Code.eq(key.to_owned()))
+                .one(&state.database)
+                .await? {
+                    Some(v) => Some(v.into()),
+                    None => return Ok(MessageResponse::new(
+                        StatusCode::BAD_REQUEST,
+                        "Invalid registration key",
+                    ))
+                }
+        } else {
+            return Ok(MessageResponse::new(
+                StatusCode::BAD_REQUEST,
+                "Registration key required",
+            ));
+        }
+    } else {
+        None
+    };
+
     // Check if username length is within bounds
     if let Err(err) = validate_username(&form.username) {
         return Ok(err);
@@ -199,26 +221,7 @@ async fn create(
             "Invalid email was provided",
         ));
     }
-    if state.invite_only {
-        let key_data = match registration_keys::Entity::find()
-        .filter(registration_keys::Column::Code.eq(form.registration_key.to_owned()))
-        .one(&state.database)
-        .await? {
-            Some(v) => v,
-            None => return Ok(MessageResponse::new(
-                StatusCode::BAD_REQUEST,
-                "Invalid registration code",
-            )),
-        };
-        // Decrease the amount of uses or delete the key if it the value is one
-        if key_data.uses_left == 1 {
-            key_data.delete(&state.database).await?;
-        } else {
-            let mut new_key_data: registration_keys::ActiveModel = key_data.clone().into();
-            new_key_data.uses_left = Set(--key_data.uses_left);
-            new_key_data.update(&state.database).await?;
-        }
-    }
+
     // Check if user with same email was found
     if users::Entity::find()
         .filter(users::Column::Email.eq(form.email.to_owned()))
@@ -245,6 +248,18 @@ async fn create(
         ));
     }
 
+    // Update the registration key here since we don't want to modify the record if failed
+    if let Some(mut registration_key) = registration_key {
+        let uses_left = registration_key.uses_left.clone().unwrap();
+
+        if uses_left <= 1 {
+            registration_key.delete(&state.database).await?;
+        } else {
+            registration_key.uses_left = Set(uses_left - 1);
+            registration_key.update(&state.database).await?;
+        }
+    }
+
     let user_data: users::Model = users::ActiveModel {
         username: Set(form.username.to_owned()),
         email: Set(form.email.to_owned()),
@@ -257,6 +272,7 @@ async fn create(
     .insert(&state.database)
     .await?;
 
+    // Send the user an email
     if let Some(smtp) = &state.smtp_client {
         let random_code = random_string(72);
 

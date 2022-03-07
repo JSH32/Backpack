@@ -80,9 +80,7 @@ const Password: NextPage = () => {
             .catch(error => {
                 toast({
                     title: "Error",
-                    description: error.response?.data?.message
-                        || error.message
-                    ,
+                    description: error.response.data.message,
                     status: "error",
                     duration: 5000,
                     isClosable: true

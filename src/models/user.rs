@@ -49,11 +49,13 @@ impl From<Role> for UserRole {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
-    pub registration_key: Option<uuid::Uuid>
+    // Only needed when invite_only
+    pub registration_key: Option<String>
 }
 
 #[derive(Deserialize)]
@@ -63,7 +65,6 @@ pub struct UserDeleteForm {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-// #[skip_serializing_none]
 pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,

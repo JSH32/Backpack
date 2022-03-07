@@ -76,7 +76,7 @@ const Profile: NextPage = observer(() => {
                             .catch(error => {
                                 toast({
                                     title: "Problem changing settings",
-                                    description: error.response?.data?.message || error.message,
+                                    description: error.response.data.message,
                                     status: "error",
                                     duration: 5000,
                                     isClosable: true
