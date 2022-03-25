@@ -49,7 +49,7 @@ import TrashIcon from "assets/icons/trash.svg"
 import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
-import { timeAgo } from "helpers/util"
+import { timeAgo, copyText } from "helpers/util"
 
 const Tokens: NextPage = () => {
   const toast = useToast()
@@ -83,8 +83,7 @@ const Tokens: NextPage = () => {
   const onCopyToken = React.useCallback((id: string) => {
     getApplicationToken(id)
       .then(res => {
-        navigator.clipboard.writeText(res.token)
-
+        copyText(res.token)
         toast({
           title: "Token copied",
           description: "Token copied to clipboard",

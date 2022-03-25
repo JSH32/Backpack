@@ -44,3 +44,13 @@ export const getExtension = (fileName: string): string =>
 
 export const isExtImage = (ext: string): boolean =>
     ["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"].includes(ext)
+
+export const copyText = (text: string) => {
+    const tempInput = document.createElement("input")
+    tempInput.value = text
+    document.body.appendChild(tempInput)
+    tempInput.select()
+    document.execCommand("copy")
+    document.body.removeChild(tempInput)
+    return true
+}
