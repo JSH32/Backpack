@@ -15,7 +15,6 @@ pub struct Config {
     pub base_url: String,
     pub worker_id: u16,
     pub jwt_key: String,
-    pub serve_frontend: bool,
     pub file_size_limit: usize,
     pub storage_provider: StorageConfig,
     pub smtp_config: Option<SMTPConfig>,
@@ -62,7 +61,6 @@ impl Config {
             base_url: get_env("BASEURL"),
             file_size_limit: get_env_or("FILE_SIZE_LIMIT", 100),
             worker_id: get_env::<u16>("WORKER_ID"),
-            serve_frontend: get_env_or("SERVE_FRONTEND", !cfg!(debug_assertions)),
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
                     "local" => StorageConfig::Local(LocalConfig {

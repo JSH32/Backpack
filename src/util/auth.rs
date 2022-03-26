@@ -4,10 +4,7 @@ use chrono::Utc;
 
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait,
-    QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 
 use crate::{

@@ -16,20 +16,18 @@ use util::file::IMAGE_EXTS;
 use std::{
     convert::TryInto,
     ffi::OsStr,
-    panic,
-    path::{Path, PathBuf},
+    path::{Path},
     time::Duration,
 };
 
 use actix_web::{
-    dev::{ServiceRequest, ServiceResponse},
     http::StatusCode,
     middleware::Logger,
     web::{self, Data},
     App, HttpRequest, HttpServer,
 };
 
-use actix_files::{Files, NamedFile};
+use actix_files::{NamedFile};
 
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 
@@ -74,23 +72,6 @@ async fn main() -> std::io::Result<()> {
     let config = config::Config::new();
     let args = Args::parse();
 
-    // Check if client directory provided has requirements to be served
-    let client_path = match args.client {
-        Some(v) => match config.serve_frontend {
-            true => {
-                let path = PathBuf::from(v);
-
-                if !path.is_dir() {
-                    panic!("Invalid client provided");
-                }
-
-                Some(path)
-            }
-            false => None,
-        },
-        None => None,
-    };
-
     // Create a SQLx pool for running migrations
     let migrator_pool = PgPoolOptions::new()
         .max_connections(1)
@@ -99,7 +80,10 @@ async fn main() -> std::io::Result<()> {
         .expect("Could not initialize migrator connection");
 
     let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
-    migrator.run(&migrator_pool).await.unwrap();
+    migrator.run(&migrator_pool).await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))
+        .unwrap();
+    
     migrator_pool.close().await;
 
     let mut opt = ConnectOptions::new(config.database_url.clone());
@@ -168,7 +152,6 @@ async fn main() -> std::io::Result<()> {
         smtp_client: smtp_client,
         base_url: config.base_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
-        with_client: config.serve_frontend,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
     });
@@ -196,7 +179,8 @@ async fn main() -> std::io::Result<()> {
     );
 
     HttpServer::new(move || {
-        let mut app = App::new()
+        let base_storage_path = storage_path.clone();
+        App::new()
             .wrap(Logger::default())
             .app_data(api_state.clone())
             .service(
@@ -210,44 +194,8 @@ async fn main() -> std::io::Result<()> {
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
                 actix_web::Error::from(models::MessageResponse::bad_request())
-            }));
-
-        let base_storage_path = storage_path.clone();
-
-        if client_path.is_some() {
-            let mut index_path = client_path.as_ref().unwrap().clone();
-            index_path.push("index.html");
-
-            app = app.default_service(
-                Files::new("", &client_path.as_ref().unwrap())
-                    // Redirect every 404 to index for react
-                    .default_handler(move |req: ServiceRequest| {
-                        let (req, _) = req.into_parts();
-
-                        let response = match &base_storage_path {
-                            Some(v) => {
-                                let mut file_path = v.clone();
-                                file_path
-                                    .push(req.path().trim_start_matches('/').replace("..", ""));
-                                match NamedFile::open(&file_path) {
-                                    Ok(v) => v.into_response(&req),
-                                    Err(_) => NamedFile::open(&index_path)
-                                        .expect("Index file not found")
-                                        .into_response(&req),
-                                }
-                            }
-                            None => NamedFile::open(&index_path)
-                                .expect("Index file not found")
-                                .into_response(&req),
-                        };
-
-                        async { Ok(ServiceResponse::new(req, response)) }
-                    })
-                    .index_file("index.html") // Set defailt index file
-                    .show_files_listing(), // Show index file
-            );
-        } else {
-            app = app.default_service(web::route().to(move |req: HttpRequest| {
+            }))
+            .default_service(web::route().to(move |req: HttpRequest| {
                 if let Some(v) = &base_storage_path {
                     let mut file_path = v.clone();
 
@@ -268,9 +216,6 @@ async fn main() -> std::io::Result<()> {
                 MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!")
                     .http_response()
             }))
-        };
-
-        app
     })
     .bind(("0.0.0.0", config.port))?
     .run()
