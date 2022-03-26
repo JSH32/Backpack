@@ -4,7 +4,7 @@ use crate::{
     state::State,
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
-use sea_orm::EntityTrait;
+use sea_orm::{EntityTrait, ActiveEnum};
 
 pub mod application;
 pub mod auth;
@@ -17,10 +17,15 @@ pub fn get_routes() -> Scope {
 
 #[get("info")]
 async fn info(state: web::Data<State>) -> Response<impl Responder> {
-    Ok(HttpResponse::Ok().json(AppInfo::from(
-        settings::Entity::find_by_id(true)
-            .one(&state.database)
-            .await?
-            .unwrap(),
-    )))
+    let settings = settings::Entity::find_by_id(true)
+        .one(&state.database)
+        .await?
+        .unwrap();
+
+    Ok(HttpResponse::Ok().json(AppInfo {
+        app_name: settings.app_name,
+        app_description: settings.app_description,
+        color: settings.color.to_value(),
+        smtp: state.smtp_client.is_some(),
+    }))
 }
