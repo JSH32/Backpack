@@ -1,19 +1,26 @@
-FROM rust:1.54.0 as builder
+# Build API
+FROM rust:1.59 as builder
 WORKDIR /usr/src/backpack
 # Copy only the files needed to build the Rust project
 COPY src ./src
 COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 
-FROM node:14
+# Runtime container
+FROM node:16
+
 WORKDIR /usr/src
-# Copy all files needed at runtime and to build the frontend
 COPY client ./client
-COPY scripts ./scripts
 COPY migrations ./migrations
+COPY docker/* ./
+
+# Build frontend
 WORKDIR /usr/src/client
 RUN npm install && npm run build
 WORKDIR /usr/src
+
+# Copy backend binary from builder
 COPY --from=builder /usr/src/backpack/target/release/backpack .
 
-ENTRYPOINT ["/bin/sh", "-c" , "node /usr/src/scripts/check.js && /usr/src/backpack --client /usr/src/client/build"]
+# Run script to start both processes
+CMD "./start.sh"
