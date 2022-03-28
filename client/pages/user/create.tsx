@@ -98,7 +98,7 @@ const UserCreate: NextPage = () => {
                                     <Input {...register("email")} />
                                 </FormControl>
                                 {
-                                    process.env.NEXT_PUBLIC_APP_INVITE_ONLY === "true" && (
+                                    appInfo?.inviteOnly && (
                                         <FormControl isRequired>
                                             <FormLabel>Registration key</FormLabel>
                                             <Input {...register("registration_key")} />

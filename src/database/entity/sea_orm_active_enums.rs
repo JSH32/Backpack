@@ -15,8 +15,6 @@ pub enum Role {
 #[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "theme_color")]
 pub enum ThemeColor {
-    #[sea_orm(string_value = "black")]
-    Black,
     #[sea_orm(string_value = "blue")]
     Blue,
     #[sea_orm(string_value = "cyan")]
@@ -35,8 +33,6 @@ pub enum ThemeColor {
     Red,
     #[sea_orm(string_value = "teal")]
     Teal,
-    #[sea_orm(string_value = "white")]
-    White,
     #[sea_orm(string_value = "yellow")]
     Yellow,
 }

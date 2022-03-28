@@ -29,6 +29,7 @@ export interface AppInfo {
     smtp: boolean;
     color: ThemeColor;
     commit: string;
+    inviteOnly: boolean;
     gitVersion: string;
 }
 

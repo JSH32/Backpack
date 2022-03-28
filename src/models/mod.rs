@@ -6,11 +6,11 @@ pub mod user;
 
 use core::fmt;
 use std::fmt::{Debug, Display};
-
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
 use serde::Serialize;
 use thiserror::Error;
+use crate::{database::entity::{settings, sea_orm_active_enums::ThemeColor}, util::GIT_VERSION};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -161,19 +161,20 @@ pub struct Page<T> {
 pub struct AppInfo {
     pub app_name: String,
     pub app_description: String,
-    pub color: String,
+    pub color: ThemeColor,
     pub invite_only: bool,
     pub git_version: String,
     pub smtp: bool
 }
 
 impl AppInfo {
-    pub fn new(settings_model: settings::Model, invite_only: bool) -> Self {
+    pub fn new(settings_model: settings::Model, invite_only: bool, smtp: bool) -> Self {
         Self {
             app_name: settings_model.app_name,
             app_description: settings_model.app_description,
-            color: settings_model.color.to_value(),
-            invite_only: invite_only,
+            color: settings_model.color.to_owned(),
+            invite_only,
+            smtp,
             git_version: GIT_VERSION.to_string(),
         }
     }
