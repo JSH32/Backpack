@@ -28,6 +28,7 @@ export interface AppInfo {
     appDescription: string;
     color: ThemeColor;
     commit: string;
+    gitVersion: string;
 }
 
 export interface UserData {

@@ -39,7 +39,7 @@ MyApp.getInitialProps = async (appContext: AppContext): Promise<AppInitialProps 
   const appProps = await App.getInitialProps(appContext)
   
   const appInfo = (await axios.get<AppInfo>(`${process.env.NEXT_PUBLIC_API_URL}/info`)).data
-
+  
   return { ...appProps, appInfo }
 }
 

@@ -11,6 +11,7 @@ import UploadIcon from "/assets/icons/upload.svg"
 import SettingsIcon from "/assets/icons/settings.svg"
 import LogOutIcon from "/assets/icons/log-out.svg"
 import KeyIcon from "/assets/icons/key.svg"
+import ClipboardIcon from "/assets/icons/clipboard.svg"
 
 import {
   Text,
@@ -30,6 +31,7 @@ import {
 
 import RouteLink from "next/link"
 import { useAppInfo } from "helpers/info"
+import { copyText } from "helpers/util"
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -100,6 +102,19 @@ const Header: React.FC = () => {
                 }}
                 onClick={onLogout}
               />
+              {appInfo?.gitVersion && (
+              <>
+                <Divider />
+                  <UserNavCard
+                  item={{
+                    label: "Copy Version",
+                    subLabel: "Copy the version of the app",
+                    icon: ClipboardIcon
+                  }}
+                  onClick={() => copyText(appInfo.gitVersion)}
+                  />
+              </>
+              )}
             </Stack>
           </PopoverContent>
         </Popover>

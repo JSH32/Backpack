@@ -14,9 +14,7 @@ export const Page: React.FC<{
         <Header/>
         <Box minH="100vh" h="100%">
             <Flex justifyContent="center" w="100%">
-                <Box
-                    maxW={2000} 
-                    w="100vw">{children}</Box>
+                <Box w="100%">{children}</Box>
             </Flex>
         </Box>
     </>
