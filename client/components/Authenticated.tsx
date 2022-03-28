@@ -5,11 +5,13 @@ import Router from "next/router"
 import * as React from "react"
 import { Page } from "layouts/Page"
 import { VerificationMessage } from "./VerificationMessage"
+import { useAppInfo } from "helpers/info"
 
 export const Authenticated: React.FC<{
     allowUnverified?: boolean,
     children: React.ReactNode
 }> = ({ allowUnverified, children }) => {
+    const appInfo = useAppInfo()
     const [userData, setUserData] = React.useState<UserData | null>(store.userData || null)
     
     React.useEffect(() => {
@@ -28,7 +30,7 @@ export const Authenticated: React.FC<{
         return <Page></Page>
 
     // SMTP verification was enabled and the user was not verified
-    if (process.env.NEXT_PUBLIC_APP_SMTP_ENABLED && !allowUnverified && !userData.verified)
+    if (appInfo?.smtp && !allowUnverified && !userData.verified)
         return <VerificationMessage email={userData.email}/>
 
     return <Page>{children}</Page>

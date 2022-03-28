@@ -29,6 +29,7 @@ import {
 import { VerificationMessage } from "components/VerificationMessage"
 import { NextPage } from "next"
 import { useRouter } from "next/router"
+import { useAppInfo } from "helpers/info"
 
 const UserCreate: NextPage = () => {
     const [emailPostSignup, setEmailPostSignup] = React.useState(null)
@@ -37,11 +38,12 @@ const UserCreate: NextPage = () => {
     const { register, handleSubmit } = useForm()
     const toast = useToast()
     const router = useRouter()
+    const appInfo = useAppInfo()
     
     const formSubmit = (data: any) => {
         userCreate(data.username, data.email, data.password, data.registration_key)
             .then(() => {
-                if (process.env.NEXT_PUBLIC_APP_SMTP_ENABLED === "true")
+                if (appInfo?.smtp)
                     setEmailPostSignup(data.email)
                 else
                     router.replace("/user/uploads")

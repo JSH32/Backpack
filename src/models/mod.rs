@@ -9,11 +9,8 @@ use std::fmt::{Debug, Display};
 
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
-use sea_orm::ActiveEnum;
 use serde::Serialize;
 use thiserror::Error;
-
-use crate::{database::entity::settings, util::GIT_VERSION};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -167,6 +164,7 @@ pub struct AppInfo {
     pub color: String,
     pub invite_only: bool,
     pub git_version: String,
+    pub smtp: bool
 }
 
 impl AppInfo {

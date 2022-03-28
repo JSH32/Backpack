@@ -11,7 +11,6 @@ pub struct State {
     pub base_url: Uri,
     pub storage_url: String,
     pub smtp_client: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>,
-    pub with_client: bool,
     pub file_size_limit: usize,
     pub invite_only: bool,
 }

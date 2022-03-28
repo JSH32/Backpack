@@ -12,7 +12,7 @@ clap = { version = "3.1.0", features = ["derive"] }
 serde = "1.0.126"
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
 serde_with = "1.4.0"
-jsonwebtoken = { git = "https://github.com/Riku32/jsonwebtoken" }
+jsonwebtoken = { git = "https://github.com/JSH32/jsonwebtoken" }
 dotenv = "0.15.0"
 # Router does not work after actix-http beta 10, need to force version 9 for http and version 8 for web
 actix-web = "=4.0.0-beta.8"

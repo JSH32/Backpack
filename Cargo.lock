@@ -1562,7 +1562,7 @@ dependencies = [
 [[package]]
 name = "jsonwebtoken"
 version = "7.2.0"
-source = "git+https://github.com/Riku32/jsonwebtoken#8ca94171c473954ec11cbc28bf1039bfcc8e18be"
+source = "git+https://github.com/JSH32/jsonwebtoken#8ca94171c473954ec11cbc28bf1039bfcc8e18be"
 dependencies = [
  "base64 0.12.3",
  "pem",

@@ -26,6 +26,7 @@ export type ThemeColor =
 export interface AppInfo {
     appName: string;
     appDescription: string;
+    smtp: boolean;
     color: ThemeColor;
     commit: string;
     gitVersion: string;

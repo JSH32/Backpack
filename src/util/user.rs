@@ -52,29 +52,16 @@ pub fn validate_username(username: &str) -> Result<(), MessageResponse> {
     }
 }
 
-pub fn verification_email(
-    base_url: &str,
-    from_email: &str,
-    email: &str,
-    code: &str,
-    serve_frontend: bool,
-) -> Message {
+pub fn verification_email(base_url: &str, from_email: &str, email: &str, code: &str) -> Message {
     Message::builder()
         .from(from_email.parse().unwrap())
         .to(email.parse().unwrap())
         .subject("Verify your account")
         .body(
-            if serve_frontend {
-                format!(
-                    "Please click on this link to verify your account\n{}user/verify?code={}",
-                    base_url, code
-                )
-            } else {
-                format!(
-                    "Please POST to the URL in order to verify your account\n{}api/user/verify/{}",
-                    base_url, code
-                )
-            }
+            format!(
+                "Please click on this link to verify your account\n{}user/verify?code={}",
+                base_url, code
+            )
             .to_string(),
         )
         .unwrap()
