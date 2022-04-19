@@ -175,14 +175,14 @@ export const userCreate = async (
     username: string,
     email: string,
     password: string,
-    registration_key?: string
+    registrationKey?: string
 ): Promise<UserData> => {
     return (
         await axios.post<UserData>(`${BASE_URL}/user`, {
             username: username,
             email: email,
             password: password,
-            registration_key: registration_key
+            registrationKey: registrationKey
         })
     ).data
 }

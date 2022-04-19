@@ -28,7 +28,8 @@ import {
   MenuList,
   Portal,
   VStack,
-  Center
+  Center,
+  Spinner
 } from "@chakra-ui/react"
 
 import type { NextPage } from "next"
@@ -56,6 +57,7 @@ const Tokens: NextPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [applications, setApplications] = React.useState<ApplicationData[]>([])
   const tokenForm = useForm()
+  const [loadingTokens, setLoadingTokens] = React.useState(true)
 
   const onDeleteApplication = (id: string) => {
     deleteApplication(id)
@@ -134,7 +136,10 @@ const Tokens: NextPage = () => {
 
   React.useEffect(() => {
     getAllApplications()
-      .then(data => setApplications(data))
+      .then(data => {
+        setApplications(data)
+        setLoadingTokens(false)
+      })
       .catch(() => [])
   }, [])
 
@@ -149,7 +154,7 @@ const Tokens: NextPage = () => {
                 Tokens allow developers to use the Backpack API on behalf of a user account.
               </Text>
 
-              {applications.length > 4 || <Button
+              <Button
                 onClick={onOpen}
                 bg="primary.500"
                 _hover={{
@@ -164,7 +169,7 @@ const Tokens: NextPage = () => {
                 h="60px"
                 zIndex={4}>
                 <Icon w={5} h={5} as={PlusIcon} />
-              </Button>}
+              </Button>
               <Modal isOpen={isOpen} onClose={closeForm}>
                 <ModalOverlay />
                 <ModalContent>
@@ -237,12 +242,12 @@ const Tokens: NextPage = () => {
                 ))}
               </DataList> : <DataList>
                 <Center h="9rem">
-                  <VStack color="gray.500">
+                  {loadingTokens ? <Spinner size="lg"/> : <VStack color="gray.500">
                     <Icon as={KeyIcon} w="30px" h="30px"/>
                     <Heading as="h2" size="2lg">
                       No Tokens found. <Link color="primary.400" onClick={onOpen}>Create one</Link>
                     </Heading>
-                  </VStack>
+                  </VStack>}
                 </Center>  
               </DataList>}
             </Stack>
