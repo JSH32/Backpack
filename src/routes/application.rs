@@ -99,24 +99,19 @@ async fn create(
         .await?;
 
     if application_count >= 5 {
-        return Ok(
-            MessageResponse::new(StatusCode::BAD_REQUEST, "The token limit per user is 5")
-                .http_response(),
-        );
+        return MessageResponse::ok(StatusCode::BAD_REQUEST, "The token limit per user is 5");
     }
 
     if (&form).name.len() > 16 {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::BAD_REQUEST,
             "Token name too long (maximum 16 characters)",
-        )
-        .http_response());
+        );
     } else if (&form).name.len() < 4 {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::BAD_REQUEST,
             "Token name too short (minimum 4 characters)",
-        )
-        .http_response());
+        );
     }
 
     if let Some(_) = auth
@@ -126,11 +121,10 @@ async fn create(
         .one(&state.database)
         .await?
     {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::BAD_REQUEST,
             "A token with that name already exists",
-        )
-        .http_response());
+        );
     }
 
     // Create an application token and send JWT to user

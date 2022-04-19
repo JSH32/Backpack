@@ -50,10 +50,6 @@ mod util;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Client directory location to serve from `/` path
-    #[clap(short, long)]
-    client: Option<String>,
-
     /// Regenerate image thumbnails
     #[clap(short, long, takes_value = false)]
     generate_thumbnails: bool,

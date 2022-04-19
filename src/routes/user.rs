@@ -2,6 +2,7 @@ use actix_web::{get, http::StatusCode, patch, post, put, web, HttpResponse, Resp
 use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
 use lettre::AsyncTransport;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, Set};
+use uuid::Uuid;
 
 use crate::{
     database::entity::{users, verifications, registration_keys},
@@ -85,11 +86,10 @@ async fn settings(
             .await?
             .is_some()
         {
-            return Ok(MessageResponse::new(
+            return MessageResponse::ok(
                 StatusCode::CONFLICT,
                 "An account with that email already exists!",
-            )
-            .http_response());
+            );
         }
 
         to_change.email = Some(new_email.to_string());
@@ -106,11 +106,10 @@ async fn settings(
             .await?
             .is_some()
         {
-            return Ok(MessageResponse::new(
+            return MessageResponse::ok(
                 StatusCode::CONFLICT,
                 "An account with that username already exists!",
-            )
-            .http_response());
+            );
         }
 
         to_change.username = Some(new_username.to_string());
@@ -185,21 +184,29 @@ async fn create(
 ) -> Response<impl Responder> {
     let registration_key: Option<registration_keys::ActiveModel> = if state.invite_only {
         if let Some(key) = &form.registration_key {
+            let uuid_key = match Uuid::parse_str(key) {
+                Ok(v) => v,
+                Err(_) => return MessageResponse::ok(
+                    StatusCode::BAD_REQUEST,
+                    "Invalid registration key",
+                )
+            };
+            
             match registration_keys::Entity::find()
-                .filter(registration_keys::Column::Code.eq(key.to_owned()))
+                .filter(registration_keys::Column::Code.eq(uuid_key))
                 .one(&state.database)
                 .await? {
                     Some(v) => Some(v.into()),
-                    None => return Ok(MessageResponse::new(
+                    None => return MessageResponse::ok(
                         StatusCode::BAD_REQUEST,
                         "Invalid registration key",
-                    ))
+                    )
                 }
         } else {
-            return Ok(MessageResponse::new(
+            return MessageResponse::ok(
                 StatusCode::BAD_REQUEST,
                 "Registration key required",
-            ));
+            );
         }
     } else {
         None
@@ -207,14 +214,14 @@ async fn create(
 
     // Check if username length is within bounds
     if let Err(err) = validate_username(&form.username) {
-        return Ok(err);
+        return Ok(err.http_response());
     }
 
     if !EMAIL_REGEX.is_match(&form.email) {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::BAD_REQUEST,
             "Invalid email was provided",
-        ));
+        );
     }
 
     // Check if user with same email was found
@@ -224,10 +231,10 @@ async fn create(
         .await?
         .is_some()
     {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::CONFLICT,
             "An account with that email already exists!",
-        ));
+        );
     }
 
     // Check if user with same username was found
@@ -237,10 +244,10 @@ async fn create(
         .await?
         .is_some()
     {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::CONFLICT,
             "An account with that username already exists!",
-        ));
+        );
     }
 
     // Update the registration key here since we don't want to modify the record if failed
@@ -260,7 +267,7 @@ async fn create(
         email: Set(form.email.to_owned()),
         password: Set(match new_password(&form.password)? {
             Ok(password_hashed) => password_hashed,
-            Err(err) => return Ok(err),
+            Err(err) => return Ok(err.http_response()),
         }),
         ..Default::default()
     }
@@ -294,10 +301,10 @@ async fn create(
         }
     }
 
-    Ok(MessageResponse::new(
+    MessageResponse::ok(
         StatusCode::OK,
         "User has successfully been created",
-    ))
+    )
 }
 
 #[patch("/verify/resend")]
@@ -306,10 +313,10 @@ async fn resend_verify(
     auth: Auth<auth_role::User, true, false>,
 ) -> Response<impl Responder> {
     if auth.user.verified {
-        return Ok(MessageResponse::new(
+        return MessageResponse::ok(
             StatusCode::CONFLICT,
             "You are already verified",
-        ));
+        );
     }
 
     let mut verification_model = verifications::ActiveModel {
@@ -337,10 +344,10 @@ async fn resend_verify(
         let _ = mailer.send(email).await;
     });
 
-    Ok(MessageResponse::new(
+    MessageResponse::ok(
         StatusCode::OK,
         &format!("Verification email resent to {}", auth.user.email),
-    ))
+    )
 }
 
 #[patch("/verify/{code}")]
@@ -360,20 +367,20 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
 
             // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
             if user_data.verified {
-                return Ok(MessageResponse::new(
+                return MessageResponse::ok(
                     StatusCode::CONFLICT,
                     "User was already verified",
-                ));
+                );
             }
 
             let mut active_user: users::ActiveModel = user_data.into();
             active_user.verified = Set(true);
             active_user.update(&state.database).await?;
 
-            Ok(MessageResponse::new(
+            MessageResponse::ok(
                 StatusCode::OK,
                 "User has been verified",
-            ))
+            )
         }
         None => return Ok(MessageResponse::bad_request()),
     }

@@ -68,12 +68,11 @@ async fn upload(
                     json!(&file_url.as_path().display().to_string().replace("\\", "/")),
                 );
 
-                return Ok(MessageResponse::new_with_data(
+                return MessageResponse::ok_with_data(
                     StatusCode::CONFLICT,
                     "You have already uploaded this file",
                     serde_json::Value::Object(object),
-                )
-                .http_response());
+                );
             }
 
             let file_model = files::ActiveModel {
@@ -91,11 +90,10 @@ async fn upload(
             // If this fails attempt to delete the file from database
             if let Err(_) = state.storage.put_object(&filename, &file.bytes).await {
                 let _ = file_model.delete(&state.database).await;
-                return Ok(MessageResponse::new(
+                return MessageResponse::ok(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Unable to upload file",
-                )
-                .http_response());
+                );
             }
 
             let root_path = PathBuf::from(&state.storage_url);
@@ -124,14 +122,13 @@ async fn upload(
         }
         Err(err) => match err {
             MultipartError::FieldNotFound(_) => Ok(MessageResponse::bad_request().http_response()),
-            MultipartError::PayloadTooLarge(_) => Ok(MessageResponse::new(
+            MultipartError::PayloadTooLarge(_) => MessageResponse::ok(
                 StatusCode::PAYLOAD_TOO_LARGE,
                 &format!(
                     "File was larger than the size limit of {}mb",
                     state.file_size_limit / 1000 / 1000
                 ),
-            )
-            .http_response()),
+            ),
             MultipartError::WriteError(err) => Err(Error::from(err)),
         },
     }
