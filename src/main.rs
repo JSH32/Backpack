@@ -13,12 +13,7 @@ use tokio::fs;
 
 use util::file::IMAGE_EXTS;
 
-use std::{
-    convert::TryInto,
-    ffi::OsStr,
-    path::{Path},
-    time::Duration,
-};
+use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
 
 use actix_web::{
     http::StatusCode,
@@ -27,7 +22,7 @@ use actix_web::{
     App, HttpRequest, HttpServer,
 };
 
-use actix_files::{NamedFile};
+use actix_files::NamedFile;
 
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 
@@ -64,7 +59,10 @@ async fn main() -> std::io::Result<()> {
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
     println!("{}", figure.to_string().purple());
-    println!("Running Backpack on version: {}", GIT_VERSION.to_string().yellow());
+    println!(
+        "Running Backpack on version: {}",
+        GIT_VERSION.to_string().yellow()
+    );
 
     let config = config::Config::new();
     let args = Args::parse();
@@ -77,10 +75,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Could not initialize migrator connection");
 
     let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
-    migrator.run(&migrator_pool).await
+    migrator
+        .run(&migrator_pool)
+        .await
         .map_err(|e| anyhow::anyhow!(e.to_string()))
         .unwrap();
-    
+
     migrator_pool.close().await;
 
     let mut opt = ConnectOptions::new(config.database_url.clone());
@@ -151,7 +151,7 @@ async fn main() -> std::io::Result<()> {
         storage_url: config.storage_url,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
-        invite_only: config.invite_only
+        invite_only: config.invite_only,
     });
 
     // If the generate thumbnails flag is enabled
@@ -175,7 +175,7 @@ async fn main() -> std::io::Result<()> {
         "Starting webserver on port {}",
         config.port.to_string().yellow()
     );
-    
+
     HttpServer::new(move || {
         let base_storage_path = storage_path.clone();
         App::new()

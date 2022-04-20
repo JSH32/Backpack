@@ -4,7 +4,7 @@ use crate::{
     state::State,
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
-use sea_orm::{EntityTrait};
+use sea_orm::EntityTrait;
 
 pub mod admin;
 pub mod application;
@@ -29,6 +29,8 @@ async fn info(state: web::Data<State>) -> Response<impl Responder> {
             app_name: settings.app_name,
             app_description: settings.app_description,
             color: settings.color,
-        }, state.invite_only, state.smtp_client.is_some()
+        },
+        state.invite_only,
+        state.smtp_client.is_some(),
     )))
 }

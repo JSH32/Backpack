@@ -4,16 +4,13 @@ pub mod auth;
 pub mod file;
 pub mod user;
 
-use core::fmt;
-use std::fmt::{Debug, Display};
-use actix_http::Message;
+use crate::{database::entity::settings, util::GIT_VERSION};
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
+use core::fmt;
 use derive_more::Display;
-use lettre::message;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
-use thiserror::Error;
-use crate::{database::entity::settings, util::GIT_VERSION};
+use std::fmt::{Display};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -80,7 +77,11 @@ impl MessageResponse {
         Ok(MessageResponse::new(code, message).http_response())
     }
 
-    pub fn ok_with_data<E>(code: StatusCode, message: &str, data: serde_json::Value) -> Result<HttpResponse, E> {
+    pub fn ok_with_data<E>(
+        code: StatusCode,
+        message: &str,
+        data: serde_json::Value,
+    ) -> Result<HttpResponse, E> {
         Ok(MessageResponse::new_with_data(code, message, data).http_response())
     }
 
@@ -162,7 +163,6 @@ pub struct Page<T> {
     pub list: Vec<T>,
 }
 
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
@@ -171,7 +171,7 @@ pub struct AppInfo {
     pub color: String,
     pub invite_only: bool,
     pub git_version: String,
-    pub smtp: bool
+    pub smtp: bool,
 }
 
 impl AppInfo {

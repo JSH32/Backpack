@@ -1,7 +1,7 @@
 use actix_http::StatusCode;
+use git_version::git_version;
 use rand::Rng;
 use regex::Regex;
-use git_version::git_version;
 
 use crate::models::MessageResponse;
 

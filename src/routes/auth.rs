@@ -38,10 +38,7 @@ async fn basic(
     }? {
         Some(v) => v,
         None => {
-            return MessageResponse::ok(
-                StatusCode::BAD_REQUEST,
-                "Invalid credentials provided!",
-            );
+            return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid credentials provided!");
         }
     };
 

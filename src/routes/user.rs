@@ -5,7 +5,7 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, Que
 use uuid::Uuid;
 
 use crate::{
-    database::entity::{users, verifications, registration_keys},
+    database::entity::{registration_keys, users, verifications},
     models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm, UserData},
     state::State,
     util::{
@@ -186,27 +186,23 @@ async fn create(
         if let Some(key) = &form.registration_key {
             let uuid_key = match Uuid::parse_str(key) {
                 Ok(v) => v,
-                Err(_) => return MessageResponse::ok(
-                    StatusCode::BAD_REQUEST,
-                    "Invalid registration key",
-                )
+                Err(_) => {
+                    return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid registration key")
+                }
             };
-            
+
             match registration_keys::Entity::find()
                 .filter(registration_keys::Column::Code.eq(uuid_key))
                 .one(&state.database)
-                .await? {
-                    Some(v) => Some(v.into()),
-                    None => return MessageResponse::ok(
-                        StatusCode::BAD_REQUEST,
-                        "Invalid registration key",
-                    )
+                .await?
+            {
+                Some(v) => Some(v.into()),
+                None => {
+                    return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid registration key")
                 }
+            }
         } else {
-            return MessageResponse::ok(
-                StatusCode::BAD_REQUEST,
-                "Registration key required",
-            );
+            return MessageResponse::ok(StatusCode::BAD_REQUEST, "Registration key required");
         }
     } else {
         None
@@ -218,10 +214,7 @@ async fn create(
     }
 
     if !EMAIL_REGEX.is_match(&form.email) {
-        return MessageResponse::ok(
-            StatusCode::BAD_REQUEST,
-            "Invalid email was provided",
-        );
+        return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid email was provided");
     }
 
     // Check if user with same email was found
@@ -301,10 +294,7 @@ async fn create(
         }
     }
 
-    MessageResponse::ok(
-        StatusCode::OK,
-        "User has successfully been created",
-    )
+    MessageResponse::ok(StatusCode::OK, "User has successfully been created")
 }
 
 #[patch("/verify/resend")]
@@ -313,10 +303,7 @@ async fn resend_verify(
     auth: Auth<auth_role::User, true, false>,
 ) -> Response<impl Responder> {
     if auth.user.verified {
-        return MessageResponse::ok(
-            StatusCode::CONFLICT,
-            "You are already verified",
-        );
+        return MessageResponse::ok(StatusCode::CONFLICT, "You are already verified");
     }
 
     let mut verification_model = verifications::ActiveModel {
@@ -352,7 +339,6 @@ async fn resend_verify(
 
 #[patch("/verify/{code}")]
 async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<impl Responder> {
-    // let (verification, user): (verifications::Model, users::Model)
     match verifications::Entity::find()
         .filter(verifications::Column::Code.eq(code.to_owned()))
         .find_also_related(users::Entity)
@@ -367,22 +353,21 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
 
             // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
             if user_data.verified {
-                return MessageResponse::ok(
-                    StatusCode::CONFLICT,
-                    "User was already verified",
-                );
+                return MessageResponse::ok(StatusCode::CONFLICT, "User was already verified");
             }
 
             let mut active_user: users::ActiveModel = user_data.into();
             active_user.verified = Set(true);
             active_user.update(&state.database).await?;
 
-            MessageResponse::ok(
-                StatusCode::OK,
-                "User has been verified",
+            MessageResponse::ok(StatusCode::OK, "User has been verified")
+        }
+        None => {
+            return MessageResponse::ok(
+                StatusCode::BAD_REQUEST,
+                "Invalid verification code was provided",
             )
         }
-        None => return Ok(MessageResponse::bad_request()),
     }
 }
 

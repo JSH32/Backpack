@@ -75,10 +75,7 @@ impl StorageProvider for S3Provider {
             .take()
         {
             Some(stream) => Ok(stream.map_ok(|b| b.to_vec()).try_concat().await?),
-            None => Err(anyhow::anyhow!(format!(
-                "No file stream found on {}",
-                path
-            ))),
+            None => Err(anyhow::anyhow!(format!("No file stream found on {}", path))),
         }
     }
 }
