@@ -382,7 +382,10 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
                 "User has been verified",
             )
         }
-        None => return Ok(MessageResponse::bad_request()),
+        None => MessageResponse::ok(
+            StatusCode::BAD_REQUEST,
+            "Couldnt find verification data"
+        ),
     }
 }
 

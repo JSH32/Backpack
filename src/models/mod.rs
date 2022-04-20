@@ -6,13 +6,10 @@ pub mod user;
 
 use core::fmt;
 use std::fmt::{Debug, Display};
-use actix_http::Message;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
-use lettre::message;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
-use thiserror::Error;
 use crate::{database::entity::settings, util::GIT_VERSION};
 
 pub use self::{application::*, auth::*, file::*, user::*};
