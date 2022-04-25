@@ -1,16 +1,16 @@
+pub mod admin;
 pub mod application;
 pub mod auth;
 pub mod file;
 pub mod user;
 
-use core::fmt;
-use std::fmt::{Debug, Display};
-
+use crate::{database::entity::settings, util::GIT_VERSION};
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
-
+use core::fmt;
 use derive_more::Display;
+use sea_orm::ActiveEnum;
 use serde::Serialize;
-use thiserror::Error;
+use std::fmt::{Display};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -28,7 +28,7 @@ pub struct Error(anyhow::Error);
 /// # Usage
 /// ```
 /// fn route() -> Response<()> {
-///     Err("This could be any error type")
+///     Err(anyhow::anyhow!("This could be any error type"))
 /// }
 /// ```
 pub type Response<T> = Result<T, Error>;
@@ -45,10 +45,6 @@ impl<E: Into<anyhow::Error>> From<E> for Error {
         Self(e.into())
     }
 }
-
-#[derive(Error, Debug)]
-#[error("{0}")]
-pub struct StringError(pub String);
 
 /// Standard message response
 #[derive(Serialize, Debug)]
@@ -75,6 +71,18 @@ impl MessageResponse {
             data: None,
             error: None,
         }
+    }
+
+    pub fn ok<E>(code: StatusCode, message: &str) -> Result<HttpResponse, E> {
+        Ok(MessageResponse::new(code, message).http_response())
+    }
+
+    pub fn ok_with_data<E>(
+        code: StatusCode,
+        message: &str,
+        data: serde_json::Value,
+    ) -> Result<HttpResponse, E> {
+        Ok(MessageResponse::new_with_data(code, message, data).http_response())
     }
 
     pub fn new_with_data(code: StatusCode, message: &str, data: serde_json::Value) -> Self {
@@ -161,5 +169,20 @@ pub struct AppInfo {
     pub app_name: String,
     pub app_description: String,
     pub color: String,
-    pub smtp: bool
+    pub invite_only: bool,
+    pub git_version: String,
+    pub smtp: bool,
+}
+
+impl AppInfo {
+    pub fn new(settings_model: settings::Model, invite_only: bool, smtp: bool) -> Self {
+        Self {
+            app_name: settings_model.app_name,
+            app_description: settings_model.app_description,
+            color: settings_model.color.to_owned().to_value(),
+            invite_only,
+            smtp,
+            git_version: GIT_VERSION.to_string(),
+        }
+    }
 }

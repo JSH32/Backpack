@@ -4,7 +4,11 @@
 
 import axios, { AxiosResponse } from "axios"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const BASE_URL = {
+    toString: () => typeof window === "undefined" 
+        ? process.env.API_URL 
+        : window.location.origin + "/api"
+}
 
 enum UserRole {
     User = "user",
@@ -28,6 +32,9 @@ export interface AppInfo {
     appDescription: string;
     smtp: boolean;
     color: ThemeColor;
+    commit: string;
+    inviteOnly: boolean;
+    gitVersion: string;
 }
 
 export interface UserData {
@@ -135,7 +142,7 @@ export const logout = async (): Promise<void> => {
 /**
  * Log in with password authentication, key will be stored as httponly
  *
- * @param email email
+ * @param auth email
  * @param password password
  * @returns user data
  */
@@ -171,13 +178,15 @@ export const getUserData = async (): Promise<UserData> => {
 export const userCreate = async (
     username: string,
     email: string,
-    password: string
+    password: string,
+    registrationKey?: string
 ): Promise<UserData> => {
     return (
         await axios.post<UserData>(`${BASE_URL}/user`, {
             username: username,
             email: email,
-            password: password
+            password: password,
+            registrationKey: registrationKey
         })
     ).data
 }

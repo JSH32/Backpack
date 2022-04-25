@@ -53,7 +53,11 @@ pub mod auth_role {
     define_role!(Admin, UserRole::Admin);
 }
 
-pub struct Auth<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> {
+pub struct Auth<
+    R: Role,
+    const ALLOW_UNVERIFIED: bool = false,
+    const ALLOW_APPLICATION: bool = false,
+> {
     pub user: users::Model,
     _r: std::marker::PhantomData<R>,
 }

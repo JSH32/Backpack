@@ -17,7 +17,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
 
   const resendEmail = React.useCallback(() => {
     resendCode()
-      .then((res) =>
+      .then(res =>
         toast({
           title: "Email resent",
           description: res.data.message,
@@ -26,7 +26,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
           isClosable: true
         })
       )
-      .catch((error) =>
+      .catch(error =>
         toast({
           title: "Error",
           description: error.response.data.message,

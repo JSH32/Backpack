@@ -1,4 +1,4 @@
-use crate::database::entity::files;
+use crate::{database::entity::files, util::GIT_VERSION};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -13,12 +13,7 @@ use tokio::fs;
 
 use util::file::IMAGE_EXTS;
 
-use std::{
-    convert::TryInto,
-    ffi::OsStr,
-    path::{Path},
-    time::Duration,
-};
+use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
 
 use actix_web::{
     http::StatusCode,
@@ -27,7 +22,7 @@ use actix_web::{
     App, HttpRequest, HttpServer,
 };
 
-use actix_files::{NamedFile};
+use actix_files::NamedFile;
 
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 
@@ -50,10 +45,6 @@ mod util;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Client directory location to serve from `/` path
-    #[clap(short, long)]
-    client: Option<String>,
-
     /// Regenerate image thumbnails
     #[clap(short, long, takes_value = false)]
     generate_thumbnails: bool,
@@ -68,6 +59,10 @@ async fn main() -> std::io::Result<()> {
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
     println!("{}", figure.to_string().purple());
+    println!(
+        "Running Backpack on version: {}",
+        GIT_VERSION.to_string().yellow()
+    );
 
     let config = config::Config::new();
     let args = Args::parse();
@@ -80,10 +75,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Could not initialize migrator connection");
 
     let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
-    migrator.run(&migrator_pool).await
+    migrator
+        .run(&migrator_pool)
+        .await
         .map_err(|e| anyhow::anyhow!(e.to_string()))
         .unwrap();
-    
+
     migrator_pool.close().await;
 
     let mut opt = ConnectOptions::new(config.database_url.clone());
@@ -97,7 +94,6 @@ async fn main() -> std::io::Result<()> {
     let database = Database::connect(opt).await.unwrap();
 
     log::info!("Connected to the database");
-
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
             if !v.path.exists() {
@@ -144,16 +140,18 @@ async fn main() -> std::io::Result<()> {
 
     // Get setting as single boolean before client gets moved
     let smtp_enabled = smtp_client.is_some();
+    let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
-        database: database,
-        storage: storage,
+        database,
+        storage,
         jwt_key: config.jwt_key,
-        smtp_client: smtp_client,
+        smtp_client,
         base_url: config.base_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,
+        invite_only: config.invite_only,
     });
 
     // If the generate thumbnails flag is enabled
@@ -189,6 +187,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
                     .service(routes::file::get_routes())
+                    .service(routes::admin::get_routes(invite_only))
                     .service(routes::get_routes()),
             )
             // Error handler when json body deserialization failed

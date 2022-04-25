@@ -41,7 +41,7 @@ const UserCreate: NextPage = () => {
     const appInfo = useAppInfo()
     
     const formSubmit = (data: any) => {
-        userCreate(data.username, data.email, data.password)
+        userCreate(data.username, data.email, data.password, data.registrationKey)
             .then(() => {
                 if (appInfo?.smtp)
                     setEmailPostSignup(data.email)
@@ -110,6 +110,14 @@ const UserCreate: NextPage = () => {
                                         </InputRightElement>
                                     </InputGroup>
                                 </FormControl>
+                                {
+                                    appInfo?.inviteOnly && (
+                                        <FormControl isRequired>
+                                            <FormLabel>Registration key</FormLabel>
+                                            <Input {...register("registrationKey")} />
+                                        </FormControl>
+                                    )
+                                }
                             </Stack>
                             <Button
                                 bg="primary.500"

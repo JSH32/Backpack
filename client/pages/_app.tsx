@@ -2,9 +2,8 @@ import "../styles/globals.scss"
 import { mode } from "@chakra-ui/theme-tools"
 import { ChakraProvider, extendTheme } from "@chakra-ui/react"
 import React from "react"
-import { AppInfo } from "helpers/api"
-import App from "next/app"
-import axios from "axios"
+import App, { AppContext } from "next/app"
+import { getAppInfo } from "helpers/api"
 import { AppInfoContext } from "helpers/info"
 
 const theme = extendTheme({
@@ -35,11 +34,9 @@ const MyApp = ({ Component, pageProps, appInfo }: any) => {
   )
 }
 
-MyApp.getInitialProps = async (appContext: any): Promise<any> => {
+MyApp.getInitialProps = async (appContext: AppContext) => {
   const appProps = await App.getInitialProps(appContext)
-  
-  const appInfo = (await axios.get<AppInfo>(`${process.env.NEXT_PUBLIC_API_URL}/info`)).data
-
+  const appInfo = await getAppInfo()
   return { ...appProps, appInfo }
 }
 

@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::database::entity::{
-    sea_orm_active_enums::Role,
-    users::{self},
-};
+use crate::database::entity::{sea_orm_active_enums::Role, users};
 
 #[derive(Serialize)]
 pub struct UserData {
@@ -49,10 +46,13 @@ impl From<Role> for UserRole {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
+    // Only needed when invite_only
+    pub registration_key: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -62,7 +62,6 @@ pub struct UserDeleteForm {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-// #[skip_serializing_none]
 pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,

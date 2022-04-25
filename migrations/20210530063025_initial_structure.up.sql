@@ -57,3 +57,15 @@ CREATE TABLE files
 -- Two identical files can not exist if owned by the same user
 CREATE UNIQUE INDEX files_user_hash_uindex
     ON files (uploader, hash);
+
+-- User registration keys
+CREATE TABLE registration_keys
+(
+    id          sonyflake    NOT NULL PRIMARY KEY,
+    iss_user    sonyflake    NOT NULL,
+    code        uuid         NOT NULL UNIQUE,
+    uses_left   INTEGER      NOT NULL DEFAULT 1,
+    expiry_date timestamptz,
+
+    FOREIGN KEY (iss_user) REFERENCES users (id) ON DELETE CASCADE
+);
