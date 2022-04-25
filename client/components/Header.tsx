@@ -11,27 +11,25 @@ import UploadIcon from "/assets/icons/upload.svg"
 import SettingsIcon from "/assets/icons/settings.svg"
 import LogOutIcon from "/assets/icons/log-out.svg"
 import KeyIcon from "/assets/icons/key.svg"
-import ClipboardIcon from "/assets/icons/clipboard.svg"
 
 import {
   Text,
-  Link,
   Box,
   Button,
   Flex,
   Icon,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Stack,
   useColorModeValue,
   useColorMode,
-  Divider
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider
 } from "@chakra-ui/react"
 
 import RouteLink from "next/link"
 import { useAppInfo } from "helpers/info"
-import { copyText } from "helpers/util"
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -57,7 +55,7 @@ const NAV_ITEMS: NavItem[] = [
 interface NavItem {
   label: string;
   subLabel?: string;
-  to?: string;
+  to: string;
   icon: any;
 }
 
@@ -75,50 +73,43 @@ const Header: React.FC = () => {
 
     const userData = toJS(store.userData)
     return !userData ? (
-      <>
-        <Button variant="link">
-          <RouteLink href="/user/login">Sign in</RouteLink>
-        </Button>
-      </>
+      <Button variant="link">
+        <RouteLink href="/user/login">Sign in</RouteLink>
+      </Button>
     ) : (
-      <>
-        <Popover trigger="hover" placement="bottom-end">
-          <PopoverTrigger>
-            <Button as="a" variant="link">
-              {userData.username}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent border={0} boxShadow="xl" p={4} rounded="xl" minW="m">
-            <Stack>
-              {NAV_ITEMS.map((item, index) => (
-                <UserNavCard key={`navIndex${index}`} item={item} />
-              ))}
-              <UserNavCard
-                lastItem={true}
-                item={{
-                  label: "Log Out",
-                  subLabel: "Sign out of your account",
-                  icon: LogOutIcon
-                }}
-                onClick={onLogout}
-              />
-              {appInfo?.gitVersion && (
-              <>
-                <Divider />
-                  <UserNavCard
-                  item={{
-                    label: "Copy Version",
-                    subLabel: "Copy the version of the app",
-                    icon: ClipboardIcon
-                  }}
-                  onClick={() => copyText(appInfo.gitVersion)}
-                  />
-              </>
-              )}
-            </Stack>
-          </PopoverContent>
-        </Popover>
-      </>
+      <Flex alignItems="center">
+        <Menu matchWidth={true} autoSelect={false}>
+          <MenuButton
+            as={Button}
+            rounded="full"
+            variant="link"
+            cursor="pointer"
+            minW={0}
+          >
+            {userData.username}
+          </MenuButton>
+
+          <MenuList>
+            {NAV_ITEMS.map(item => <MenuItem 
+              key={item.label} 
+              icon={<Icon as={item.icon} color="gray.400" fontSize="md" mt="5px"/>} 
+              onClick={() => Router.push(item.to)}>
+                {item.label}
+              </MenuItem>)}
+
+            <MenuDivider/>
+
+            <MenuItem icon={<Icon
+              as={LogOutIcon} 
+              color="gray.400" 
+              fontSize="md" 
+              mt="5px"/>} 
+              onClick={onLogout}>
+                Logout
+              </MenuItem>
+          </MenuList>
+        </Menu>
+      </Flex>
     )
   })
 
@@ -149,7 +140,7 @@ const Header: React.FC = () => {
           <Button onClick={toggleColorMode} variant="ghost">
               {colorMode === "light" ? <Icon as={MoonIcon} /> : <Icon as={SunIcon} />}
           </Button>
-          <User />
+          <User/>
         </Stack>
       </Flex>
     </Box>
@@ -157,50 +148,3 @@ const Header: React.FC = () => {
 }
 
 export default Header
-
-const UserNavCard: React.FC<{
-  item: NavItem;
-  onClick?: () => void;
-  lastItem?: boolean;
-}> = ({ item, onClick, lastItem }) => {
-  return (
-    <>
-      {lastItem ? <Divider /> : <></>}
-      <RouteLink href={item.to ? item.to : "#"}>
-        <Link
-          onClick={onClick}
-          role="group"
-          display="block"
-          p={2}
-          rounded="md"
-          _hover={{ bg: useColorModeValue("primary.50", "gray.900") }}
-        >
-          <Stack direction="row" align="center">
-            <Box>
-              <Text
-                color={lastItem ? "red.300" : "grey.200"}
-                transition="all .3s ease"
-                _groupHover={{ color: lastItem ? "red.500" : "primary.400" }}
-                fontWeight={500}
-              >
-                {item.label}
-              </Text>
-              <Text fontSize="sm">{item.subLabel}</Text>
-            </Box>
-            <Flex
-              transition={"all .3s ease"}
-              transform={"translateX(-10px)"}
-              opacity={0}
-              _groupHover={{ opacity: "100%", transform: "translateX(0)" }}
-              justify={"flex-end"}
-              align={"center"}
-              flex={1}
-            >
-              <Icon color={ lastItem ? "red.500" : "primary.400" } w={5} h={5} as={item.icon} />
-            </Flex>
-          </Stack>
-        </Link>
-      </RouteLink>
-    </>
-  )
-}

@@ -4,7 +4,11 @@
 
 import axios, { AxiosResponse } from "axios"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const BASE_URL = {
+    toString: () => typeof window === "undefined" 
+        ? process.env.API_URL 
+        : window.location.origin + "/api"
+}
 
 enum UserRole {
     User = "user",

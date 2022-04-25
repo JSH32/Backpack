@@ -1,16 +1,16 @@
 import { Box, Flex } from "@chakra-ui/react"
 import * as React from "react"
 import Header from "components/Header"
-import Head from "next/head"
+import { Meta } from "components/Meta"
 
 export const Page: React.FC<{
     title?: string
     children?: JSX.Element | JSX.Element[] | React.ReactNode
 }> = ({ title, children }) => {
     return <>
-    <Head>
-        <title>{title}</title>
-    </Head>
+        <Meta
+            title={title}
+            description={title}/>
         <Header/>
         <Box minH="100vh" h="100%">
             <Flex justifyContent="center" w="100%">
