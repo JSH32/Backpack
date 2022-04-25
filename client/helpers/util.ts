@@ -52,5 +52,4 @@ export const copyText = (text: string) => {
     tempInput.select()
     document.execCommand("copy")
     document.body.removeChild(tempInput)
-    return true
 }
