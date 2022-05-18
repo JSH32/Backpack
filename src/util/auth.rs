@@ -73,22 +73,16 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
             >,
         >,
     >;
-    type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
         let req = req.clone();
 
         Box::pin(async move {
-            let (user_data, is_application) = match get_auth_data(req, ALLOW_UNVERIFIED).await {
-                Ok(user_data) => user_data,
-                Err(err) => return Err(err),
-            };
+            let (user_data, is_application) = get_auth_data(req, ALLOW_UNVERIFIED).await?;
 
-            if is_application && !ALLOW_APPLICATION {
-                return Err(Error::from(MessageResponse::unauthorized_error()));
-            }
-
-            if UserRole::from(user_data.role.clone()) < R::LEVEL {
+            if (is_application && !ALLOW_APPLICATION)
+                || (UserRole::from(user_data.role.clone()) < R::LEVEL)
+            {
                 return Err(Error::from(MessageResponse::unauthorized_error()));
             }
 

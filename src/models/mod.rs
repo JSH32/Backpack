@@ -5,12 +5,13 @@ pub mod file;
 pub mod user;
 
 use crate::{database::entity::settings, util::GIT_VERSION};
+use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
 use derive_more::Display;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
-use std::fmt::{Display};
+use std::fmt::Display;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
@@ -150,8 +151,10 @@ impl ResponseError for MessageResponse {
 
 /// Responder to convert data to valid simple HTTP response
 impl Responder for MessageResponse {
+    type Body = BoxBody;
+
     /// Get HTTP response from response
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse {
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
         HttpResponse::from(self)
     }
 }

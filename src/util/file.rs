@@ -41,42 +41,41 @@ pub async fn get_file_from_payload(
     field_name: &str,
 ) -> Result<File, MultipartError> {
     while let Ok(Some(mut field)) = payload.try_next().await {
-        if let Some(disposition) = field.content_disposition() {
-            let filename_param = match disposition.get_filename() {
-                Some(v) => v,
-                None => continue,
-            };
+        let disposition = field.content_disposition().clone();
+        let filename_param = match disposition.get_filename() {
+            Some(v) => v,
+            None => continue,
+        };
 
-            let name_param = match disposition.get_name() {
-                Some(v) => v,
-                None => continue,
-            };
+        let name_param = match disposition.get_name() {
+            Some(v) => v,
+            None => continue,
+        };
 
-            if name_param != field_name {
-                continue;
-            }
-
-            let mut bytes = Vec::<u8>::new();
-            let mut size = 0;
-
-            while let Ok(Some(chunk)) = field.try_next().await {
-                size += chunk.len();
-
-                if size > size_limit {
-                    return Err(MultipartError::PayloadTooLarge(size_limit));
-                }
-
-                if let Err(err) = bytes.write(&chunk).await {
-                    return Err(MultipartError::WriteError(err));
-                }
-            }
-
-            return Ok(File {
-                filename: filename_param.to_string(),
-                bytes: bytes,
-                size: size,
-            });
+        if name_param != field_name {
+            continue;
         }
+
+        let mut bytes = Vec::<u8>::new();
+        let mut size = 0;
+
+        while let Ok(Some(chunk)) = field.try_next().await {
+            size += chunk.len();
+
+            if size > size_limit {
+                return Err(MultipartError::PayloadTooLarge(size_limit));
+            }
+
+            if let Err(err) = bytes.write(&chunk).await {
+                return Err(MultipartError::WriteError(err));
+            }
+        }
+
+        return Ok(File {
+            filename: filename_param.to_string(),
+            bytes: bytes,
+            size: size,
+        });
     }
 
     Err(MultipartError::FieldNotFound(field_name.to_string()))

@@ -194,26 +194,29 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
                 actix_web::Error::from(models::MessageResponse::bad_request())
             }))
-            .default_service(web::route().to(move |req: HttpRequest| {
-                if let Some(v) = &base_storage_path {
-                    let mut file_path = v.clone();
+            .default_service(web::to(move |req: HttpRequest| {
+                let storage_path = base_storage_path.clone();
+                async move {
+                    if let Some(v) = &storage_path {
+                        let mut file_path = v.clone();
 
-                    // Request path after the root
-                    let path_end = req.path().trim_start_matches('/');
+                        // Request path after the root
+                        let path_end = req.path().trim_start_matches('/');
 
-                    // Make sure request path isn't empty
-                    // This would attempt to send the directory (and fail) otherwise
-                    if !path_end.eq("") {
-                        // Sanitize the path to prevent walking to another directory
-                        file_path.push(path_end.replace("..", ""));
-                        if let Ok(v) = NamedFile::open(&file_path) {
-                            return v.into_response(&req);
+                        // Make sure request path isn't empty
+                        // This would attempt to send the directory (and fail) otherwise
+                        if !path_end.eq("") {
+                            // Sanitize the path to prevent walking to another directory
+                            file_path.push(path_end.replace("..", ""));
+                            if let Ok(v) = NamedFile::open(&file_path) {
+                                return v.into_response(&req);
+                            }
                         }
                     }
-                };
 
-                MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!")
-                    .http_response()
+                    MessageResponse::new(StatusCode::NOT_FOUND, "Resource was not found!")
+                        .http_response()
+                }
             }))
     })
     .bind(("0.0.0.0", config.port))?

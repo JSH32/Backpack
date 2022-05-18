@@ -1,7 +1,6 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use chrono::Utc;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use time::OffsetDateTime;
 
 use crate::{
     database::entity::users,
@@ -13,7 +12,11 @@ use crate::{
     },
 };
 
-use actix_web::{cookie::Cookie, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use actix_web::{
+    cookie::{time::OffsetDateTime, Cookie},
+    http::StatusCode,
+    post, web, HttpResponse, Responder, Scope,
+};
 
 pub fn get_routes() -> Scope {
     web::scope("/auth").service(basic).service(logout)
@@ -80,7 +83,7 @@ async fn basic(
                 .secure(false)
                 .http_only(true)
                 .path("/")
-                .expires(OffsetDateTime::from_unix_timestamp(expire_time))
+                .expires(OffsetDateTime::from_unix_timestamp(expire_time).unwrap())
                 .finish(),
         )
         .json(UserData::from(user_data)))
@@ -96,7 +99,7 @@ async fn logout(_: Auth<auth_role::User, true, false>) -> impl Responder {
                 .http_only(true)
                 .path("/")
                 // Cookie expires instantly when issued, will remove the cookie
-                .expires(OffsetDateTime::from_unix_timestamp(Utc::now().timestamp()))
+                .expires(OffsetDateTime::from_unix_timestamp(Utc::now().timestamp()).unwrap())
                 .finish(),
         )
         .json(MessageResponse::new(
