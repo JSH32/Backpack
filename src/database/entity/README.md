@@ -1,2 +1,2 @@
 ## SeaORM Database models 
-These are automatically generated with some edits for sonyflake. Be careful when regenerating since it will remove functions in "ActiveModelBehavior"
+These are automatically generated with some manual edits for sonyflake. Be careful when regenerating and make sure to generate to a new directory and cross reference the changes.
