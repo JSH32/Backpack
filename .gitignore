@@ -4,5 +4,4 @@ target
 /uploads
 test
 *_archive
-docker-compose.yml
 *.code-workspace

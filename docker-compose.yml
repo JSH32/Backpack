@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  backpack_api:
+    build: ./
+    env_file: .env
+    environment:
+      PORT: 3000
+  backpack_client:
+    build: ./client
+    env_file: .env
+    depends_on:
+      - backpack_api
+    environment:
+      PORT: 3000
+      INTERNAL_API_URL: "http://backpack_api:3000"
+  proxy:
+    image: nginx
+    ports:
+      - ${PORT}:80
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - backpack_api
+      - backpack_client
