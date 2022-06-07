@@ -6,8 +6,8 @@ use config::StorageConfig;
 use figlet_rs::FIGfont;
 use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
-use sea_orm::{ConnectOptions, Database, EntityTrait};
-use sqlx::{migrate::Migrator, postgres::PgPoolOptions};
+use sea_orm::{EntityTrait, SqlxPostgresConnector};
+use sqlx::{postgres::PgPoolOptions, Row, migrate::Migrator};
 use state::State;
 use tokio::fs;
 
@@ -68,32 +68,35 @@ async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
     // Create a SQLx pool for running migrations
-    let migrator_pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(&config.database_url)
-        .await
-        .expect("Could not initialize migrator connection");
-
-    let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
-    migrator
-        .run(&migrator_pool)
-        .await
-        .map_err(|e| anyhow::anyhow!(e.to_string()))
-        .unwrap();
-
-    migrator_pool.close().await;
-
-    let mut opt = ConnectOptions::new(config.database_url.clone());
-    opt.max_connections(100)
-        .min_connections(5)
+    let sqlx_pool = PgPoolOptions::new()
+        .max_connections(100)
+        .min_connections(1)
         .connect_timeout(Duration::from_secs(8))
         .idle_timeout(Duration::from_secs(8))
         .max_lifetime(Duration::from_secs(8))
-        .sqlx_logging(true);
+        .connect(&config.database_url)
+        .await
+        .expect("Could not initialize database connection");
 
-    let database = Database::connect(opt).await.unwrap();
+    let pg_version = sqlx::query("SELECT version()")
+        .fetch_one(&sqlx_pool).await
+        .unwrap()
+        .try_get("version")
+        .unwrap_or("unknown".to_string());
 
-    log::info!("Connected to the database");
+    log::info!("Connected to the database ({})", pg_version);
+
+    if config.run_migrations {
+        let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
+        migrator
+            .run(&sqlx_pool)
+            .await
+            .map_err(|e| anyhow::anyhow!(e.to_string()))
+            .unwrap();
+    }
+        
+    let database = SqlxPostgresConnector::from_sqlx_postgres_pool(sqlx_pool);
+
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
             if !v.path.exists() {
@@ -182,7 +185,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(api_state.clone())
             .service(
-                web::scope("/api/")
+                web::scope("/api")
                     .service(routes::user::get_routes(smtp_enabled))
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())

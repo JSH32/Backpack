@@ -19,6 +19,7 @@ pub struct Config {
     pub storage_provider: StorageConfig,
     pub smtp_config: Option<SMTPConfig>,
     pub invite_only: bool,
+    pub run_migrations: bool
 }
 
 #[derive(Clone)]
@@ -63,6 +64,7 @@ impl Config {
             file_size_limit: get_env_or("FILE_SIZE_LIMIT", 100),
             worker_id: get_env::<u16>("WORKER_ID"),
             invite_only: get_env_or("INVITE_ONLY", false),
+            run_migrations: get_env_or("RUN_MIGRATIONS", true),
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
                     "local" => StorageConfig::Local(LocalConfig {
