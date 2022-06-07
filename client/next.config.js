@@ -1,22 +1,6 @@
-// 0.0.0.0:3001 is the default 
-const BACKEND_URL = process.env.BACKEND_URL || "http://0.0.0.0:3001"
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${BACKEND_URL}/api/:path*` // Proxy to Backend
-      },
-      // Proxy the files from backpack API. Yes I know this will screw up 404 pages on non nested invalid URL's. Cry more, i'll fix later
-      {
-        source: "/:path",
-        destination: `${process.env.BACKEND_URL || "http://0.0.0.0:3001"}/:path` // Proxy to Backend
-      }
-    ]
-  },
   async redirects() {
     return [
       {
@@ -34,8 +18,12 @@ const nextConfig = {
 
     return config
   },
-  env: {
-    API_URL: `${BACKEND_URL}/api`
+  publicRuntimeConfig: {
+    apiUrl: `${process.env.API_URL}/api`
+  },
+  serverRuntimeConfig: {
+    // This url is used to fetch internal data on next server side
+    internalApiUrl: `${process.env.INTERNAL_API_URL || process.env.API_URL}/api`
   }
 }
 

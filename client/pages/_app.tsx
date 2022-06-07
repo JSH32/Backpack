@@ -3,8 +3,12 @@ import { mode } from "@chakra-ui/theme-tools"
 import { ChakraProvider, extendTheme } from "@chakra-ui/react"
 import React from "react"
 import App, { AppContext } from "next/app"
-import { getAppInfo } from "helpers/api"
+import { AppInfo, getAppInfo } from "helpers/api"
 import { AppInfoContext } from "helpers/info"
+import axios from "axios"
+import getConfig from "next/config"
+
+const { serverRuntimeConfig } = getConfig()
 
 const theme = extendTheme({
     fonts: {
@@ -36,7 +40,14 @@ const MyApp = ({ Component, pageProps, appInfo }: any) => {
 
 MyApp.getInitialProps = async (appContext: AppContext) => {
   const appProps = await App.getInitialProps(appContext)
-  const appInfo = await getAppInfo()
+  let appInfo: AppInfo
+
+  // If on server
+  if (appContext.ctx.req)
+    appInfo = (await axios.get<AppInfo>(`${serverRuntimeConfig.internalApiUrl}/info`)).data
+  else
+    appInfo = await getAppInfo()
+
   return { ...appProps, appInfo }
 }
 

@@ -3,11 +3,12 @@
  */
 
 import axios, { AxiosResponse } from "axios"
+import getConfig from "next/config"
+
+const { publicRuntimeConfig } = getConfig()
 
 const BASE_URL = {
-    toString: () => typeof window === "undefined" 
-        ? process.env.API_URL 
-        : window.location.origin + "/api"
+    toString: () => publicRuntimeConfig.apiUrl
 }
 
 enum UserRole {
