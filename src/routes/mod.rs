@@ -13,10 +13,10 @@ pub mod file;
 pub mod user;
 
 pub fn get_routes() -> Scope {
-    web::scope("/").service(info)
+    web::scope("").service(info)
 }
 
-#[get("info")]
+#[get("/info")]
 async fn info(state: web::Data<State>) -> Response<impl Responder> {
     let settings = settings::Entity::find_by_id(true)
         .one(&state.database)
