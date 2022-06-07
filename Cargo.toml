@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1.10.0", features = ["full"] }
-sqlx = { version = "0.5.1", features = [ "runtime-actix-native-tls", "postgres", "chrono" ] }
-sea-orm = { version = "0.8.0", features = [ "sqlx-postgres", "runtime-actix-native-tls", "macros" ], default-features = false }
+sqlx = { version = "0.5.1", features = [ "runtime-actix-rustls", "postgres", "chrono" ] }
+sea-orm = { version = "0.8.0", features = [ "sqlx-postgres", "runtime-actix-rustls", "macros" ], default-features = false }
 clap = { version = "3.1.0", features = ["derive"] }
 serde = "1.0.126"
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
