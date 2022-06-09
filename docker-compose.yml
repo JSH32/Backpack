@@ -22,11 +22,6 @@ services:
     ports:
       - ${PORT}:80
     env_file: .env
-    environment:
-      # This should be "on" if serving files through the API
-      # This is always the case if LOCAL_SERVE is true
-      # If serving files seperately or using S3 this should be "off"
-      PROXY_FILES: "on"
     volumes:
       - ./nginx:/etc/nginx/templates
     depends_on:

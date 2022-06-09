@@ -150,7 +150,8 @@ async fn main() -> std::io::Result<()> {
         storage,
         jwt_key: config.jwt_key,
         smtp_client,
-        base_url: config.base_url.parse::<Uri>().unwrap(),
+        api_url: config.api_url.parse::<Uri>().unwrap(),
+        client_url: config.client_url.parse::<Uri>().unwrap(),
         storage_url: config.storage_url,
         // Convert MB to bytes
         file_size_limit: config.file_size_limit * 1000 * 1000,

@@ -158,7 +158,7 @@ async fn settings(
 
         if success {
             let email =
-                verification_email(&state.base_url.to_string(), &smtp.1, &email, &random_code);
+                verification_email(&state.client_url.to_string(), &smtp.1, &email, &random_code);
             let mailer = smtp.clone().0;
             tokio::spawn(async move {
                 let _ = mailer.send(email).await;
@@ -282,7 +282,7 @@ async fn create(
 
         if success {
             let email = verification_email(
-                &state.base_url.to_string(),
+                &state.client_url.to_string(),
                 &smtp.1,
                 &user_data.email,
                 &random_code,
@@ -320,7 +320,7 @@ async fn resend_verify(
 
     let smtp = state.smtp_client.as_ref().unwrap();
     let email = verification_email(
-        &state.base_url.to_string(),
+        &state.client_url.to_string(),
         &smtp.1,
         &auth.user.email,
         &random_code,

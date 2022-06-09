@@ -69,9 +69,9 @@ async fn basic(
         &user_data.id,
         None,
         &state
-            .base_url
+            .api_url
             .host()
-            .expect("BASE_URL must have host included"),
+            .expect("API_URL must have host included"),
         Some(expire_time),
         &state.jwt_key,
     )?;

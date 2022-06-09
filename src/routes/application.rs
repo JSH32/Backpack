@@ -36,9 +36,9 @@ async fn token(
                     &auth.user.id,
                     Some(v.id),
                     &state
-                        .base_url
+                        .api_url
                         .host()
-                        .expect("BASE_URL must have host included"),
+                        .expect("API_URL must have host included"),
                     None,
                     &state.jwt_key,
                 )?,
@@ -142,9 +142,9 @@ async fn create(
         &auth.user.id,
         Some(token_data.id.clone()),
         &state
-            .base_url
+            .api_url
             .host()
-            .expect("BASE_URL must have host included"),
+            .expect("API_URL must have host included"),
         None,
         &state.jwt_key,
     )?);

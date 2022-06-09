@@ -10,9 +10,10 @@ use std::{
 #[derive(Clone)]
 pub struct Config {
     pub port: u16,
+    pub api_url: String,
+    pub client_url: String,
     pub storage_url: String,
     pub database_url: String,
-    pub base_url: String,
     pub worker_id: u16,
     pub jwt_key: String,
     pub file_size_limit: usize,
@@ -57,10 +58,11 @@ impl Config {
         dotenv().ok();
         Config {
             port: get_env("PORT"),
-            storage_url: get_env("STORAGE_BASEURL"),
+            storage_url: get_env("STORAGE_URL"),
             database_url: get_env("DATABASE_URL"),
             jwt_key: get_env("JWT_KEY"),
-            base_url: get_env("BASEURL"),
+            api_url: get_env("API_URL"),
+            client_url: get_env("CLIENT_URL"),
             file_size_limit: get_env_or("FILE_SIZE_LIMIT", 100),
             worker_id: get_env::<u16>("WORKER_ID"),
             invite_only: get_env_or("INVITE_ONLY", false),
