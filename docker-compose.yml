@@ -5,6 +5,10 @@ services:
     env_file: .env
     environment:
       PORT: 3000
+      LOCAL_PATH: /uploads
+    volumes:
+      # This will only be used if using local storage
+      - ${LOCAL_PATH}:/uploads
   backpack_client:
     build: ./client
     env_file: .env
@@ -17,8 +21,14 @@ services:
     image: nginx
     ports:
       - ${PORT}:80
+    env_file: .env
+    environment:
+      # This should be "on" if serving files through the API
+      # This is always the case if LOCAL_SERVE is true
+      # If serving files seperately or using S3 this should be "off"
+      PROXY_FILES: "on"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
+      - ./nginx:/etc/nginx/templates
     depends_on:
       - backpack_api
       - backpack_client

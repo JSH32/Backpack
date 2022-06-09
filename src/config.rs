@@ -68,7 +68,7 @@ impl Config {
             storage_provider: {
                 match get_env::<String>("STORAGE_PROVIDER").as_str() {
                     "local" => StorageConfig::Local(LocalConfig {
-                        path: Path::new(get_env::<String>("LOCAL_PATH").as_str()).to_path_buf(),
+                        path: Path::new(get_env_or::<String>("LOCAL_PATH", "./uploads".to_string()).as_str()).to_path_buf(),
                         serve: get_env_or("LOCAL_SERVE", true),
                     }),
                     "s3" => StorageConfig::S3(S3Config {
