@@ -18,12 +18,10 @@ services:
       PORT: 3000
       INTERNAL_API_URL: "http://backpack_api:3000"
   proxy:
-    image: nginx
+    build: ./nginx
     ports:
       - ${PORT}:80
     env_file: .env
-    volumes:
-      - ./nginx:/etc/nginx/templates
     depends_on:
       - backpack_api
       - backpack_client
