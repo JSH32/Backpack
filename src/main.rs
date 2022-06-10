@@ -7,7 +7,7 @@ use figlet_rs::FIGfont;
 use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
 use sea_orm::{EntityTrait, SqlxPostgresConnector};
-use sqlx::{postgres::PgPoolOptions, Row, migrate::Migrator};
+use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use state::State;
 use tokio::fs;
 
@@ -79,7 +79,8 @@ async fn main() -> std::io::Result<()> {
         .expect("Could not initialize database connection");
 
     let pg_version = sqlx::query("SELECT version()")
-        .fetch_one(&sqlx_pool).await
+        .fetch_one(&sqlx_pool)
+        .await
         .unwrap()
         .try_get("version")
         .unwrap_or("unknown".to_string());
@@ -94,7 +95,7 @@ async fn main() -> std::io::Result<()> {
             .map_err(|e| anyhow::anyhow!(e.to_string()))
             .unwrap();
     }
-        
+
     let database = SqlxPostgresConnector::from_sqlx_postgres_pool(sqlx_pool);
 
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
