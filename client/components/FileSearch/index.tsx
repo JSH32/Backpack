@@ -37,7 +37,7 @@ export const FileSearch: React.FC<{
       .finally(() => setInitialLoading(false))
   }, [])
 
-  const searchCallback = React.useCallback((form) => {
+  const searchCallback = React.useCallback((form: any) => {
     setQueryString(form.query)
     // Search callback should go back to page 1
     onSearch(1, form.query)
@@ -51,7 +51,7 @@ export const FileSearch: React.FC<{
       .catch(() => setSearchResult(null))
   }, [currentPage])
 
-  const deleteFile = React.useCallback((fileId) => {
+  const deleteFile = React.useCallback((fileId: string) => {
     onDelete(fileId)
       .then(() => onSearch(1, queryString))
       .then(setSearchResult)
