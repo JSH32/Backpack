@@ -1,4 +1,4 @@
-use crate::{database::entity::files, util::GIT_VERSION};
+use crate::{database::entity::files, models::ApiDoc, util::GIT_VERSION};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -12,6 +12,8 @@ use state::State;
 use tokio::fs;
 
 use util::file::IMAGE_EXTS;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
 
@@ -186,6 +188,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(api_state.clone())
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
+            )
             .service(
                 web::scope("/api")
                     .service(routes::user::get_routes(smtp_enabled))

@@ -6,12 +6,13 @@ use uuid::Uuid;
 
 use crate::{
     database::entity::{registration_keys, users, verifications},
-    models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm, UserData},
+    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData},
     state::State,
     util::{
         self,
         auth::{auth_role, Auth},
         random_string,
+        response::Response,
         user::{new_password, validate_username, verification_email},
         EMAIL_REGEX,
     },

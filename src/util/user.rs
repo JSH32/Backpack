@@ -4,7 +4,8 @@ use lettre::Message;
 use rand::rngs::OsRng;
 use regex::Regex;
 
-use crate::models::{MessageResponse, Response};
+use crate::models::MessageResponse;
+use crate::util::response::Response;
 
 /// Checks and generates a new hashed password
 pub fn new_password(password: &str) -> Response<Result<String, MessageResponse>> {

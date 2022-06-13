@@ -4,11 +4,12 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::{
     database::entity::users,
-    models::{auth::BasicAuthForm, MessageResponse, Response, UserData},
+    models::{auth::BasicAuthForm, MessageResponse, UserData},
     state::State,
     util::{
         self,
         auth::{auth_role, create_jwt_string, verify_user, Auth},
+        response::Response,
     },
 };
 

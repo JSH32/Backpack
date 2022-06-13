@@ -16,11 +16,12 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     database::entity::files,
-    models::{Error, FileData, FileStats, MessageResponse, Page, Response},
+    models::{FileData, FileStats, MessageResponse, Page},
     state::State,
     util::{
         auth::{auth_role, Auth},
         file::{get_file_from_payload, get_thumbnail_image, MultipartError, IMAGE_EXTS},
+        response::{Error, Response},
         validate_paginate,
     },
 };

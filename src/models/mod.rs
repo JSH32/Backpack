@@ -4,62 +4,39 @@ pub mod auth;
 pub mod file;
 pub mod user;
 
+use crate::routes;
 use crate::{database::entity::settings, util::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
-use derive_more::Display;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
 use std::fmt::Display;
+use utoipa::{Component, OpenApi};
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
-#[derive(Debug, Display)]
-pub struct Error(anyhow::Error);
-
-/// # Response
-///
-/// Utility type for error reporting.
-///
-/// The error variant accepts any error as it wraps [`anyhow::Error`].
-/// This type should be returned from an Actix route handler.
-/// Error variant should only be used when returning an exceptional case.
-///
-/// # Usage
-/// ```
-/// fn route() -> Response<()> {
-///     Err(anyhow::anyhow!("This could be any error type"))
-/// }
-/// ```
-pub type Response<T> = Result<T, Error>;
-
-impl ResponseError for Error {
-    fn error_response(&self) -> HttpResponse {
-        log::error!("{}", &self.0.to_string());
-        MessageResponse::internal_server_error(&self.0.to_string()).http_response()
-    }
-}
-
-impl<E: Into<anyhow::Error>> From<E> for Error {
-    fn from(e: E) -> Self {
-        Self(e.into())
-    }
-}
+/// Backpack API Documentation
+#[derive(OpenApi)]
+#[openapi(handlers(routes::info), components(AppInfo, MessageResponse))]
+pub struct ApiDoc;
 
 /// Standard message response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Component)]
 pub struct MessageResponse {
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     code: StatusCode,
 
+    /// Message
     message: String,
 
+    /// Optional error (if error response)
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
 
     // Optional data, can be any JSON value
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[component(value_type = Any)]
     data: Option<serde_json::Value>,
 }
 
@@ -166,15 +143,32 @@ pub struct Page<T> {
     pub list: Vec<T>,
 }
 
-#[derive(Serialize)]
+/// Public server configuration
+#[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
+    /// App name
+    #[component(default = "Backpack")]
     pub app_name: String,
+
+    /// App description
+    #[component(default = "A file host for all your needs")]
     pub app_description: String,
+
+    /// Theme color of the Backpack instance
+    #[component(default = "purple")]
     pub color: String,
+
+    /// Git tag or commit hash.
+    #[component(default = false)]
     pub invite_only: bool,
-    pub git_version: String,
+
+    /// Is SMTP (email verification) enabled on the server?
+    #[component(default = true)]
     pub smtp: bool,
+
+    /// Git tag (version) or commit hash
+    pub git_version: String,
 }
 
 impl AppInfo {

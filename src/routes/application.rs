@@ -3,9 +3,12 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFi
 
 use crate::{
     database::entity::applications,
-    models::{application::*, MessageResponse, Response},
+    models::{application::*, MessageResponse},
     state::State,
-    util::auth::{auth_role, create_jwt_string, Auth},
+    util::{
+        auth::{auth_role, create_jwt_string, Auth},
+        response::Response,
+    },
 };
 
 pub fn get_routes() -> Scope {
