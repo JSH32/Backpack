@@ -48,11 +48,11 @@ const Password: NextPage = () => {
         confirmNew: false
     })
 
-    const setViewButtonValue = React.useCallback((field, status) => {
+    const setViewButtonValue = React.useCallback((field: string, status: boolean) => {
         setViewStatus({ ...viewStatus, [field]: status })
     }, [viewStatus])
 
-    const onSubmit = React.useCallback(form => {
+    const onSubmit = React.useCallback((form: any) => {
         if (form.newPassword !== form.confirmNewPassword) {
             toast({
                 title: "Passwords do not match",

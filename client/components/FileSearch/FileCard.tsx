@@ -32,7 +32,7 @@ const FileCard: React.FC<{
             align="center"
             textAlign="center"
             justify="center">
-            <Heading isTruncated w={180}>{ext !== "" ? ext : "FILE"}</Heading>
+            <Heading noOfLines={1} w={180}>{ext !== "" ? ext : "FILE"}</Heading>
         </Flex> }
         <Box p="4">
             <Flex
@@ -44,7 +44,7 @@ const FileCard: React.FC<{
                     as="h4"
                     maxW="120px"
                     lineHeight="tight"
-                    isTruncated>
+                    noOfLines={1}>
                     {file.name}
                 </Box>
                 <HStack>
