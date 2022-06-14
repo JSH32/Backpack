@@ -1,14 +1,11 @@
 use serde::{Deserialize, Serialize};
+use utoipa::Component;
 
 use crate::database::entity::{sea_orm_active_enums::Role, users};
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
 pub struct UserData {
     pub id: String,
-
-    #[serde(skip_serializing)]
-    pub password: String,
-
     pub username: String,
     pub email: String,
     pub verified: bool,
@@ -19,7 +16,6 @@ impl From<users::Model> for UserData {
     fn from(user: users::Model) -> Self {
         Self {
             id: user.id,
-            password: user.password,
             username: user.username,
             email: user.email,
             verified: user.verified,
@@ -28,9 +24,12 @@ impl From<users::Model> for UserData {
     }
 }
 
-/// User access level
-#[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd)]
-#[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
+/**
+User role, this is used to restrict access to routes.
+This is ordinal, meaning the higher indexes of this enum have higher clearance than lower indexes
+*/
+#[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd, Component)]
+#[serde(rename_all = "camelCase")]
 pub enum UserRole {
     User,
     Admin,
@@ -45,7 +44,7 @@ impl From<Role> for UserRole {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateForm {
     pub username: String,
@@ -60,7 +59,7 @@ pub struct UserDeleteForm {
     pub password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]

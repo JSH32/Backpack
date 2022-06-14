@@ -4,22 +4,17 @@ pub mod auth;
 pub mod file;
 pub mod user;
 
-use crate::routes;
 use crate::{database::entity::settings, util::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fmt::Display;
-use utoipa::{Component, OpenApi};
+use utoipa::Component;
 
 pub use self::{application::*, auth::*, file::*, user::*};
-
-/// Backpack API Documentation
-#[derive(OpenApi)]
-#[openapi(handlers(routes::info), components(AppInfo, MessageResponse))]
-pub struct ApiDoc;
 
 /// Standard message response
 #[derive(Serialize, Debug, Component)]
@@ -30,14 +25,13 @@ pub struct MessageResponse {
     /// Message
     message: String,
 
-    /// Optional error (if error response)
+    /// Optional error (only on 500 errors)
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
 
-    // Optional data, can be any JSON value
+    // Optional data, can be any JSON object
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[component(value_type = Any)]
-    data: Option<serde_json::Value>,
+    data: Option<HashMap<String, serde_json::Value>>,
 }
 
 impl MessageResponse {
@@ -58,12 +52,16 @@ impl MessageResponse {
     pub fn ok_with_data<E>(
         code: StatusCode,
         message: &str,
-        data: serde_json::Value,
+        data: HashMap<String, serde_json::Value>,
     ) -> Result<HttpResponse, E> {
         Ok(MessageResponse::new_with_data(code, message, data).http_response())
     }
 
-    pub fn new_with_data(code: StatusCode, message: &str, data: serde_json::Value) -> Self {
+    pub fn new_with_data(
+        code: StatusCode,
+        message: &str,
+        data: HashMap<String, serde_json::Value>,
+    ) -> Self {
         MessageResponse {
             code: code,
             message: message.to_string(),
@@ -148,23 +146,18 @@ pub struct Page<T> {
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
     /// App name
-    #[component(default = "Backpack")]
     pub app_name: String,
 
     /// App description
-    #[component(default = "A file host for all your needs")]
     pub app_description: String,
 
     /// Theme color of the Backpack instance
-    #[component(default = "purple")]
     pub color: String,
 
     /// Git tag or commit hash.
-    #[component(default = false)]
     pub invite_only: bool,
 
     /// Is SMTP (email verification) enabled on the server?
-    #[component(default = true)]
     pub smtp: bool,
 
     /// Git tag (version) or commit hash

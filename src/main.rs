@@ -1,4 +1,4 @@
-use crate::{database::entity::files, models::ApiDoc, util::GIT_VERSION};
+use crate::{database::entity::files, docs::ApiDoc, util::GIT_VERSION};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -38,6 +38,7 @@ extern crate env_logger;
 
 mod config;
 mod database;
+mod docs;
 mod models;
 mod routes;
 mod state;
@@ -145,7 +146,6 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Get setting as single boolean before client gets moved
-    let smtp_enabled = smtp_client.is_some();
     let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
@@ -194,7 +194,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api")
-                    .service(routes::user::get_routes(smtp_enabled))
+                    .service(routes::user::get_routes())
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
                     .service(routes::file::get_routes())

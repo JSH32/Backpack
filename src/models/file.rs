@@ -6,12 +6,13 @@ use std::{
 use serde::Serialize;
 
 use chrono::{DateTime, Utc};
+use utoipa::Component;
 
 use crate::util::file::IMAGE_EXTS;
 
 use crate::database::entity::files;
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct FileData {
     pub id: String,
@@ -26,6 +27,8 @@ pub struct FileData {
     pub thumbnail_url: Option<String>,
 
     pub hash: String,
+
+    #[component(value_type = f64)]
     pub uploaded: DateTime<Utc>,
     pub size: i64,
 }

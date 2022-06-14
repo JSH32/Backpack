@@ -63,7 +63,8 @@ async fn upload(
                 let mut file_url = PathBuf::from(&state.storage_url);
                 file_url.push(file.name);
 
-                let mut object = serde_json::Map::new();
+                // let mut object = serde_json::Map::new();
+                let mut object = HashMap::new();
                 object.insert(
                     "url".to_string(),
                     json!(&file_url.as_path().display().to_string().replace("\\", "/")),
@@ -72,7 +73,7 @@ async fn upload(
                 return MessageResponse::ok_with_data(
                     StatusCode::CONFLICT,
                     "You have already uploaded this file",
-                    serde_json::Value::Object(object),
+                    object,
                 );
             }
 
