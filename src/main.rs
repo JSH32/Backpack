@@ -191,9 +191,11 @@ async fn main() -> std::io::Result<()> {
                 "/api/docs/openapi.json",
                 web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
             )
-            .route("/api/docs", web::get().to(|| async {
-                HttpResponse::Ok().body(include_str!("docs/rapidoc.html"))
-            }))
+            .route(
+                "/api/docs",
+                web::get()
+                    .to(|| async { HttpResponse::Ok().body(include_str!("docs/rapidoc.html")) }),
+            )
             .service(
                 web::scope("/api")
                     .service(routes::user::get_routes())
