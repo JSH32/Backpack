@@ -397,7 +397,6 @@ async fn resend_verify(
     responses(
         (status = 200, body = MessageResponse),
         (status = 400, body = MessageResponse, description = "Invalid verification code"),
-        (status = 409, body = MessageResponse, description = "Already verified. This can only happen if SMTP was disabled after a verification email was created."),
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     params(
@@ -421,11 +420,6 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
             let user_data = user_data_opt.unwrap();
 
             verification.delete(&state.database).await?;
-
-            // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
-            if user_data.verified {
-                return MessageResponse::ok(StatusCode::CONFLICT, "User was already verified");
-            }
 
             let mut active_user: users::ActiveModel = user_data.into();
             active_user.verified = Set(true);
