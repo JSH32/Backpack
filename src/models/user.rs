@@ -24,10 +24,7 @@ impl From<users::Model> for UserData {
     }
 }
 
-/**
-User role, this is used to restrict access to routes.
-This is ordinal, meaning the higher indexes of this enum have higher clearance than lower indexes
-*/
+/// User access level
 #[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd, Component)]
 #[serde(rename_all = "camelCase")]
 pub enum UserRole {
