@@ -13,7 +13,6 @@ use tokio::fs;
 
 use util::file::IMAGE_EXTS;
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
 
@@ -21,7 +20,7 @@ use actix_web::{
     http::StatusCode,
     middleware::Logger,
     web::{self, Data},
-    App, HttpRequest, HttpServer,
+    App, HttpRequest, HttpResponse, HttpServer,
 };
 
 use actix_files::NamedFile;
@@ -188,10 +187,13 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(api_state.clone())
-            .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
+            .route(
+                "/api/docs/openapi.json",
+                web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
             )
+            .route("/api/docs", web::get().to(|| async {
+                HttpResponse::Ok().body(include_str!("docs/rapidoc.html"))
+            }))
             .service(
                 web::scope("/api")
                     .service(routes::user::get_routes())
