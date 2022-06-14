@@ -24,7 +24,7 @@ impl From<users::Model> for UserData {
     }
 }
 
-/// User access level
+/// User access level (user, admin)
 #[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd, Component)]
 #[serde(rename_all = "camelCase")]
 pub enum UserRole {
