@@ -1,5 +1,3 @@
-use utoipa::openapi::security::ApiKey;
-use utoipa::openapi::security::ApiKeyValue;
 use utoipa::openapi::security::HttpAuthScheme;
 use utoipa::openapi::security::HttpBuilder;
 use utoipa::openapi::security::SecurityScheme;
