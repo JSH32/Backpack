@@ -1,31 +1,44 @@
 use utoipa::openapi::security::ApiKey;
 use utoipa::openapi::security::ApiKeyValue;
+use utoipa::openapi::security::HttpAuthScheme;
+use utoipa::openapi::security::HttpBuilder;
 use utoipa::openapi::security::SecurityScheme;
 use utoipa::openapi::LicenseBuilder;
 use utoipa::Modify;
 use utoipa::OpenApi;
 
 use crate::models::*;
-use crate::routes;
+
+// Utoipa reads by the tag by name provided
+// This is a hack to proxy through modules so it is recognized as "server"
+mod server {
+    pub(crate) use crate::routes::*;
+}
+
+use crate::routes::user;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
 #[openapi(
     handlers(
-		routes::info,
-		routes::user::info,
-		routes::user::settings,
-		routes::user::create,
-		routes::user::verify,
-		routes::user::resend_verify
+		server::info, 
+		user::info, 
+		user::settings, 
+		user::create, 
+		user::verify, 
+		user::resend_verify
 	),
     components(
-		AppInfo,
-		MessageResponse,
-		UserData,
-		UserRole,
+		AppInfo, 
+		MessageResponse, 
+		UserData, 
+		UserRole, 
 		UpdateUserSettings,
 		UserCreateForm
+	),
+	tags(
+		(name = "server", description = "Server information endpoints."),
+		(name = "user", description = "User management endpoints.")
 	),
     modifiers(&ApiModifier)
 )]
@@ -36,17 +49,20 @@ struct ApiModifier;
 
 impl Modify for ApiModifier {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-		// Authentication
+        // Authentication
         let components = openapi.components.as_mut().unwrap(); // we can unwrap safely since there already is components registered.
         components.add_security_scheme(
             "apiKey",
-            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::with_description(
-                "auth-token",
-                include_str!("ApiKey.md"),
-            ))),
+            SecurityScheme::Http(
+                HttpBuilder::new()
+                    .scheme(HttpAuthScheme::Bearer)
+                    .bearer_format("JWT")
+                    .description(Some(include_str!("ApiKey.md")))
+                    .build(),
+            ),
         );
 
-		// License
+        // License
         openapi.info.license = Some(
             LicenseBuilder::default()
                 .name("MIT")
