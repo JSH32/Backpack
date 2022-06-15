@@ -16,8 +16,11 @@ use utoipa::Component;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
-/// Standard message response
+/// Standard message response.
+///
+/// Usually the only field will be `message`
 #[derive(Serialize, Debug, Component)]
+#[component(example = json!({"message": "string"}))]
 pub struct MessageResponse {
     #[serde(skip)]
     code: StatusCode,
@@ -29,7 +32,7 @@ pub struct MessageResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
 
-    // Optional data, can be any JSON object
+    /// Optional data, can be any JSON object
     #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<HashMap<String, serde_json::Value>>,
 }
