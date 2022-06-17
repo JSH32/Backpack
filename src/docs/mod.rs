@@ -17,7 +17,8 @@ use crate::routes;
 		routes::user::settings,
 		routes::user::create,
 		routes::user::verify,
-		routes::user::resend_verify
+		routes::user::resend_verify,
+		routes::file::upload
 	),
     components(
 		AppInfo,
@@ -25,7 +26,8 @@ use crate::routes;
 		UserData,
 		UserRole,
 		UpdateUserSettings,
-		UserCreateForm
+		UserCreateForm,
+		UploadFile
 	),
     modifiers(&ApiModifier)
 )]
@@ -36,7 +38,7 @@ struct ApiModifier;
 
 impl Modify for ApiModifier {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-		// Authentication
+        // Authentication
         let components = openapi.components.as_mut().unwrap(); // we can unwrap safely since there already is components registered.
         components.add_security_scheme(
             "apiKey",
@@ -46,7 +48,7 @@ impl Modify for ApiModifier {
             ))),
         );
 
-		// License
+        // License
         openapi.info.license = Some(
             LicenseBuilder::default()
                 .name("MIT")

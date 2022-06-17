@@ -3,7 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::Serialize;
+use actix_extract_multipart::File;
+use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
 use utoipa::Component;
@@ -79,4 +80,12 @@ impl FileData {
 #[derive(Serialize)]
 pub struct FileStats {
     pub usage: i64,
+}
+
+/// Upload a file
+#[derive(Deserialize, Component, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadFile {
+    #[component(value_type = String, format = ComponentFormat::Binary)]
+    pub upload_file: File,
 }

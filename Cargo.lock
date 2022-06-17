@@ -229,6 +229,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix_extract_multipart"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98e54eb6303a581b261911cd35290d35566fdc95b14e88e1860ba0cbd12df15c"
+dependencies = [
+ "actix-multipart",
+ "actix-web",
+ "futures",
+ "futures-util",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -376,6 +390,7 @@ dependencies = [
  "actix-http",
  "actix-multipart",
  "actix-web",
+ "actix_extract_multipart",
  "anyhow",
  "argon2",
  "async-trait",
@@ -397,6 +412,7 @@ dependencies = [
  "lettre",
  "log",
  "nanoid",
+ "paste",
  "rand",
  "regex",
  "rusoto_core",
