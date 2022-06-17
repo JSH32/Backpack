@@ -72,7 +72,7 @@ dependencies = [
  "http",
  "httparse",
  "httpdate",
- "itoa 1.0.2",
+ "itoa",
  "language-tags",
  "local-channel",
  "log",
@@ -200,7 +200,7 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
- "itoa 1.0.2",
+ "itoa",
  "language-tags",
  "log",
  "mime",
@@ -1349,7 +1349,7 @@ checksum = "ff8670570af52249509a86f5e3e18a08c60b177071826898fde8997cf5f6bfbb"
 dependencies = [
  "bytes",
  "fnv",
- "itoa 1.0.2",
+ "itoa",
 ]
 
 [[package]]
@@ -1389,9 +1389,9 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
-version = "0.14.11"
+version = "0.14.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b61cf2d1aebcf6e6352c97b81dc2244ca29194be1b276f5d8ad5c6330fffb11"
+checksum = "42dc3c131584288d375f2d07f822b0cb012d8c6fb899a5b9fdb3cb7eb9b6004f"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -1402,7 +1402,7 @@ dependencies = [
  "http-body",
  "httparse",
  "httpdate",
- "itoa 0.4.8",
+ "itoa",
  "pin-project-lite",
  "socket2",
  "tokio",
@@ -1518,12 +1518,6 @@ checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
 dependencies = [
  "either",
 ]
-
-[[package]]
-name = "itoa"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b71991ff56294aa922b450139ee08b3bfc70982c6b2c7562771375cf73542dd4"
 
 [[package]]
 name = "itoa"
@@ -2614,7 +2608,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
 dependencies = [
  "indexmap",
- "itoa 1.0.2",
+ "itoa",
  "ryu",
  "serde",
 ]
@@ -2626,7 +2620,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd"
 dependencies = [
  "form_urlencoded",
- "itoa 1.0.2",
+ "itoa",
  "ryu",
  "serde",
 ]
@@ -2815,7 +2809,7 @@ dependencies = [
  "hkdf",
  "hmac 0.12.1",
  "indexmap",
- "itoa 1.0.2",
+ "itoa",
  "libc",
  "log",
  "md-5 0.10.1",
@@ -3084,7 +3078,7 @@ version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2702e08a7a860f005826c6815dcac101b19b5eb330c27fe4a5928fec1d20ddd"
 dependencies = [
- "itoa 1.0.2",
+ "itoa",
  "libc",
  "num_threads",
  "time-macros 0.2.4",
