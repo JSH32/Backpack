@@ -7,24 +7,19 @@ use utoipa::OpenApi;
 
 use crate::models::*;
 
-// Utoipa reads by the tag by name provided
-// This is a hack to proxy through modules so it is recognized as "server"
-mod server {
-    pub(crate) use crate::routes::*;
-}
-
-use crate::routes::user;
+use crate::routes;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
 #[openapi(
     handlers(
-		server::info, 
-		user::info, 
-		user::settings, 
-		user::create, 
-		user::verify, 
-		user::resend_verify
+		routes::info,
+		routes::user::info,
+		routes::user::settings,
+		routes::user::create,
+		routes::user::verify,
+		routes::user::resend_verify,
+		routes::file::upload,
 	),
     components(
 		AppInfo, 
@@ -32,7 +27,8 @@ use crate::routes::user;
 		UserData, 
 		UserRole, 
 		UpdateUserSettings,
-		UserCreateForm
+		UserCreateForm,
+		UploadFile
 	),
 	tags(
 		(name = "server", description = "Server information endpoints."),
