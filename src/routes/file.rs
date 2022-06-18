@@ -41,7 +41,7 @@ pub fn get_routes() -> Scope {
 /// - Application token allowed: `true`
 #[utoipa::path(
     context_path = "/api/file",
-    tag = "File",
+    tag = "file",
     responses(
         (status = 200, body = FileData),
         (status = 409, body = MessageResponse, description = "File already uploaded"),
@@ -154,7 +154,7 @@ async fn upload(
 /// - Application token allowed: `true`
 #[utoipa::path(
     context_path = "/api/file",
-    tag = "File",
+    tag = "file",
     responses((status = 200, body = FileStats)),
     security(("apiKey" = [])),
 )]
@@ -187,7 +187,7 @@ async fn stats(
 /// - Application token allowed: `true`
 #[utoipa::path(
     context_path = "/api/file",
-    tag = "File",
+    tag = "file",
     responses(
         (status = 200, body = FilePage),
         (status = 400, body = MessageResponse, description = "Invalid page number"),
@@ -195,7 +195,7 @@ async fn stats(
     ),
     params(
         ("page_number" = u64, path, description = "Page to get files by (starts at 1)"),
-        ("query" = str, query, description = "Query by file name similarity")
+        ("query" = Option<str>, query, description = "Query by file name similarity")
     ),
     security(("apiKey" = [])),
 )]
@@ -247,7 +247,7 @@ async fn list(
 /// - Application token allowed: `true`
 #[utoipa::path(
     context_path = "/api/file", 
-    tag = "File",
+    tag = "file",
     responses(
         (status = 200, body = FileData),
         (status = 403, body = MessageResponse, description = "Access denied"),
@@ -298,7 +298,7 @@ async fn info(
 /// - Application token allowed: `true`
 #[utoipa::path(
     context_path = "/api/file",
-    tag = "File",
+    tag = "file",
     responses(
         (status = 200, body = MessageResponse, description = "File deleted"),
         (status = 403, body = MessageResponse, description = "Access denied"),

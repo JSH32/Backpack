@@ -24,6 +24,10 @@ use crate::routes;
         routes::file::list,
         routes::file::info,
         routes::file::delete_file,
+        routes::application::token,
+        routes::application::list,
+        routes::application::create,
+        routes::application::delete
 	),
     components(
 		AppInfo,
@@ -35,11 +39,16 @@ use crate::routes;
 		UploadFile,
         FileData,
         FileStats,
-        FilePage
+        FilePage,
+        ApplicationData,
+        TokenResponse,
+        ApplicationCreate
 	),
 	tags(
 		(name = "server", description = "Server information endpoints."),
-		(name = "user", description = "User management endpoints.")
+		(name = "user", description = "User management endpoints."),
+        (name = "file", description = "File management endpoints."),
+        (name = "application", description = "Application and token management endpoints.")
 	),
     modifiers(&ApiModifier)
 )]
