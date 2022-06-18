@@ -17,6 +17,7 @@ pub fn get_routes() -> Scope {
 /// Get public server configuration
 #[utoipa::path(
     context_path = "/api",
+    tag = "Server",
     responses(
         (status = 200, body = AppInfo)
     )

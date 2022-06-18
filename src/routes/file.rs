@@ -40,7 +40,8 @@ pub fn get_routes() -> Scope {
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file", 
+    context_path = "/api/file",
+    tag = "File",
     responses(
         (status = 200, body = FileData),
         (status = 409, body = MessageResponse, description = "File already uploaded"),
@@ -152,7 +153,8 @@ async fn upload(
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file", 
+    context_path = "/api/file",
+    tag = "File",
     responses((status = 200, body = FileStats)),
     security(("apiKey" = [])),
 )]
@@ -179,6 +181,24 @@ async fn stats(
     }))
 }
 
+/// Get a paginated list of files
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/file",
+    tag = "File",
+    responses(
+        (status = 200, body = FilePage),
+        (status = 400, body = MessageResponse, description = "Invalid page number"),
+        (status = 404, body = MessageResponse, description = "Page not found")
+    ),
+    params(
+        ("page_number" = u64, path, description = "Page to get files by (starts at 1)"),
+        ("query" = str, query, description = "Query by file name similarity")
+    ),
+    security(("apiKey" = [])),
+)]
 #[get("/list/{page_number}")]
 async fn list(
     state: web::Data<State>,
@@ -221,6 +241,23 @@ async fn list(
     }))
 }
 
+/// Get file data by ID
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/file", 
+    tag = "File",
+    responses(
+        (status = 200, body = FileData),
+        (status = 403, body = MessageResponse, description = "Access denied"),
+        (status = 404, body = MessageResponse, description = "File not found")
+    ),
+    params(
+        ("file_id" = u64, path, description = "File ID"),
+    ),
+    security(("apiKey" = [])),
+)]
 #[get("/{file_id}")]
 async fn info(
     state: web::Data<State>,
@@ -255,6 +292,23 @@ async fn info(
     )
 }
 
+/// Delete file data by ID
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/file",
+    tag = "File",
+    responses(
+        (status = 200, body = MessageResponse, description = "File deleted"),
+        (status = 403, body = MessageResponse, description = "Access denied"),
+        (status = 404, body = MessageResponse, description = "File not found")
+    ),
+    params(
+        ("file_id" = u64, path, description = "File ID"),
+    ),
+    security(("apiKey" = [])),
+)]
 #[delete("/{file_id}")]
 async fn delete_file(
     state: web::Data<State>,

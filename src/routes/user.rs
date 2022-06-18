@@ -32,7 +32,8 @@ pub fn get_routes() -> Scope {
 /// - Allow unverified users: `true`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/user", 
+    context_path = "/api/user",
+    tag = "User",
     responses(
         (status = 200, body = UserData)
     ),
@@ -48,7 +49,8 @@ async fn info(auth: Auth<auth_role::User, true, true>) -> impl Responder {
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 #[utoipa::path(
-    context_path = "/api/user", 
+    context_path = "/api/user",
+    tag = "User",
     responses(
         (status = 200, body = UserData),
         (status = 400, body = MessageResponse),
@@ -201,7 +203,8 @@ async fn settings(
 
 /// Create a new user
 #[utoipa::path(
-    context_path = "/api/user", 
+    context_path = "/api/user",
+    tag = "User",
     responses(
         (status = 200, body = UserData),
         (status = 400, body = MessageResponse),
@@ -336,7 +339,8 @@ async fn create(
 ///
 /// This will be disabled if `smtp` is disabled in server settings
 #[utoipa::path(
-    context_path = "/api/user", 
+    context_path = "/api/user",
+    tag = "User",
     responses(
         (status = 200, body = MessageResponse),
         (status = 409, body = MessageResponse, description = "Already verified"),
@@ -393,7 +397,8 @@ async fn resend_verify(
 ///
 /// This will be disabled if `smtp` is disabled in server settings
 #[utoipa::path(
-    context_path = "/api/user", 
+    context_path = "/api/user",
+    tag = "User",
     responses(
         (status = 200, body = MessageResponse),
         (status = 400, body = MessageResponse, description = "Invalid verification code"),

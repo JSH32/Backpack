@@ -21,6 +21,9 @@ use crate::routes;
 		routes::user::resend_verify,
 		routes::file::upload,
         routes::file::stats,
+        routes::file::list,
+        routes::file::info,
+        routes::file::delete_file,
 	),
     components(
 		AppInfo,
@@ -31,7 +34,8 @@ use crate::routes;
 		UserCreateForm,
 		UploadFile,
         FileData,
-        FileStats
+        FileStats,
+        FilePage
 	),
 	tags(
 		(name = "server", description = "Server information endpoints."),

@@ -137,7 +137,8 @@ impl Responder for MessageResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
+#[aliases(FilePage = Page<FileData>)]
 pub struct Page<T> {
     pub page: usize,
     pub pages: usize,
