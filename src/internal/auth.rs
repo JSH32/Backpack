@@ -39,7 +39,7 @@ pub trait Role {
 macro_rules! define_role {
     ($name:ident, $variant:expr) => {
         pub struct $name;
-        impl $crate::util::auth::Role for $name {
+        impl $crate::internal::auth::Role for $name {
             const LEVEL: $crate::models::user::UserRole = $variant;
         }
     };

@@ -22,10 +22,10 @@ use crate::routes;
 		routes::file::upload,
 	),
     components(
-		AppInfo, 
-		MessageResponse, 
-		UserData, 
-		UserRole, 
+		AppInfo,
+		MessageResponse,
+		UserData,
+		UserRole,
 		UpdateUserSettings,
 		UserCreateForm,
 		UploadFile

@@ -1,4 +1,8 @@
-use crate::{database::entity::files, docs::ApiDoc, util::GIT_VERSION};
+use crate::{
+    database::entity::files,
+    docs::ApiDoc,
+    internal::{multipart::MultipartConfig, GIT_VERSION},
+};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -11,7 +15,7 @@ use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use state::State;
 use tokio::fs;
 
-use util::file::IMAGE_EXTS;
+use internal::file::IMAGE_EXTS;
 use utoipa::OpenApi;
 
 use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
@@ -31,6 +35,7 @@ use storage::{local::LocalProvider, s3::S3Provider, StorageProvider};
 
 #[macro_use]
 extern crate lazy_static;
+
 extern crate argon2;
 extern crate dotenv;
 extern crate env_logger;
@@ -38,11 +43,11 @@ extern crate env_logger;
 mod config;
 mod database;
 mod docs;
+mod internal;
 mod models;
 mod routes;
 mod state;
 mod storage;
-mod util;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -209,6 +214,9 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
                 actix_web::Error::from(models::MessageResponse::bad_request())
             }))
+            .app_data(MultipartConfig::default().set_error_handler(|_| {
+                actix_web::Error::from(models::MessageResponse::bad_request())
+            }))
             .default_service(web::to(move |req: HttpRequest| {
                 let storage_path = base_storage_path.clone();
                 async move {
@@ -294,7 +302,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
                         .storage
                         .put_object(
                             &format!("thumb/{}", file.name),
-                            &util::file::get_thumbnail_image(&buf)?,
+                            &internal::file::get_thumbnail_image(&buf)?,
                         )
                         .await
                     {

@@ -3,13 +3,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use actix_extract_multipart::File;
 use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
 use utoipa::Component;
 
-use crate::util::file::IMAGE_EXTS;
+use crate::internal::{file::IMAGE_EXTS, multipart::File};
 
 use crate::database::entity::files;
 

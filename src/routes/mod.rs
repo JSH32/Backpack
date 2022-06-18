@@ -1,4 +1,6 @@
-use crate::{database::entity::settings, models::AppInfo, state::State, util::response::Response};
+use crate::{
+    database::entity::settings, internal::response::Response, models::AppInfo, state::State,
+};
 use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::EntityTrait;
 

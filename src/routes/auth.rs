@@ -4,13 +4,13 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::{
     database::entity::users,
-    models::{auth::BasicAuthForm, MessageResponse, UserData},
-    state::State,
-    util::{
+    internal::{
         self,
         auth::{auth_role, create_jwt_string, verify_user, Auth},
         response::Response,
     },
+    models::{auth::BasicAuthForm, MessageResponse, UserData},
+    state::State,
 };
 
 use actix_web::{
@@ -29,7 +29,7 @@ async fn basic(
     state: web::Data<State>,
     form: web::Json<BasicAuthForm>,
 ) -> Response<impl Responder> {
-    let mut user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
+    let mut user_data = match if internal::EMAIL_REGEX.is_match(&form.auth) {
         users::Entity::find()
             .filter(users::Column::Email.eq(form.auth.to_owned()))
             .one(&state.database)

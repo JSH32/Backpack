@@ -1,6 +1,5 @@
-use std::io::Cursor;
-
 use image::ImageError;
+use std::io::Cursor;
 
 /// Image extensions
 pub const IMAGE_EXTS: &'static [&'static str] =

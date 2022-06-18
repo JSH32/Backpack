@@ -7,6 +7,7 @@ use crate::models::MessageResponse;
 
 pub mod auth;
 pub mod file;
+pub mod multipart;
 pub mod response;
 pub mod user;
 

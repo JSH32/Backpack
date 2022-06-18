@@ -4,7 +4,7 @@ pub mod auth;
 pub mod file;
 pub mod user;
 
-use crate::{database::entity::settings, util::GIT_VERSION};
+use crate::{database::entity::settings, internal::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;

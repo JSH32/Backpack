@@ -6,9 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     database::entity::{registration_keys, users, verifications},
-    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData},
-    state::State,
-    util::{
+    internal::{
         self,
         auth::{auth_role, Auth},
         random_string,
@@ -16,6 +14,8 @@ use crate::{
         user::{new_password, validate_username, verification_email},
         EMAIL_REGEX,
     },
+    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData},
+    state::State,
 };
 
 pub fn get_routes() -> Scope {
@@ -88,7 +88,7 @@ async fn settings(
     };
 
     if let Some(new_password) = &form.new_password {
-        to_change.new_password = match util::user::new_password(&new_password)? {
+        to_change.new_password = match internal::user::new_password(&new_password)? {
             Ok(v) => Some(v),
             Err(err) => return Ok(err.http_response()),
         }

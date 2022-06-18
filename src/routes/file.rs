@@ -4,8 +4,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use actix_extract_multipart::Multipart;
-// use actix_multipart::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use sea_orm::{
@@ -17,14 +15,15 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     database::entity::files,
-    models::{FileData, FileStats, MessageResponse, Page, UploadFile},
-    state::State,
-    util::{
+    internal::{
         auth::{auth_role, Auth},
         file::{get_thumbnail_image, IMAGE_EXTS},
-        response::Response,
+        multipart::Multipart,
+        response::{self, Response},
         validate_paginate,
     },
+    models::{FileData, FileStats, MessageResponse, Page, UploadFile},
+    state::State,
 };
 
 pub fn get_routes() -> Scope {
@@ -45,9 +44,9 @@ pub fn get_routes() -> Scope {
 #[utoipa::path(
     context_path = "/api/file", 
     responses(
-        (status = 200, body = UserData),
-        (status = 400, body = MessageResponse),
-        (status = 409, body = MessageResponse)
+        (status = 200, body = FileData),
+        (status = 409, body = MessageResponse),
+        (status = 413, body = MessageResponse)
     ),
     security(("apiKey" = [])),
     request_body(content = UploadFile, content_type = "multipart/form-data")
@@ -56,9 +55,9 @@ pub fn get_routes() -> Scope {
 async fn upload(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, true>,
-    file: Multipart<UploadFile>, // mut payload: Multipart,
+    file: Multipart<UploadFile>,
 ) -> Response<impl Responder> {
-    if file.upload_file.len() > state.file_size_limit {
+    if file.upload_file.bytes.len() > state.file_size_limit {
         return MessageResponse::ok(
             StatusCode::PAYLOAD_TOO_LARGE,
             &format!(
@@ -68,7 +67,7 @@ async fn upload(
         );
     }
 
-    let extension = Path::new(file.upload_file.name())
+    let extension = Path::new(&file.upload_file.name)
         .extension()
         .and_then(OsStr::to_str)
         .unwrap_or("");
@@ -76,7 +75,7 @@ async fn upload(
     // New filename, collision not likely with NanoID
     let filename = nanoid!(10) + "." + extension;
 
-    let hash = &format!("{:x}", Sha256::digest(&file.upload_file.data()));
+    let hash = &format!("{:x}", Sha256::digest(&file.upload_file.bytes));
 
     let file_exists = files::Entity::find()
         .filter(files::Column::Hash.eq(hash.to_owned()))
@@ -105,9 +104,9 @@ async fn upload(
     let file_model = files::ActiveModel {
         uploader: Set(auth.user.id.to_owned()),
         name: Set(filename.to_owned()),
-        original_name: Set(file.upload_file.name().to_owned()),
+        original_name: Set(file.upload_file.name.to_owned()),
         hash: Set(hash.to_owned()),
-        size: Set(file.upload_file.len() as i64),
+        size: Set(file.upload_file.bytes.len() as i64),
         ..Default::default()
     }
     .insert(&state.database)
@@ -115,18 +114,18 @@ async fn upload(
 
     // Upload file to storage provider
     // If this fails attempt to delete the file from database
-    if let Err(_) = state
+    if let Err(err) = state
         .storage
-        .put_object(&filename, &file.upload_file.data())
+        .put_object(&filename, &file.upload_file.bytes)
         .await
     {
         let _ = file_model.delete(&state.database).await;
-        return MessageResponse::ok(StatusCode::INTERNAL_SERVER_ERROR, "Unable to upload file");
+        return Err(response::Error(err));
     }
 
     let root_path = PathBuf::from(&state.storage_url);
 
-    let mut file_api = FileData::from(file_model);
+    let mut file_data = FileData::from(file_model);
 
     // Create thumbnail
     if IMAGE_EXTS
@@ -135,18 +134,19 @@ async fn upload(
     {
         // We don't care if this fails. Thumbnail can fail for whatever reason due to image encoding
         // User/API caller should not expect thumbnail to ALWAYS exist
-        if let Ok(image) = &get_thumbnail_image(&file.upload_file.data()) {
+        if let Ok(image) = &get_thumbnail_image(&file.upload_file.bytes) {
+            // TODO: Store thumbnail status as a boolean in database just in case
             let _ = state
                 .storage
                 .put_object(&format!("./thumb/{}", &filename), image)
                 .await;
 
-            file_api.set_thumbnail_url(root_path.clone());
+            file_data.set_thumbnail_url(root_path.clone());
         }
     }
 
-    file_api.set_url(root_path.clone());
-    Ok(HttpResponse::Ok().json(file_api))
+    file_data.set_url(root_path.clone());
+    Ok(HttpResponse::Ok().json(file_data))
 }
 
 #[get("/stats")]

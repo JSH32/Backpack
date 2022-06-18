@@ -4,7 +4,7 @@ use derive_more::Display;
 use crate::models::MessageResponse;
 
 #[derive(Debug, Display)]
-pub struct Error(anyhow::Error);
+pub struct Error(pub anyhow::Error);
 
 /// # Response
 ///

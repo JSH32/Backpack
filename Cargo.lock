@@ -229,20 +229,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix_extract_multipart"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98e54eb6303a581b261911cd35290d35566fdc95b14e88e1860ba0cbd12df15c"
-dependencies = [
- "actix-multipart",
- "actix-web",
- "futures",
- "futures-util",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -390,7 +376,6 @@ dependencies = [
  "actix-http",
  "actix-multipart",
  "actix-web",
- "actix_extract_multipart",
  "anyhow",
  "argon2",
  "async-trait",
@@ -419,6 +404,7 @@ dependencies = [
  "rusoto_s3",
  "sea-orm",
  "serde",
+ "serde-aux",
  "serde_json",
  "serde_with",
  "sha2 0.10.2",
@@ -2611,6 +2597,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-aux"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93abf9799c576f004252b2a05168d58527fb7c54de12e94b4d12fe3475ffad24"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
