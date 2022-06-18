@@ -76,8 +76,10 @@ impl FileData {
     }
 }
 
-#[derive(Serialize)]
+/// File stats for user
+#[derive(Serialize, Component)]
 pub struct FileStats {
+    /// Total usage in bytes
     pub usage: i64,
 }
 

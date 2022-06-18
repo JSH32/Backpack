@@ -35,8 +35,6 @@ pub fn get_routes() -> Scope {
         .service(delete_file)
 }
 
-// utoipa_multipart!(uploadFile);
-
 /// Upload a file
 /// - Minimum required role: `user`
 /// - Allow unverified users: `false`
@@ -45,8 +43,8 @@ pub fn get_routes() -> Scope {
     context_path = "/api/file", 
     responses(
         (status = 200, body = FileData),
-        (status = 409, body = MessageResponse),
-        (status = 413, body = MessageResponse)
+        (status = 409, body = MessageResponse, description = "File already uploaded"),
+        (status = 413, body = MessageResponse, description = "File too large")
     ),
     security(("apiKey" = [])),
     request_body(content = UploadFile, content_type = "multipart/form-data")
@@ -149,6 +147,15 @@ async fn upload(
     Ok(HttpResponse::Ok().json(file_data))
 }
 
+/// Get file stats for user
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/file", 
+    responses((status = 200, body = FileStats)),
+    security(("apiKey" = [])),
+)]
 #[get("/stats")]
 async fn stats(
     state: web::Data<State>,
