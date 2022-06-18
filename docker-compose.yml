@@ -9,8 +9,8 @@ services:
     volumes:
       # This will only be used if using local storage
       - ${LOCAL_PATH}:/uploads
-  backpack_client:
-    build: ./client
+  backpack_frontend:
+    build: ./frontend
     env_file: .env
     depends_on:
       - backpack_api

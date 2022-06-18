@@ -1,6 +1,6 @@
 FROM node:lts-alpine AS deps
 
-WORKDIR /client
+WORKDIR /frontend
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
@@ -8,15 +8,15 @@ RUN yarn install --frozen-lockfile
 FROM node:lts-alpine AS builder
 
 ENV NODE_ENV=production
-WORKDIR /client
+WORKDIR /frontend
 COPY . .
-COPY --from=deps /client/node_modules ./node_modules
+COPY --from=deps /frontend/node_modules ./node_modules
 RUN yarn build
 
 # Production image, copy all the files and run next
 FROM node:lts-alpine AS runner
 
-WORKDIR /client
+WORKDIR /frontend
 ENV NODE_ENV=production
-COPY --from=builder /client ./
+COPY --from=builder /frontend ./
 CMD ["node_modules/.bin/next", "start"]
