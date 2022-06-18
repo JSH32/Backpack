@@ -53,14 +53,12 @@ use crate::routes;
         (name = "application", description = "Application and token management endpoints."),
         (name = "authentication", description = "User authentication endpoints.")
 	),
-    modifiers(&ApiModifier)
+    modifiers(&ApiDoc)
 )]
 pub struct ApiDoc;
 
-/// Runtime extra configuration for the documentation
-struct ApiModifier;
-
-impl Modify for ApiModifier {
+/// Runtime modification for documentation
+impl Modify for ApiDoc {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
         // Authentication
         let components = openapi.components.as_mut().unwrap(); // we can unwrap safely since there already is components registered.
