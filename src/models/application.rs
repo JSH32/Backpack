@@ -14,7 +14,6 @@ pub struct ApplicationData {
     #[component(value_type = f64, read_only)]
     pub last_accessed: DateTimeUtc,
 
-    #[serde(skip_serializing)]
     #[component(read_only)]
     pub user_id: String,
 
