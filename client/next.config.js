@@ -1,7 +1,3 @@
-// require('dotenv').config()
-// console.log("hio")
-// console.log(process.env.API_URL)
-
 // Use proxied URL in development
 const API_URL = process.env.NODE_ENV === "production"
   ? process.env.API_URL
