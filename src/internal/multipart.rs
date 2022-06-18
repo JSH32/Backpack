@@ -68,7 +68,11 @@ async fn multipart_to_json(
     while let Ok(Some(mut field)) = multipart.try_next().await {
         let disposition = field.content_disposition().clone();
 
-        let field_name = disposition.get_name().unwrap();
+        let field_name = match disposition.get_name() {
+            Some(v) => v,
+            None => continue,
+        };
+
         let field_name_formatted = field_name.replace("[]", "");
 
         // Make sure the field actually exists on the form
@@ -83,9 +87,8 @@ async fn multipart_to_json(
             while let Some(chunk) = field.next().await {
                 match chunk {
                     Ok(bytes) => {
-                        let chunk_data = bytes.to_vec();
-                        data.reserve_exact(chunk_data.len());
-                        for byte in chunk_data {
+                        data.reserve_exact(bytes.len());
+                        for byte in bytes {
                             data.push(Value::Number(Number::from(byte)));
                         }
                     }
@@ -169,14 +172,16 @@ fn params_insert(
     field_name_formatted: &String,
     element: Value,
 ) {
-    if params.contains_key(field_name_formatted) {
-        if let Value::Array(val) = params.get_mut(field_name_formatted).unwrap() {
-            val.push(element);
+    if field_name.ends_with("[]") {
+        if params.contains_key(field_name_formatted) {
+            if let Value::Array(val) = params.get_mut(field_name_formatted).unwrap() {
+                val.push(element);
+            }
+        } else {
+            params.insert(field_name_formatted.to_owned(), Value::Array(vec![element]));
         }
-    } else if field_name.ends_with("[]") {
-        params.insert(field_name_formatted.to_owned(), Value::Array(vec![element]));
     } else {
-        params.insert(field_name_formatted.to_owned(), element);
+        params.insert(field_name.to_owned(), element);
     }
 }
 
