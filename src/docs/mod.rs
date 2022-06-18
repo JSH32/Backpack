@@ -27,7 +27,8 @@ use crate::routes;
         routes::application::token,
         routes::application::list,
         routes::application::create,
-        routes::application::delete
+        routes::application::delete,
+        routes::auth::basic
 	),
     components(
 		AppInfo,
@@ -42,13 +43,15 @@ use crate::routes;
         FilePage,
         ApplicationData,
         TokenResponse,
-        ApplicationCreate
+        ApplicationCreate,
+        BasicAuthForm
 	),
 	tags(
 		(name = "server", description = "Server information endpoints."),
 		(name = "user", description = "User management endpoints."),
         (name = "file", description = "File management endpoints."),
-        (name = "application", description = "Application and token management endpoints.")
+        (name = "application", description = "Application and token management endpoints."),
+        (name = "authentication", description = "User authentication endpoints.")
 	),
     modifiers(&ApiModifier)
 )]
