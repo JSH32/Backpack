@@ -3,15 +3,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
+use utoipa::Component;
 
-use crate::util::file::IMAGE_EXTS;
+use crate::internal::{file::IMAGE_EXTS, multipart::File};
 
 use crate::database::entity::files;
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct FileData {
     pub id: String,
@@ -26,6 +27,8 @@ pub struct FileData {
     pub thumbnail_url: Option<String>,
 
     pub hash: String,
+
+    #[component(value_type = f64)]
     pub uploaded: DateTime<Utc>,
     pub size: i64,
 }
@@ -73,7 +76,17 @@ impl FileData {
     }
 }
 
-#[derive(Serialize)]
+/// File stats for user
+#[derive(Serialize, Component)]
 pub struct FileStats {
+    /// Total usage in bytes
     pub usage: i64,
+}
+
+/// Upload a file
+#[derive(Deserialize, Component, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadFile {
+    #[component(value_type = String, format = ComponentFormat::Binary)]
+    pub upload_file: File,
 }

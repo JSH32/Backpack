@@ -4,63 +4,37 @@ pub mod auth;
 pub mod file;
 pub mod user;
 
-use crate::{database::entity::settings, util::GIT_VERSION};
+use crate::{database::entity::settings, internal::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
-use derive_more::Display;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fmt::Display;
+use utoipa::Component;
 
 pub use self::{application::*, auth::*, file::*, user::*};
 
-#[derive(Debug, Display)]
-pub struct Error(anyhow::Error);
-
-/// # Response
+/// Standard message response.
 ///
-/// Utility type for error reporting.
-///
-/// The error variant accepts any error as it wraps [`anyhow::Error`].
-/// This type should be returned from an Actix route handler.
-/// Error variant should only be used when returning an exceptional case.
-///
-/// # Usage
-/// ```
-/// fn route() -> Response<()> {
-///     Err(anyhow::anyhow!("This could be any error type"))
-/// }
-/// ```
-pub type Response<T> = Result<T, Error>;
-
-impl ResponseError for Error {
-    fn error_response(&self) -> HttpResponse {
-        log::error!("{}", &self.0.to_string());
-        MessageResponse::internal_server_error(&self.0.to_string()).http_response()
-    }
-}
-
-impl<E: Into<anyhow::Error>> From<E> for Error {
-    fn from(e: E) -> Self {
-        Self(e.into())
-    }
-}
-
-/// Standard message response
-#[derive(Serialize, Debug)]
+/// Usually the only field will be `message`
+#[derive(Serialize, Debug, Component)]
+#[component(example = json!({"message": "string"}))]
 pub struct MessageResponse {
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     code: StatusCode,
 
+    /// Message
     message: String,
 
+    /// Optional error (only on 500 errors)
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
 
-    // Optional data, can be any JSON value
+    /// Optional data, can be any JSON object
     #[serde(skip_serializing_if = "Option::is_none")]
-    data: Option<serde_json::Value>,
+    data: Option<HashMap<String, serde_json::Value>>,
 }
 
 impl MessageResponse {
@@ -81,12 +55,16 @@ impl MessageResponse {
     pub fn ok_with_data<E>(
         code: StatusCode,
         message: &str,
-        data: serde_json::Value,
+        data: HashMap<String, serde_json::Value>,
     ) -> Result<HttpResponse, E> {
         Ok(MessageResponse::new_with_data(code, message, data).http_response())
     }
 
-    pub fn new_with_data(code: StatusCode, message: &str, data: serde_json::Value) -> Self {
+    pub fn new_with_data(
+        code: StatusCode,
+        message: &str,
+        data: HashMap<String, serde_json::Value>,
+    ) -> Self {
         MessageResponse {
             code: code,
             message: message.to_string(),
@@ -159,22 +137,35 @@ impl Responder for MessageResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
+#[aliases(FilePage = Page<FileData>)]
 pub struct Page<T> {
     pub page: usize,
     pub pages: usize,
     pub list: Vec<T>,
 }
 
-#[derive(Serialize)]
+/// Public server configuration
+#[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
+    /// App name
     pub app_name: String,
+
+    /// App description
     pub app_description: String,
+
+    /// Theme color of the Backpack instance
     pub color: String,
+
+    /// Git tag or commit hash.
     pub invite_only: bool,
-    pub git_version: String,
+
+    /// Is SMTP (email verification) enabled on the server?
     pub smtp: bool,
+
+    /// Git tag (version) or commit hash
+    pub git_version: String,
 }
 
 impl AppInfo {

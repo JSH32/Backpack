@@ -6,38 +6,62 @@ use uuid::Uuid;
 
 use crate::{
     database::entity::{registration_keys, users, verifications},
-    models::{MessageResponse, Response, UpdateUserSettings, UserCreateForm, UserData},
-    state::State,
-    util::{
+    internal::{
         self,
         auth::{auth_role, Auth},
         random_string,
+        response::Response,
         user::{new_password, validate_username, verification_email},
         EMAIL_REGEX,
     },
+    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData},
+    state::State,
 };
 
-pub fn get_routes(smtp_verification: bool) -> Scope {
-    let scope = web::scope("/user")
+pub fn get_routes() -> Scope {
+    web::scope("/user")
         .service(create)
         .service(settings)
-        .service(info);
-
-    if smtp_verification {
-        scope.service(resend_verify).service(verify)
-    } else {
-        scope
-    }
+        .service(info)
+        .service(resend_verify)
+        .service(verify)
 }
 
+/// Get current user information
+/// - Minimum required role: `user`
+/// - Allow unverified users: `true`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = UserData)
+    ),
+    security(("apiKey" = []))
+)]
 #[get("")]
 async fn info(auth: Auth<auth_role::User, true, true>) -> impl Responder {
     HttpResponse::Ok().json(UserData::from(auth.user))
 }
 
+/// Change user settings
+/// - Minimum required role: `user`
+/// - Allow unverified users: `true`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = UserData),
+        (status = 400, body = MessageResponse),
+        (status = 409, body = MessageResponse)
+    ),
+    security(("apiKey" = [])),
+    request_body = UpdateUserSettings
+)]
 #[put("/settings")]
 async fn settings(
-    auth: Auth<auth_role::User, true, true>,
+    auth: Auth<auth_role::User, true, false>,
     state: web::Data<State>,
     form: web::Json<UpdateUserSettings>,
 ) -> Response<impl Responder> {
@@ -66,7 +90,7 @@ async fn settings(
     };
 
     if let Some(new_password) = &form.new_password {
-        to_change.new_password = match util::user::new_password(&new_password)? {
+        to_change.new_password = match internal::user::new_password(&new_password)? {
             Ok(v) => Some(v),
             Err(err) => return Ok(err.http_response()),
         }
@@ -177,6 +201,17 @@ async fn settings(
     )))
 }
 
+/// Create a new user
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = UserData),
+        (status = 400, body = MessageResponse),
+        (status = 409, body = MessageResponse)
+    ),
+    request_body = UserCreateForm
+)]
 #[post("")]
 async fn create(
     state: web::Data<State>,
@@ -297,11 +332,31 @@ async fn create(
     MessageResponse::ok(StatusCode::OK, "User has successfully been created")
 }
 
+/// Resend a verification code to the email
+/// - Minimum required role: `user`
+/// - Allow unverified users: `true`
+/// - Application token allowed: `false`
+///
+/// This will be disabled if `smtp` is disabled in server settings
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = MessageResponse),
+        (status = 409, body = MessageResponse, description = "Already verified"),
+        (status = 410, body = MessageResponse, description = "SMTP is disabled")
+    ),
+    security(("apiKey" = [])),
+)]
 #[patch("/verify/resend")]
 async fn resend_verify(
     state: web::Data<State>,
     auth: Auth<auth_role::User, true, false>,
 ) -> Response<impl Responder> {
+    if let None = state.smtp_client {
+        return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
+    }
+
     if auth.user.verified {
         return MessageResponse::ok(StatusCode::CONFLICT, "You are already verified");
     }
@@ -337,8 +392,27 @@ async fn resend_verify(
     )
 }
 
+/// Verify using a verification code
+///
+/// This will be disabled if `smtp` is disabled in server settings
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = MessageResponse),
+        (status = 400, body = MessageResponse, description = "Invalid verification code"),
+        (status = 410, body = MessageResponse, description = "SMTP is disabled")
+    ),
+    params(
+        ("code" = str, path, description = "Verification code to verify"),
+    )
+)]
 #[patch("/verify/{code}")]
 async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<impl Responder> {
+    if let None = state.smtp_client {
+        return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
+    }
+
     match verifications::Entity::find()
         .filter(verifications::Column::Code.eq(code.to_owned()))
         .find_also_related(users::Entity)
@@ -350,11 +424,6 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
             let user_data = user_data_opt.unwrap();
 
             verification.delete(&state.database).await?;
-
-            // This case can ONLY happen if SMTP verification is disabled, the user tries to access their account, and THEN re-enables
-            if user_data.verified {
-                return MessageResponse::ok(StatusCode::CONFLICT, "User was already verified");
-            }
 
             let mut active_user: users::ActiveModel = user_data.into();
             active_user.verified = Set(true);

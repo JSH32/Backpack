@@ -397,12 +397,14 @@ dependencies = [
  "lettre",
  "log",
  "nanoid",
+ "paste",
  "rand",
  "regex",
  "rusoto_core",
  "rusoto_s3",
  "sea-orm",
  "serde",
+ "serde-aux",
  "serde_json",
  "serde_with",
  "sha2 0.10.2",
@@ -410,6 +412,7 @@ dependencies = [
  "thiserror",
  "time 0.3.9",
  "tokio",
+ "utoipa",
  "uuid 0.8.2",
 ]
 
@@ -2591,6 +2594,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-aux"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93abf9799c576f004252b2a05168d58527fb7c54de12e94b4d12fe3475ffad24"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3330,6 +3344,31 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "utoipa"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0bdc651bbdd526cc02a07dea1dfb49030a1757178c7552185baccd65ef6f741"
+dependencies = [
+ "serde",
+ "serde_json",
+ "utoipa-gen",
+]
+
+[[package]]
+name = "utoipa-gen"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36592981d9d4ff5900ec9a09634a9373231324f8a7ba918bb3351b4b2987e4e1"
+dependencies = [
+ "lazy_static",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
 ]
 
 [[package]]

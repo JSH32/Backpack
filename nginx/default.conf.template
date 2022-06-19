@@ -2,8 +2,8 @@ upstream backpack_api {
     server backpack_api:3000;
 }
 
-upstream backpack_client {
-    server backpack_client:3000;
+upstream backpack_frontend {
+    server backpack_frontend:3000;
 }
 
 server {
@@ -13,7 +13,7 @@ server {
     client_max_body_size ${FILE_SIZE_LIMIT}m;
 
     location / {
-        proxy_pass        http://backpack_client;
+        proxy_pass        http://backpack_frontend;
         proxy_redirect    off;
         proxy_set_header  Host $host;
         proxy_set_header  X-Real-IP $remote_addr;

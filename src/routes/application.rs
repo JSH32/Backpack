@@ -3,13 +3,16 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, PaginatorTrait, QueryFi
 
 use crate::{
     database::entity::applications,
-    models::{application::*, MessageResponse, Response},
+    internal::{
+        auth::{auth_role, create_jwt_string, Auth},
+        response::Response,
+    },
+    models::{application::*, MessageResponse},
     state::State,
-    util::auth::{auth_role, create_jwt_string, Auth},
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/applications")
+    web::scope("/application")
         .service(list)
         .service(info)
         .service(create)
@@ -17,6 +20,21 @@ pub fn get_routes() -> Scope {
         .service(token)
 }
 
+/// Get token by application ID
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = TokenResponse),
+        (status = 404, body = MessageResponse, description = "Application not found")
+    ),
+    params(
+        ("application_id" = str, path, description = "Application ID to get token for"),
+    )
+)]
 #[get("/{application_id}/token")]
 async fn token(
     state: web::Data<State>,
@@ -49,6 +67,15 @@ async fn token(
     )
 }
 
+/// Get all applications
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses((status = 200, body = [ApplicationData]))
+)]
 #[get("")]
 async fn list(
     state: web::Data<State>,
@@ -66,6 +93,18 @@ async fn list(
     Ok(HttpResponse::Ok().json(applications))
 }
 
+/// Get token info
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = ApplicationData),
+        (status = 401, body = MessageResponse)
+    )
+)]
 #[get("/{application_id}")]
 async fn info(
     state: web::Data<State>,
@@ -86,11 +125,24 @@ async fn info(
     )
 }
 
+/// Create an application
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = ApplicationData),
+        (status = 400, body = MessageResponse, description = "Token limit reached or invalid name"),
+    ),
+    request_body = ApplicationCreate
+)]
 #[post("")]
 async fn create(
     state: web::Data<State>,
     auth: Auth<auth_role::User, false, false>,
-    form: web::Json<ApplicationCreateForm>,
+    form: web::Json<ApplicationCreate>,
 ) -> Response<impl Responder> {
     let application_count = auth
         .user
@@ -152,6 +204,18 @@ async fn create(
     Ok(HttpResponse::Ok().json(token_data))
 }
 
+/// Delete an application
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = MessageResponse, description = "Application was deleted"),
+        (status = 401, body = MessageResponse, description = "Unauthorized or token does not exist"),
+    )
+)]
 #[delete("/{application_id}")]
 async fn delete(
     state: web::Data<State>,

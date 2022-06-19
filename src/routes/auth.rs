@@ -4,31 +4,37 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::{
     database::entity::users,
-    models::{auth::BasicAuthForm, MessageResponse, Response, UserData},
-    state::State,
-    util::{
+    internal::{
         self,
-        auth::{auth_role, create_jwt_string, verify_user, Auth},
+        auth::{create_jwt_string, verify_user},
+        response::Response,
     },
+    models::{auth::BasicAuthForm, MessageResponse, TokenResponse},
+    state::State,
 };
 
-use actix_web::{
-    cookie::{time::OffsetDateTime, Cookie},
-    http::StatusCode,
-    post, web, HttpResponse, Responder, Scope,
-};
+use actix_web::{http::StatusCode, post, web, HttpResponse, Responder, Scope};
 
 pub fn get_routes() -> Scope {
-    web::scope("/auth").service(basic).service(logout)
+    web::scope("/auth").service(basic)
 }
 
 /// Login with email and password
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    responses(
+        (status = 200, body = TokenResponse),
+        (status = 400, body = MessageResponse, description = "Invalid credentials"),
+    ),
+    request_body(content = BasicAuthForm)
+)]
 #[post("/basic")]
 async fn basic(
     state: web::Data<State>,
     form: web::Json<BasicAuthForm>,
 ) -> Response<impl Responder> {
-    let mut user_data = match if util::EMAIL_REGEX.is_match(&form.auth) {
+    let mut user_data = match if internal::EMAIL_REGEX.is_match(&form.auth) {
         users::Entity::find()
             .filter(users::Column::Email.eq(form.auth.to_owned()))
             .one(&state.database)
@@ -76,34 +82,5 @@ async fn basic(
         &state.jwt_key,
     )?;
 
-    // Set JWT token as cookie
-    Ok(HttpResponse::Ok()
-        .cookie(
-            Cookie::build("auth-token", jwt)
-                .secure(false)
-                .http_only(true)
-                .path("/")
-                .expires(OffsetDateTime::from_unix_timestamp(expire_time).unwrap())
-                .finish(),
-        )
-        .json(UserData::from(user_data)))
-}
-
-/// Remove httponly cookie
-#[post("/logout")]
-async fn logout(_: Auth<auth_role::User, true, false>) -> impl Responder {
-    HttpResponse::Ok()
-        .cookie(
-            Cookie::build("auth-token", "")
-                .secure(false)
-                .http_only(true)
-                .path("/")
-                // Cookie expires instantly when issued, will remove the cookie
-                .expires(OffsetDateTime::from_unix_timestamp(Utc::now().timestamp()).unwrap())
-                .finish(),
-        )
-        .json(MessageResponse::new(
-            StatusCode::OK,
-            "Successfully logged out",
-        ))
+    Ok(HttpResponse::Ok().json(TokenResponse { token: jwt }))
 }

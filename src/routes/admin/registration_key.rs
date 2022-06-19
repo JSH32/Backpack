@@ -3,15 +3,16 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder, Scope};
 
 use crate::{
     database::entity::registration_keys,
-    models::{
-        admin::registration_key::{RegistrationKeyData, RegistrationKeyParams},
-        MessageResponse, Page, Response,
-    },
-    state::State,
-    util::{
+    internal::{
         auth::{auth_role, Auth},
+        response::Response,
         validate_paginate,
     },
+    models::{
+        admin::registration_key::{RegistrationKeyData, RegistrationKeyParams},
+        MessageResponse, Page,
+    },
+    state::State,
 };
 
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, Set};

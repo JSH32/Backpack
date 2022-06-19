@@ -1,4 +1,8 @@
-use crate::{database::entity::files, util::GIT_VERSION};
+use crate::{
+    database::entity::files,
+    docs::ApiDoc,
+    internal::{multipart::MultipartConfig, GIT_VERSION},
+};
 use actix_http::Uri;
 use clap::Parser;
 use colored::*;
@@ -11,7 +15,8 @@ use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use state::State;
 use tokio::fs;
 
-use util::file::IMAGE_EXTS;
+use internal::file::IMAGE_EXTS;
+use utoipa::OpenApi;
 
 use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
 
@@ -19,7 +24,7 @@ use actix_web::{
     http::StatusCode,
     middleware::Logger,
     web::{self, Data},
-    App, HttpRequest, HttpServer,
+    App, HttpRequest, HttpResponse, HttpServer,
 };
 
 use actix_files::NamedFile;
@@ -30,17 +35,19 @@ use storage::{local::LocalProvider, s3::S3Provider, StorageProvider};
 
 #[macro_use]
 extern crate lazy_static;
+
 extern crate argon2;
 extern crate dotenv;
 extern crate env_logger;
 
 mod config;
 mod database;
+mod docs;
+mod internal;
 mod models;
 mod routes;
 mod state;
 mod storage;
-mod util;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -143,7 +150,6 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Get setting as single boolean before client gets moved
-    let smtp_enabled = smtp_client.is_some();
     let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
@@ -186,9 +192,18 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(api_state.clone())
+            .route(
+                "/api/docs/openapi.json",
+                web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
+            )
+            .route(
+                "/api/docs",
+                web::get()
+                    .to(|| async { HttpResponse::Ok().body(include_str!("docs/rapidoc.html")) }),
+            )
             .service(
                 web::scope("/api")
-                    .service(routes::user::get_routes(smtp_enabled))
+                    .service(routes::user::get_routes())
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
                     .service(routes::file::get_routes())
@@ -197,6 +212,9 @@ async fn main() -> std::io::Result<()> {
             )
             // Error handler when json body deserialization failed
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
+                actix_web::Error::from(models::MessageResponse::bad_request())
+            }))
+            .app_data(MultipartConfig::default().set_error_handler(|_| {
                 actix_web::Error::from(models::MessageResponse::bad_request())
             }))
             .default_service(web::to(move |req: HttpRequest| {
@@ -284,7 +302,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
                         .storage
                         .put_object(
                             &format!("thumb/{}", file.name),
-                            &util::file::get_thumbnail_image(&buf)?,
+                            &internal::file::get_thumbnail_image(&buf)?,
                         )
                         .await
                     {

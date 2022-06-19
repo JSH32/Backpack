@@ -1,0 +1,43 @@
+{
+  "name": "backpack-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_ENV=development dotenv -- next dev",
+    "build": "NODE_ENV=production next build",
+    "start": "NODE_ENV=production next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@backpack-app/backpack-client": "^0.1.0-dev.1",
+    "@chakra-ui/icons": "^2.0.2",
+    "@chakra-ui/react": "^2.2.1",
+    "@chakra-ui/system": "^2.1.3",
+    "@chakra-ui/theme-tools": "^2.0.2",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "@svgr/webpack": "^6.2.1",
+    "axios": "^0.27.2",
+    "backpack-api-client": "file:../client",
+    "dotenv": "^16.0.1",
+    "dotenv-cli": "^5.1.0",
+    "framer-motion": "^6",
+    "javascript-time-ago": "^2.5.4",
+    "mobx": "^6.6.0",
+    "mobx-react-lite": "^3.4.0",
+    "next": "12.1.6",
+    "react": "18.1.0",
+    "react-dom": "18.1.0",
+    "react-hook-form": "^7.32.0",
+    "sass": "^1.52.3"
+  },
+  "devDependencies": {
+    "@types/node": "17.0.42",
+    "@types/react": "18.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "@typescript-eslint/parser": "^5.27.1",
+    "eslint": "^8.17.0",
+    "eslint-config-next": "12.1.6",
+    "typescript": "4.7.3"
+  }
+}

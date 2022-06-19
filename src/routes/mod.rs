@@ -1,7 +1,5 @@
 use crate::{
-    database::entity::settings,
-    models::{AppInfo, Response},
-    state::State,
+    database::entity::settings, internal::response::Response, models::AppInfo, state::State,
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::EntityTrait;
@@ -16,6 +14,14 @@ pub fn get_routes() -> Scope {
     web::scope("").service(info)
 }
 
+/// Get public server configuration
+#[utoipa::path(
+    context_path = "/api",
+    tag = "Server",
+    responses(
+        (status = 200, body = AppInfo)
+    )
+)]
 #[get("/info")]
 async fn info(state: web::Data<State>) -> Response<impl Responder> {
     let settings = settings::Entity::find_by_id(true)
