@@ -24,7 +24,7 @@ import {
     Icon,
     useToast
 } from "@chakra-ui/react"
-import { FileData } from "backpack-client"
+import { FileData } from "@backpack-app/backpack-client"
 import api from "helpers/api"
 
 const FileInfo: React.FC = () => {
