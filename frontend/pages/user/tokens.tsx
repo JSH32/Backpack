@@ -101,7 +101,6 @@ const Tokens: NextPage = () => {
   }, [])
 
   const createApplication = React.useCallback((form: any) => {
-    console.log(form)
     api.application.create(form)
       .then(res => {
         toast({
