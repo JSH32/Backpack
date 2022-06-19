@@ -12,7 +12,6 @@ export class ServerService {
 
     /**
      * Get public server configuration
-     * Get public server configuration
      *
      * @returns AppInfo
      * @throws ApiError

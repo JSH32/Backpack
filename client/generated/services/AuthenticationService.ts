@@ -13,7 +13,6 @@ export class AuthenticationService {
 
     /**
      * Login with email and password
-     * Login with email and password
      *
      * @param requestBody
      * @returns TokenResponse

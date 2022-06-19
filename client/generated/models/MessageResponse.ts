@@ -7,10 +7,6 @@
  */
 export type MessageResponse = {
     /**
-     * Message
-     */
-    message: string;
-    /**
      * Optional error (only on 500 errors)
      */
     error?: string;
@@ -18,5 +14,9 @@ export type MessageResponse = {
      * Optional data, can be any JSON object
      */
     data?: any;
+    /**
+     * Message
+     */
+    message: string;
 };
 

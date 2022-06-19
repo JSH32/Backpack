@@ -2,6 +2,7 @@
   "name": "@backpack-app/backpack-client",
   "version": "0.1.0-dev.1",
   "description": "Generated backpack API client",
+  "homepage": "https://github.com/JSH32/Backpack/tree/rewrite/client",
   "scripts": {
     "generate": "openapi --input http://localhost:3000/api/docs/openapi.json --output ./generated --client axios --name BackpackClient",
     "build": "tsc"
@@ -17,6 +18,6 @@
   "types": "build/index.d.ts",
   "main": "build/index.js",
   "dependencies": {
-    "@backpack-app/openapi-typescript-codegen": "^0.23.0"
+    "@backpack-app/openapi-typescript-codegen": "^0.23.1"
   }
 }

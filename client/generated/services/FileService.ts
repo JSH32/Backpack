@@ -16,7 +16,6 @@ export class FileService {
 
     /**
      * Upload a file
-     * Upload a file
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
@@ -41,7 +40,6 @@ export class FileService {
     }
 
     /**
-     * Get a paginated list of files
      * Get a paginated list of files
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -74,7 +72,6 @@ export class FileService {
 
     /**
      * Get file stats for user
-     * Get file stats for user
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
@@ -90,7 +87,6 @@ export class FileService {
     }
 
     /**
-     * Get file data by ID
      * Get file data by ID
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -117,7 +113,6 @@ export class FileService {
     }
 
     /**
-     * Delete file data by ID
      * Delete file data by ID
      * - Minimum required role: `user`
      * - Allow unverified users: `false`

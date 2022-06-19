@@ -7,28 +7,28 @@
  */
 export type AppInfo = {
     /**
-     * Git tag or commit hash.
+     * Is SMTP (email verification) enabled on the server?
      */
-    inviteOnly: boolean;
+    smtp: boolean;
     /**
      * Git tag (version) or commit hash
      */
     gitVersion: string;
     /**
-     * App description
+     * Theme color of the Backpack instance
      */
-    appDescription: string;
+    color: string;
+    /**
+     * Git tag or commit hash.
+     */
+    inviteOnly: boolean;
     /**
      * App name
      */
     appName: string;
     /**
-     * Theme color of the Backpack instance
+     * App description
      */
-    color: string;
-    /**
-     * Is SMTP (email verification) enabled on the server?
-     */
-    smtp: boolean;
+    appDescription: string;
 };
 
