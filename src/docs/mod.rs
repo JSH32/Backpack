@@ -26,6 +26,7 @@ use crate::routes;
         routes::file::delete_file,
         routes::application::token,
         routes::application::list,
+        routes::application::info,
         routes::application::create,
         routes::application::delete,
         routes::auth::basic

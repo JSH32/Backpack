@@ -1,6 +1,5 @@
 import * as React from "react"
 
-import { getUsage, searchFile, uploadFile, deleteFile } from "helpers/api"
 import { convertBytes } from "helpers/util"
 import { Icon } from "@chakra-ui/icons"
 import { FileSearch } from "components/FileSearch"
@@ -21,6 +20,7 @@ import {
     useToast, 
     Button
 } from "@chakra-ui/react"
+import api from "helpers/api"
 
 const UploadFiles: React.FC = () => {
     const [usage, setUsage] = React.useState<string>()
@@ -30,10 +30,9 @@ const UploadFiles: React.FC = () => {
     const toast = useToast()
     const toastIdRef = React.useRef<ToastId>()
     
-    
     React.useEffect(() => {
-        getUsage()
-            .then(bytes => setUsage(convertBytes(bytes)))
+        api.file.stats()
+            .then(stats => setUsage(convertBytes(stats.usage)))
             .catch(() => setUsage("0 Bytes"))
     }, [searchReload])
 
@@ -73,7 +72,10 @@ const UploadFiles: React.FC = () => {
 
         for (const file of event.target.files) {
             setCurrentUploading(count => count + 1)
-            uploadPromises.push(uploadFile(file)
+            uploadPromises.push(api.file.upload({ uploadFile: file })
+                .catch(err => {
+                    console.log(err)
+                })
                 .finally(() => {
                     setCurrentUploading(count => count - 1)
                 }))
@@ -86,9 +88,9 @@ const UploadFiles: React.FC = () => {
     }, [searchReload])
 
     const deleteCallback = React.useCallback((id: string) => {
-        return deleteFile(id)
-            .then(getUsage)
-            .then(bytes => setUsage(convertBytes(bytes)))
+        return api.file.deleteFile(id)
+            .then(api.file.stats)
+            .then(stats => setUsage(convertBytes(stats.usage)))
             .catch(() => setUsage("0 Bytes"))
     }, [])
 
@@ -125,7 +127,7 @@ const UploadFiles: React.FC = () => {
                         <Divider/>
                         <FileSearch
                             key={searchReload}
-                            onSearch={searchFile}
+                            onSearch={(page, query) => api.file.list(page, query)}
                             onDelete={deleteCallback}
                             onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
                     </Stack>

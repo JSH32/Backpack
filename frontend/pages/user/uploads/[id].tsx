@@ -1,7 +1,6 @@
 import * as React from "react"
 import { Resource } from "components/Resource"
 import Router, { useRouter } from "next/router"
-import { deleteFile, FileData, getFile } from "helpers/api"
 import { Result } from "components/Result"
 import { convertBytes, dateToString, getExtension, isExtImage } from "helpers/util"
 import TrashIcon from "assets/icons/trash.svg"
@@ -25,6 +24,8 @@ import {
     Icon,
     useToast
 } from "@chakra-ui/react"
+import { FileData } from "backpack-client"
+import api from "helpers/api"
 
 const FileInfo: React.FC = () => {
     const router = useRouter()
@@ -34,13 +35,13 @@ const FileInfo: React.FC = () => {
     const toast = useToast()
 
     React.useEffect(() => {
-        getFile(id as string)
+        api.file.info(id as string)
             .then(setFileInfo)
             .catch(() => setIsError(true))
     }, [])
 
     const deleteCallback = React.useCallback(() => {
-        deleteFile(fileInfo?.id as string)
+        api.file.deleteFile(fileInfo?.id as string)
             .then(() => {
                 toast({
                     title: "File deleted",
@@ -54,7 +55,7 @@ const FileInfo: React.FC = () => {
             .catch(error => {
                 toast({
                     title: "Error",
-                    description: error.response.data.message,
+                    description: error.body.message,
                     status: "error",
                     duration: 5000,
                     isClosable: true

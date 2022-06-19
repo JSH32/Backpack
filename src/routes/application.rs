@@ -93,6 +93,18 @@ async fn list(
     Ok(HttpResponse::Ok().json(applications))
 }
 
+/// Get token info
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = ApplicationData),
+        (status = 401, body = MessageResponse)
+    )
+)]
 #[get("/{application_id}")]
 async fn info(
     state: web::Data<State>,
@@ -123,7 +135,8 @@ async fn info(
     responses(
         (status = 200, body = ApplicationData),
         (status = 400, body = MessageResponse, description = "Token limit reached or invalid name"),
-    )
+    ),
+    request_body = ApplicationCreate
 )]
 #[post("")]
 async fn create(

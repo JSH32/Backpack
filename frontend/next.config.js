@@ -32,6 +32,7 @@ const nextConfig = {
     return config
   },
   publicRuntimeConfig: {
+    apiRoot: API_URL,
     apiUrl: `${API_URL}/api`
   },
   serverRuntimeConfig: {

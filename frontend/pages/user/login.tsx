@@ -25,7 +25,6 @@ import {
 import { Page } from "layouts/Page"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
-import { passwordLogin } from "helpers/api"
 import store from "helpers/store"
 import { default as RouterLink } from "next/link"
 
@@ -33,6 +32,8 @@ import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
 
 import styles from "styles/login.module.scss"
+import { BasicAuthForm } from "@backpack-app/backpack-client"
+import api from "helpers/api"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
@@ -46,23 +47,29 @@ const Login: NextPage = () => {
             router.replace("/user/uploads")
     }, [])
 
-    const formSubmit = (data: any) => {
-        passwordLogin(data.auth, data.password)
-            .then(userInfo => {
-                store.setUserInfo(userInfo)
-                userInfo.verified ? router.replace("/user/uploads") : setPostLoginUnverifiedEmail(userInfo.email)
-                toast({
-                    title: "Logged in",
-                    description: `Welcome ${userInfo.username}`,
-                    status: "success",
-                    duration: 5000,
-                    isClosable: true
+    const formSubmit = (data: BasicAuthForm) => {
+        api.authentication.basic(data)
+            .then(tokenRes => {
+                localStorage.setItem("token", tokenRes.token)
+                api.user.info().then(userInfo => {
+                    store.setUserInfo(userInfo)
+                    userInfo.verified 
+                        ? router.replace("/user/uploads") 
+                        : setPostLoginUnverifiedEmail(userInfo.email)
+
+                    toast({
+                        title: "Logged in",
+                        description: `Welcome ${userInfo.username}`,
+                        status: "success",
+                        duration: 5000,
+                        isClosable: true
+                    })
                 })
             })
             .catch(error => {
                 toast({
                     title: "Authentication Error",
-                    description: error.response.data.message,
+                    description: error.body.message,
                     status: "error",
                     duration: 5000,
                     isClosable: true
@@ -108,7 +115,7 @@ const Login: NextPage = () => {
                         <chakra.span>or</chakra.span>
                         <Divider borderColor="white.500" />
                     </Box>
-                    <form onSubmit={handleSubmit(formSubmit)}>
+                    <form onSubmit={handleSubmit(formSubmit as any)}>
                         <Stack spacing={5}>
                             <Stack spacing={2}>
                                 <FormControl>

@@ -1,5 +1,4 @@
 import * as React from "react"
-import { userCreate } from "helpers/api"
 import { default as RouterLink } from "next/link"
 import { useForm } from "react-hook-form"
 import { Page } from "layouts/Page"
@@ -30,9 +29,11 @@ import { VerificationMessage } from "components/VerificationMessage"
 import { NextPage } from "next"
 import { useRouter } from "next/router"
 import { useAppInfo } from "helpers/info"
+import { UserCreateForm, UserService } from "@backpack-app/backpack-client"
+import api from "helpers/api"
 
 const UserCreate: NextPage = () => {
-    const [emailPostSignup, setEmailPostSignup] = React.useState(null)
+    const [emailPostSignup, setEmailPostSignup] = React.useState<string | null>(null)
     const [showPassword, setShowPassword] = React.useState(false)
 
     const { register, handleSubmit } = useForm()
@@ -40,8 +41,8 @@ const UserCreate: NextPage = () => {
     const router = useRouter()
     const appInfo = useAppInfo()
     
-    const formSubmit = (data: any) => {
-        userCreate(data.username, data.email, data.password, data.registrationKey)
+    const formSubmit = (data: UserCreateForm) => {
+        api.user.create(data)
             .then(() => {
                 if (appInfo?.smtp)
                     setEmailPostSignup(data.email)
@@ -58,7 +59,7 @@ const UserCreate: NextPage = () => {
             })
             .catch(error => toast({
                 title: "Error",
-                description: error.response.data.message,
+                description: error.body.message,
                 status: "error",
                 duration: 5000,
                 isClosable: true
@@ -86,7 +87,7 @@ const UserCreate: NextPage = () => {
                     boxShadow="lg"
                     w={["full", 400]}
                     p={8}>
-                    <form onSubmit={handleSubmit(formSubmit)}>
+                    <form onSubmit={handleSubmit(formSubmit as any)}>
                         <Stack spacing={5}>
                             <Stack spacing={2}>
                                 <FormControl isRequired>

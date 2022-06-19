@@ -1,5 +1,4 @@
 import { EmailIcon } from "@chakra-ui/icons"
-import { resendCode } from "helpers/api"
 import * as React from "react"
 
 import {
@@ -11,16 +10,17 @@ import {
   useToast
 } from "@chakra-ui/react"
 import { Page } from "layouts/Page"
+import api from "helpers/api"
 
 export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
   const toast = useToast()
 
   const resendEmail = React.useCallback(() => {
-    resendCode()
+    api.user.resendVerify()
       .then(res =>
         toast({
           title: "Email resent",
-          description: res.data.message,
+          description: res.message,
           status: "success",
           duration: 5000,
           isClosable: true
@@ -29,7 +29,7 @@ export const VerificationMessage: React.FC<{ email: string }> = ({ email }) => {
       .catch(error =>
         toast({
           title: "Error",
-          description: error.response.data.message,
+          description: error.body.message,
           status: "error",
           duration: 5000,
           isClosable: true

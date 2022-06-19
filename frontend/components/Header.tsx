@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite"
 import * as React from "react"
 import Router from "next/router"
 import store from "helpers/store"
-import { logout } from "helpers/api"
 
 import SunIcon from "/assets/icons/sun.svg"
 import MoonIcon from "/assets/icons/moon.svg"
@@ -65,10 +64,9 @@ const Header: React.FC = () => {
 
   const User = observer(() => {
     const onLogout = async () => {
-      logout().then(() => {
-        store.setUserInfo()
-        Router.push("/")
-      })
+      localStorage.removeItem("token")
+      store.setUserInfo(undefined)
+      Router.push("/")
     }
 
     const userData = toJS(store.userData)

@@ -22,7 +22,6 @@ import {
     ListItem
 } from "@chakra-ui/react"
 
-import { updateSettings } from "helpers/api"
 import { observer } from "mobx-react-lite"
 import { useForm } from "react-hook-form"
 import { toJS } from "mobx"
@@ -31,6 +30,7 @@ import {
     ProfileTab, 
     SettingsLayout 
 } from "layouts/SettingsLayout"
+import api from "helpers/api"
 
 const Profile: NextPage = observer(() => {
     const changeForm = useForm()
@@ -62,7 +62,7 @@ const Profile: NextPage = observer(() => {
                 <ModalOverlay />
                 <ModalContent>
                     <form onSubmit={finalSubmitForm.handleSubmit(form => {
-                        updateSettings(newData, form.password)
+                        api.user.settings({ ...newData, currentPassword: form.password })
                             .then(newData => {
                                 store.setUserInfo(newData)
                                 toast({
@@ -76,7 +76,7 @@ const Profile: NextPage = observer(() => {
                             .catch(error => {
                                 toast({
                                     title: "Problem changing settings",
-                                    description: error.response.data.message,
+                                    description: error.body.message,
                                     status: "error",
                                     duration: 5000,
                                     isClosable: true

@@ -347,7 +347,6 @@ async fn create(
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     security(("apiKey" = [])),
-    request_body = UserCreateForm,
 )]
 #[patch("/verify/resend")]
 async fn resend_verify(

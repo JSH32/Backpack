@@ -34,13 +34,6 @@ import {
 
 import type { NextPage } from "next"
 import { Authenticated } from "components/Authenticated"
-import {
-  applicationCreate,
-  ApplicationData,
-  getAllApplications,
-  getApplicationToken,
-  deleteApplication
-} from "helpers/api"
 import { Page } from "layouts/Page"
 import { useForm } from "react-hook-form"
 import { DataList, DataListCell, DataListHeader, DataListRow } from "components/DataList"
@@ -51,6 +44,8 @@ import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
 import { timeAgo, copyText } from "helpers/util"
+import { ApplicationData } from "@backpack-app/backpack-client"
+import api from "helpers/api"
 
 const Tokens: NextPage = () => {
   const toast = useToast()
@@ -60,7 +55,7 @@ const Tokens: NextPage = () => {
   const [loadingTokens, setLoadingTokens] = React.useState(true)
 
   const onDeleteApplication = (id: string) => {
-    deleteApplication(id)
+    api.application.delete(id)
       .then(() => {
         setApplications(applications.filter((app) => app.id !== id))
         toast({
@@ -71,10 +66,10 @@ const Tokens: NextPage = () => {
           isClosable: true
         })
       })
-      .catch(err => {
+      .catch(error => {
         toast({
           title: "Error",
-          description: err.response.data.message,
+          description: error.body.message,
           status: "error",
           duration: 5000,
           isClosable: true
@@ -83,7 +78,7 @@ const Tokens: NextPage = () => {
   }
 
   const onCopyToken = React.useCallback((id: string) => {
-    getApplicationToken(id)
+    api.application.token(id)
       .then(res => {
         copyText(res.token)
         toast({
@@ -97,7 +92,7 @@ const Tokens: NextPage = () => {
       .catch(err => {
         toast({
           title: "Error",
-          description: err.response.data.message,
+          description: err.body.message,
           status: "error",
           duration: 5000,
           isClosable: true
@@ -106,7 +101,8 @@ const Tokens: NextPage = () => {
   }, [])
 
   const createApplication = React.useCallback((form: any) => {
-    applicationCreate(form.name)
+    console.log(form)
+    api.application.create(form)
       .then(res => {
         toast({
           title: "Success",
@@ -118,10 +114,10 @@ const Tokens: NextPage = () => {
         closeForm()
         setApplications(applications.concat(res))
       })
-      .catch(err => {
+      .catch(error => {
         toast({
           title: "Error",
-          description: err.response.data.message,
+          description: error.body.message,
           status: "error",
           duration: 5000,
           isClosable: true
@@ -135,7 +131,7 @@ const Tokens: NextPage = () => {
   }, [tokenForm.reset])
 
   React.useEffect(() => {
-    getAllApplications()
+    api.application.list()
       .then(data => {
         setApplications(data)
         setLoadingTokens(false)
@@ -169,7 +165,7 @@ const Tokens: NextPage = () => {
                 h="60px"
                 zIndex={4}>
                 <Icon w={5} h={5} as={PlusIcon} />
-              </Button>
+              </Button> 
               <Modal isOpen={isOpen} onClose={closeForm}>
                 <ModalOverlay />
                 <ModalContent>

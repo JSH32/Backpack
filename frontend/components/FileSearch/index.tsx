@@ -1,6 +1,5 @@
 /* eslint-disable react/no-children-prop */
 import * as React from "react"
-import { FileData, SearchResult } from "helpers/api"
 import { SearchIcon } from "@chakra-ui/icons"
 import { useForm } from "react-hook-form"
 import { Pagination } from "../Pagination"
@@ -16,14 +15,15 @@ import {
   Spinner,
   Text
 } from "@chakra-ui/react"
+import { FileData, FilePage } from "@backpack-app/backpack-client"
 
 export const FileSearch: React.FC<{
-  onSearch: (page: number, query?: string) => Promise<SearchResult<FileData>>
+  onSearch: (page: number, query?: string) => Promise<FilePage>
   onDelete: (fileId: string) => Promise<void>
   onFileDetails: (fileId: string) => void
 }> = ({ onSearch, onDelete, onFileDetails }) => {
   const [searchResult, setSearchResult] =
-    React.useState<SearchResult<FileData> | null>(null)
+    React.useState<FilePage | null>(null)
 
   const [queryString, setQueryString] = React.useState<string>("")
   const [currentPage, setCurrentPage] = React.useState(1)

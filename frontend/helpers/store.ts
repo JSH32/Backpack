@@ -1,12 +1,13 @@
-import { getUserData, UserData } from "helpers/api"
+import { UserData } from "@backpack-app/backpack-client"
 import { action, makeAutoObservable, observable } from "mobx"
+import api from "helpers/api"
 
 class Store {
     @observable userData: UserData | undefined = undefined
 
     constructor() {
         makeAutoObservable(this)
-        getUserData()
+        api.user.info()
             .then(this.setUserInfo)
             .catch(() => this.setUserInfo(undefined))
     }

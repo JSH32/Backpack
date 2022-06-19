@@ -13,7 +13,6 @@ import {
     InputRightElement
 } from "@chakra-ui/react"
 
-import { updateSettings } from "helpers/api"
 import { useForm } from "react-hook-form"
 
 import {
@@ -25,6 +24,7 @@ import {
     ViewIcon, 
     ViewOffIcon 
 } from "@chakra-ui/icons"
+import api from "helpers/api"
 
 const ViewButton: React.FC<{
     active: boolean,
@@ -65,7 +65,10 @@ const Password: NextPage = () => {
         }
 
         setLoading(true)
-        updateSettings({ newPassword: form.newPassword }, form.currentPassword)
+        api.user.settings({ 
+            newPassword: form.newPassword, 
+            currentPassword: form.currentPassword 
+        })
             .then(() => {
                 toast({
                     title: "Success",
@@ -80,7 +83,7 @@ const Password: NextPage = () => {
             .catch(error => {
                 toast({
                     title: "Error",
-                    description: error.response.data.message,
+                    description: error.body.message,
                     status: "error",
                     duration: 5000,
                     isClosable: true

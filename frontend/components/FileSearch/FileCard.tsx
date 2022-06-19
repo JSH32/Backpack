@@ -1,9 +1,9 @@
 import { Box, Button, Flex, Heading, HStack, Text, Tooltip, useColorModeValue, Icon, Image } from "@chakra-ui/react"
-import { FileData } from "helpers/api"
 import { dateToString, getExtension, isExtImage } from "helpers/util"
 import * as React from "react"
 import InfoIcon from "assets/icons/info.svg"
 import DeleteIcon from "assets/icons/trash.svg"
+import { FileData } from "@backpack-app/backpack-client"
 
 const FileCard: React.FC<{ 
     file: FileData, 
@@ -69,7 +69,7 @@ const FileCard: React.FC<{
                     </Tooltip>
                 </HStack>
             </Flex>
-            <Text color="gray.500">{dateToString(file.uploaded)}</Text>
+            <Text color="gray.500">{dateToString(new Date(file.uploaded))}</Text>
         </Box>
     </Box>
 }

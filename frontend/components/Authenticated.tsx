@@ -1,4 +1,3 @@
-import { getUserData, UserData } from "helpers/api"
 import store from "helpers/store"
 import { observe } from "mobx"
 import Router from "next/router"
@@ -6,6 +5,8 @@ import * as React from "react"
 import { Page } from "layouts/Page"
 import { VerificationMessage } from "./VerificationMessage"
 import { useAppInfo } from "helpers/info"
+import { UserData } from "@backpack-app/backpack-client"
+import api from "helpers/api"
 
 export const Authenticated: React.FC<{
     allowUnverified?: boolean,
@@ -17,9 +18,15 @@ export const Authenticated: React.FC<{
     React.useEffect(() => {
         // Since this might be loaded on initial page load MobX async constructor might not be done running
         // Make the HTTP request just in case this is the initial load
-        getUserData()
-            .then(setUserData)
-            .catch(() => Router.replace("/user/login"))
+        api.user.info()
+            .then(data => {
+                console.log(data)
+                setUserData(data)
+            })
+            .catch(err => {
+                console.log(err)
+                Router.replace("/user/login")
+            })
 
         // Watch changes so we can reload this componment and re-evaluate if we should lock the route
         return observe(store, "userData", data => setUserData(data.newValue as UserData))

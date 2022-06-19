@@ -1,0 +1,22 @@
+{
+  "name": "@backpack-app/backpack-client",
+  "version": "0.1.0-dev.1",
+  "description": "Generated backpack API client",
+  "scripts": {
+    "generate": "openapi --input http://localhost:3000/api/docs/openapi.json --output ./generated --client axios --name BackpackClient",
+    "build": "tsc"
+  },
+  "author": "JSH32",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "axios": "^0.27.2",
+    "form-data": "^4.0.0",
+    "typescript": "^4.7.4"
+  },
+  "types": "build/index.d.ts",
+  "main": "build/index.js",
+  "dependencies": {
+    "@backpack-app/openapi-typescript-codegen": "^0.23.0"
+  }
+}
