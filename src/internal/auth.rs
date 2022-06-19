@@ -95,23 +95,19 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
 }
 
 fn get_token(req: &HttpRequest) -> Option<String> {
-    match req.cookie("auth-token") {
-        Some(cookie) => Some(cookie.value().to_string()),
-        // Token could not be found
-        None => match req.headers().get("Authorization") {
-            Some(header) => match header.to_str() {
-                Ok(value) => {
-                    // Auth type must be bearer
-                    if value.starts_with("Bearer ") {
-                        Some(value.trim_start_matches("Bearer ").to_string())
-                    } else {
-                        None
-                    }
+    match req.headers().get("Authorization") {
+        Some(header) => match header.to_str() {
+            Ok(value) => {
+                // Auth type must be bearer
+                if value.starts_with("Bearer ") {
+                    Some(value.trim_start_matches("Bearer ").to_string())
+                } else {
+                    None
                 }
-                Err(_) => None,
-            },
-            None => None,
+            }
+            Err(_) => None,
         },
+        None => None,
     }
 }
 
