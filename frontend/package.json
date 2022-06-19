@@ -6,10 +6,10 @@
     "dev": "NODE_ENV=development dotenv -- next dev",
     "build": "NODE_ENV=production next build",
     "start": "NODE_ENV=production next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generateClient": "find ./client ! -name 'README.md' -type f -exec rm -f {} + && openapi --input http://localhost:3000/api/docs/openapi.json --output ./client --client axios --name BackpackClient"
   },
   "dependencies": {
-    "@backpack-app/backpack-client": "^0.1.0-dev.1",
     "@chakra-ui/icons": "^2.0.2",
     "@chakra-ui/react": "^2.2.1",
     "@chakra-ui/system": "^2.1.3",
@@ -37,6 +37,9 @@
     "@typescript-eslint/parser": "^5.27.1",
     "eslint": "^8.17.0",
     "eslint-config-next": "12.1.6",
+    "i": "^0.3.7",
+    "npm": "^8.12.2",
+    "@backpack-app/openapi-typescript-codegen": "^0.23.1",
     "typescript": "4.7.3"
   }
 }

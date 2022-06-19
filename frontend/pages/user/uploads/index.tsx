@@ -73,9 +73,6 @@ const UploadFiles: React.FC = () => {
         for (const file of event.target.files) {
             setCurrentUploading(count => count + 1)
             uploadPromises.push(api.file.upload({ uploadFile: file })
-                .catch(err => {
-                    console.log(err)
-                })
                 .finally(() => {
                     setCurrentUploading(count => count - 1)
                 }))

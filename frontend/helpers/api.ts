@@ -1,4 +1,4 @@
-import { BackpackClient } from "@backpack-app/backpack-client"
+import { BackpackClient } from "@/client"
 import getConfig from "next/config";
 
 const { publicRuntimeConfig } = getConfig()

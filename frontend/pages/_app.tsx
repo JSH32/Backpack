@@ -6,7 +6,7 @@ import App, { AppContext } from "next/app"
 import { AppInfoContext } from "helpers/info"
 import axios from "axios"
 import getConfig from "next/config"
-import { AppInfo } from "@backpack-app/backpack-client"
+import { AppInfo } from "@/client"
 import api from "helpers/api"
 
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig()

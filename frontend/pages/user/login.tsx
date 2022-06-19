@@ -32,7 +32,7 @@ import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
 
 import styles from "styles/login.module.scss"
-import { BasicAuthForm } from "@backpack-app/backpack-client"
+import { BasicAuthForm } from "@/client"
 import api from "helpers/api"
 
 const Login: NextPage = () => {

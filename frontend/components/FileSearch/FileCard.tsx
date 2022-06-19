@@ -3,7 +3,7 @@ import { dateToString, getExtension, isExtImage } from "helpers/util"
 import * as React from "react"
 import InfoIcon from "assets/icons/info.svg"
 import DeleteIcon from "assets/icons/trash.svg"
-import { FileData } from "@backpack-app/backpack-client"
+import { FileData } from "@/client"
 
 const FileCard: React.FC<{ 
     file: FileData, 

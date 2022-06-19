@@ -15,7 +15,7 @@ import {
   Spinner,
   Text
 } from "@chakra-ui/react"
-import { FileData, FilePage } from "@backpack-app/backpack-client"
+import { FileData, FilePage } from "@/client"
 
 export const FileSearch: React.FC<{
   onSearch: (page: number, query?: string) => Promise<FilePage>

@@ -1,4 +1,4 @@
-import { UserData } from "@backpack-app/backpack-client"
+import { UserData } from "@/client"
 import { action, makeAutoObservable, observable } from "mobx"
 import api from "helpers/api"
 

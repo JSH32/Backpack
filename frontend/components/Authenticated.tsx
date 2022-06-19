@@ -5,7 +5,7 @@ import * as React from "react"
 import { Page } from "layouts/Page"
 import { VerificationMessage } from "./VerificationMessage"
 import { useAppInfo } from "helpers/info"
-import { UserData } from "@backpack-app/backpack-client"
+import { UserData } from "@/client"
 import api from "helpers/api"
 
 export const Authenticated: React.FC<{
@@ -20,11 +20,9 @@ export const Authenticated: React.FC<{
         // Make the HTTP request just in case this is the initial load
         api.user.info()
             .then(data => {
-                console.log(data)
                 setUserData(data)
             })
             .catch(err => {
-                console.log(err)
                 Router.replace("/user/login")
             })
 
