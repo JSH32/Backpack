@@ -7,19 +7,18 @@ use crate::database::entity::applications;
 #[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationData {
-    pub name: String,
     pub id: String,
+    pub name: String,
 
     /// Last time the application was used for a request
-    #[component(value_type = f64, read_only)]
+    #[component(value_type = String)]
     pub last_accessed: DateTimeUtc,
 
-    #[component(read_only)]
+    /// User ID who owns the application
     pub user_id: String,
 
     /// Only sent when the token is originally created
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[component(read_only)]
     pub token: Option<String>,
 }
 

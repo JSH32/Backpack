@@ -4,8 +4,8 @@
 
 export type UserCreateForm = {
     username: string;
-    password: string;
     email: string;
     registrationKey?: string;
+    password: string;
 };
 

@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 export type BasicAuthForm = {
-    password: string;
     auth: string;
+    password: string;
 };
 

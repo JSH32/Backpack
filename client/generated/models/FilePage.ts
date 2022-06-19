@@ -5,8 +5,8 @@
 import type { FileData } from './FileData';
 
 export type FilePage = {
-    page: number;
     pages: number;
+    page: number;
     list: Array<FileData>;
 };
 

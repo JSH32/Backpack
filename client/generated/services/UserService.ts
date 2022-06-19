@@ -15,7 +15,6 @@ export class UserService {
 
     /**
      * Get current user information
-     * Get current user information
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
      * - Application token allowed: `true`
@@ -31,7 +30,6 @@ export class UserService {
     }
 
     /**
-     * Create a new user
      * Create a new user
      *
      * @param requestBody
@@ -50,7 +48,6 @@ export class UserService {
     }
 
     /**
-     * Change user settings
      * Change user settings
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
@@ -73,7 +70,6 @@ export class UserService {
 
     /**
      * Resend a verification code to the email
-     * Resend a verification code to the email
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
      * - Application token allowed: `false`
@@ -95,7 +91,6 @@ export class UserService {
     }
 
     /**
-     * Verify using a verification code
      * Verify using a verification code
      *
      * This will be disabled if `smtp` is disabled in server settings
