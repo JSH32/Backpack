@@ -6,6 +6,7 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 
 use crate::{
     database::entity::{applications, users, verifications},
@@ -60,6 +61,16 @@ pub struct Auth<
 > {
     pub user: users::Model,
     _r: std::marker::PhantomData<R>,
+}
+
+impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> Deref
+    for Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION>
+{
+    type Target = users::Model;
+
+    fn deref(&self) -> &users::Model {
+        &self.user
+    }
 }
 
 impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromRequest

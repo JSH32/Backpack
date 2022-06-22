@@ -40,8 +40,8 @@ pub fn get_routes() -> Scope {
     security(("apiKey" = []))
 )]
 #[get("")]
-async fn info(auth: Auth<auth_role::User, true, true>) -> impl Responder {
-    HttpResponse::Ok().json(UserData::from(auth.user))
+async fn info(user: Auth<auth_role::User, true, true>) -> impl Responder {
+    HttpResponse::Ok().json(UserData::from(user.user))
 }
 
 /// Change user settings
@@ -61,7 +61,7 @@ async fn info(auth: Auth<auth_role::User, true, true>) -> impl Responder {
 )]
 #[put("/settings")]
 async fn settings(
-    auth: Auth<auth_role::User, true, false>,
+    user: Auth<auth_role::User, true, false>,
     state: web::Data<State>,
     form: web::Json<UpdateUserSettings>,
 ) -> Response<impl Responder> {
@@ -69,7 +69,7 @@ async fn settings(
     if !Argon2::default()
         .verify_password(
             form.current_password.as_bytes(),
-            &PasswordHash::new(&auth.user.password)?,
+            &PasswordHash::new(&user.password)?,
         )
         .is_ok()
     {
@@ -140,7 +140,7 @@ async fn settings(
     }
 
     let mut update_model = users::ActiveModel {
-        id: Set(auth.user.id.to_owned()),
+        id: Set(user.id.to_owned()),
         ..Default::default()
     };
 
@@ -172,7 +172,7 @@ async fn settings(
         let random_code = random_string(72);
 
         let success = verifications::ActiveModel {
-            user_id: Set(auth.user.id.to_owned()),
+            user_id: Set(user.id.to_owned()),
             code: Set(random_code.to_owned()),
             ..Default::default()
         }
@@ -192,7 +192,7 @@ async fn settings(
 
     // Send updated user data in case of data change
     Ok(HttpResponse::Ok().json(UserData::from(
-        users::Entity::find_by_id(auth.user.id)
+        users::Entity::find_by_id(user.id.to_owned())
             .one(&state.database)
             .await?
             .ok_or(DbErr::Custom(
@@ -351,18 +351,18 @@ async fn create(
 #[patch("/verify/resend")]
 async fn resend_verify(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, true, false>,
+    user: Auth<auth_role::User, true, false>,
 ) -> Response<impl Responder> {
     if let None = state.smtp_client {
         return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
     }
 
-    if auth.user.verified {
+    if user.verified {
         return MessageResponse::ok(StatusCode::CONFLICT, "You are already verified");
     }
 
     let mut verification_model = verifications::ActiveModel {
-        user_id: Set(auth.user.id.to_owned()),
+        user_id: Set(user.id.to_owned()),
         ..Default::default()
     };
 
@@ -377,7 +377,7 @@ async fn resend_verify(
     let email = verification_email(
         &state.client_url.to_string(),
         &smtp.1,
-        &auth.user.email,
+        &user.email,
         &random_code,
     );
 
@@ -388,7 +388,7 @@ async fn resend_verify(
 
     MessageResponse::ok(
         StatusCode::OK,
-        &format!("Verification email resent to {}", auth.user.email),
+        &format!("Verification email resent to {}", user.email),
     )
 }
 

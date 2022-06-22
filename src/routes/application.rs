@@ -39,11 +39,10 @@ pub fn get_routes() -> Scope {
 async fn token(
     state: web::Data<State>,
     application_id: web::Path<String>,
-    auth: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
     Ok(
-        match auth
-            .user
+        match user
             .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)
@@ -51,7 +50,7 @@ async fn token(
         {
             Some(v) => HttpResponse::Ok().json(TokenResponse {
                 token: create_jwt_string(
-                    &auth.user.id,
+                    &user.id,
                     Some(v.id),
                     &state
                         .api_url
@@ -79,10 +78,9 @@ async fn token(
 #[get("")]
 async fn list(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User, false, false>,
 ) -> Response<impl Responder> {
-    let applications: Vec<ApplicationData> = auth
-        .user
+    let applications: Vec<ApplicationData> = user
         .find_related(applications::Entity)
         .all(&state.database)
         .await?
@@ -108,12 +106,11 @@ async fn list(
 #[get("/{application_id}")]
 async fn info(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User, false, false>,
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
-        match auth
-            .user
+        match user
             .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.as_str()))
             .one(&state.database)
@@ -141,11 +138,10 @@ async fn info(
 #[post("")]
 async fn create(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User, false, false>,
     form: web::Json<ApplicationCreate>,
 ) -> Response<impl Responder> {
-    let application_count = auth
-        .user
+    let application_count = user
         .find_related(applications::Entity)
         .count(&state.database)
         .await?;
@@ -166,8 +162,7 @@ async fn create(
         );
     }
 
-    if let Some(_) = auth
-        .user
+    if let Some(_) = user
         .find_related(applications::Entity)
         .filter(applications::Column::Name.eq(form.name.to_owned()))
         .one(&state.database)
@@ -182,7 +177,7 @@ async fn create(
     // Create an application token and send JWT to user
     let mut token_data = ApplicationData::from(
         applications::ActiveModel {
-            user_id: Set(auth.user.id.to_owned()),
+            user_id: Set(user.id.to_owned()),
             name: Set(form.name.to_owned()),
             ..Default::default()
         }
@@ -191,7 +186,7 @@ async fn create(
     );
 
     token_data.token = Some(create_jwt_string(
-        &auth.user.id,
+        &user.id,
         Some(token_data.id.clone()),
         &state
             .api_url
@@ -219,12 +214,11 @@ async fn create(
 #[delete("/{application_id}")]
 async fn delete(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User, false, false>,
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
-        match auth
-            .user
+        match user
             .find_related(applications::Entity)
             .filter(applications::Column::Id.eq(application_id.to_string()))
             .one(&state.database)

@@ -53,7 +53,7 @@ pub fn get_routes() -> Scope {
 #[post("")]
 async fn upload(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, false, true>,
     file: Multipart<UploadFile>,
 ) -> Response<impl Responder> {
     if file.upload_file.bytes.len() > state.file_size_limit {
@@ -101,7 +101,7 @@ async fn upload(
     }
 
     let file_model = files::ActiveModel {
-        uploader: Set(auth.user.id.to_owned()),
+        uploader: Set(user.id.to_owned()),
         name: Set(filename.to_owned()),
         original_name: Set(file.upload_file.name.to_owned()),
         hash: Set(hash.to_owned()),
@@ -161,7 +161,7 @@ async fn upload(
 #[get("/stats")]
 async fn stats(
     state: web::Data<State>,
-    auth: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, false, true>,
 ) -> Response<impl Responder> {
     // Im not using an ORM for this query
     let usage = state
@@ -169,7 +169,7 @@ async fn stats(
         .query_one(Statement::from_sql_and_values(
             DbBackend::Postgres,
             r#"SELECT COALESCE(CAST(SUM(size) AS BIGINT), 0) FROM files WHERE uploader = $1"#,
-            vec![auth.user.id.into()],
+            vec![user.id.clone().into()],
         ))
         .await?;
 
@@ -203,7 +203,7 @@ async fn stats(
 async fn list(
     state: web::Data<State>,
     page_number: web::Path<usize>,
-    auth: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, false, true>,
     query_params: web::Query<HashMap<String, String>>,
 ) -> Response<impl Responder> {
     let query = match query_params.get("query") {
@@ -212,7 +212,7 @@ async fn list(
     };
 
     let paginator = files::Entity::find()
-        .filter(files::Column::Uploader.eq(auth.user.id.to_owned()))
+        .filter(files::Column::Uploader.eq(user.id.to_owned()))
         .filter(query)
         .order_by_desc(files::Column::Uploaded)
         .paginate(&state.database, 25);
@@ -262,7 +262,7 @@ async fn list(
 async fn info(
     state: web::Data<State>,
     file_id: web::Path<String>,
-    auth: Auth<auth_role::User, true, true>,
+    user: Auth<auth_role::User, true, true>,
 ) -> Response<impl Responder> {
     Ok(
         match files::Entity::find_by_id(file_id.to_string())
@@ -270,7 +270,7 @@ async fn info(
             .await?
         {
             Some(v) => {
-                if v.uploader != auth.user.id {
+                if v.uploader != user.id {
                     MessageResponse::new(
                         StatusCode::FORBIDDEN,
                         "You are not allowed to access this file",
@@ -313,7 +313,7 @@ async fn info(
 async fn delete_file(
     state: web::Data<State>,
     file_id: web::Path<String>,
-    auth: Auth<auth_role::User, true, true>,
+    user: Auth<auth_role::User, true, true>,
 ) -> Response<impl Responder> {
     Ok(
         match files::Entity::find_by_id(file_id.to_string())
@@ -321,7 +321,7 @@ async fn delete_file(
             .await?
         {
             Some(v) => {
-                if v.uploader != auth.user.id {
+                if v.uploader != user.id {
                     MessageResponse::new(
                         StatusCode::FORBIDDEN,
                         "You are not allowed to access this file",

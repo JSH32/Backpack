@@ -28,12 +28,12 @@ pub fn get_routes() -> Scope {
 #[post("")]
 async fn create(
     state: web::Data<State>,
-    auth: Auth<auth_role::Admin>,
+    user: Auth<auth_role::Admin>,
     query: web::Query<RegistrationKeyParams>,
 ) -> Response<impl Responder> {
     Ok(HttpResponse::Ok().json(RegistrationKeyData::from(
         registration_keys::ActiveModel {
-            iss_user: Set(auth.user.id.to_owned()),
+            iss_user: Set(user.id.to_owned()),
             uses_left: Set(query.max_uses.unwrap_or(1)),
             ..Default::default()
         }
@@ -46,7 +46,7 @@ async fn create(
 async fn list(
     state: web::Data<State>,
     page_number: web::Path<usize>,
-    _auth: Auth<auth_role::Admin>,
+    _user: Auth<auth_role::Admin>,
 ) -> Response<impl Responder> {
     let paginator = registration_keys::Entity::find().paginate(&state.database, 25);
 
@@ -71,7 +71,7 @@ async fn list(
 async fn get_one(
     state: web::Data<State>,
     registration_id: web::Path<String>,
-    _auth: Auth<auth_role::Admin>,
+    _user: Auth<auth_role::Admin>,
 ) -> Response<impl Responder> {
     Ok(
         match registration_keys::Entity::find_by_id(registration_id.to_string())
@@ -89,7 +89,7 @@ async fn get_one(
 async fn delete(
     state: web::Data<State>,
     registration_id: web::Path<String>,
-    _auth: Auth<auth_role::Admin>,
+    _user: Auth<auth_role::Admin>,
 ) -> Response<impl Responder> {
     let result = registration_keys::Entity::delete_many()
         .filter(registration_keys::Column::Id.eq(registration_id.to_string()))
