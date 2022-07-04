@@ -114,6 +114,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-multipart-extract"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4ce684761f95be9da2329511cdf3ff7210c0710d76e40b4e1674f40d34b046b"
+dependencies = [
+ "actix-multipart",
+ "actix-multipart-extract-derive",
+ "actix-web",
+ "futures",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "actix-multipart-extract-derive"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7213aba328e560426e384f8a2512e431ddcb572fe44660eba93af5015c65826a"
+dependencies = [
+ "parse-size",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "actix-router"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -375,6 +403,7 @@ dependencies = [
  "actix-files",
  "actix-http",
  "actix-multipart",
+ "actix-multipart-extract",
  "actix-web",
  "anyhow",
  "argon2",
@@ -2012,6 +2041,12 @@ dependencies = [
  "smallvec",
  "windows-sys",
 ]
+
+[[package]]
+name = "parse-size"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "944553dd59c802559559161f9816429058b869003836120e262e8caec061b7ae"
 
 [[package]]
 name = "password-hash"

@@ -1,9 +1,6 @@
-use crate::{
-    database::entity::files,
-    docs::ApiDoc,
-    internal::{multipart::MultipartConfig, GIT_VERSION},
-};
+use crate::{database::entity::files, docs::ApiDoc, internal::GIT_VERSION};
 use actix_http::Uri;
+use actix_multipart_extract::MultipartConfig;
 use clap::Parser;
 use colored::*;
 use config::StorageConfig;
@@ -214,9 +211,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::JsonConfig::default().error_handler(|_, _| {
                 actix_web::Error::from(models::MessageResponse::bad_request())
             }))
-            .app_data(MultipartConfig::default().set_error_handler(|_| {
-                actix_web::Error::from(models::MessageResponse::bad_request())
-            }))
+            .app_data(
+                MultipartConfig::default()
+                    .set_error_handler(|_| models::MessageResponse::bad_request().http_response()),
+            )
             .default_service(web::to(move |req: HttpRequest| {
                 let storage_path = base_storage_path.clone();
                 async move {

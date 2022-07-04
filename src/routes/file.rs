@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use sea_orm::{
@@ -18,7 +19,6 @@ use crate::{
     internal::{
         auth::{auth_role, Auth},
         file::{get_thumbnail_image, IMAGE_EXTS},
-        multipart::Multipart,
         response::{self, Response},
         validate_paginate,
     },

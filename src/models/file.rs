@@ -3,12 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use actix_multipart_extract::{File, MultipartForm};
 use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
 use utoipa::Component;
 
-use crate::internal::{file::IMAGE_EXTS, multipart::File};
+use crate::internal::file::IMAGE_EXTS;
 
 use crate::database::entity::files;
 
@@ -84,7 +85,7 @@ pub struct FileStats {
 }
 
 /// Upload a file
-#[derive(Deserialize, Component, Debug)]
+#[derive(Deserialize, MultipartForm, Component, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadFile {
     #[component(value_type = String, format = ComponentFormat::Binary)]
