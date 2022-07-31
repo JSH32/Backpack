@@ -14,19 +14,28 @@ use crate::{
     state::State,
 };
 
+/// Data stored in JWT token.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JWTClaims {
-    iss: String, // Issuer
-    iat: i64,    // Issued at
+struct Claims {
+    /// Issuer (the domain).
+    iss: String,
 
+    /// Issued at.
+    iat: i64,
+
+    /// Expiration date.
+    /// This should be [`None`] if `application_id` is [`Some`].
     #[serde(skip_serializing_if = "Option::is_none")]
-    exp: Option<i64>, // Expire
+    exp: Option<i64>,
 
-    user_id: String, // User ID the token refers to
+    /// Subject, user ID the token refers to.
+    sub: String,
 
+    /// ID of the Application.
+    /// This should be [`Some`] if the token was an application token.
     #[serde(skip_serializing_if = "Option::is_none")]
-    application_id: Option<String>, // Application ID, if the token was an application token
+    application_id: Option<String>,
 }
 
 /// TODO: Replace the use of this entirely with const_generics when possible
@@ -122,7 +131,8 @@ fn get_token(req: &HttpRequest) -> Option<String> {
     }
 }
 
-/// Get data from user based on request
+/// Get data from user based on request.
+/// If the authentication request failed this will return an [`actix_web::Error`].
 async fn get_auth_data(
     req: HttpRequest,
     allow_unverified: bool,
@@ -131,22 +141,25 @@ async fn get_auth_data(
 
     let jwt_token = get_token(&req).ok_or(Error::from(MessageResponse::unauthorized_error()))?;
 
+    let mut validation = Validation::default();
+    validation.required_spec_claims.remove("exp"); // Application tokens might not have expiration date.
+
     // Try to verify token
-    let claims = decode::<JWTClaims>(
+    let claims = decode::<Claims>(
         &jwt_token,
         &DecodingKey::from_secret(state.jwt_key.as_ref()),
-        &Validation::default(),
+        &validation,
     )
     .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?
     .claims;
 
-    let mut user = users::Entity::find_by_id(claims.user_id)
+    let mut user = users::Entity::find_by_id(claims.sub)
         .one(&state.database)
         .await
         .map_err(|_| Error::from(MessageResponse::unauthorized_error()))?
         .ok_or(Error::from(MessageResponse::unauthorized_error()))?;
 
-    // Block user out if unverified is false
+    // Error if user isn't verified and verification is required
     if state.smtp_client.is_some() && !user.verified && !allow_unverified {
         return Err(Error::from(MessageResponse::new(
             StatusCode::UNAUTHORIZED,
@@ -237,11 +250,11 @@ pub fn create_jwt_string(
     expiration: Option<i64>,
     key: &str,
 ) -> Result<String, jsonwebtoken::errors::Error> {
-    let claims = JWTClaims {
+    let claims = Claims {
         iss: issuer.into(),
         exp: expiration,
         iat: Utc::now().timestamp(),
-        user_id: user_id.to_string(),
+        sub: user_id.to_string(),
         application_id: application_id,
     };
 
