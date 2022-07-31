@@ -87,6 +87,23 @@ macro_rules! define_option {
 define_option!(VerifiedOpt, AllowUnverified, DenyUnverified);
 define_option!(ApplicationOpt, AllowApplication, DenyApplication);
 
+/// Actix parameter based middleware for authentication with options.
+///
+/// # Arguments
+///
+/// * `R` - The users role. Greater roles in the underlying enum of [`auth_role`] will access to lower role access level.
+/// * `VOpt` - Allow the user to be unverified. This is one of [`AllowUnverified`] or [`DenyVerified`]. This is deny by default.
+/// * `AOpt` - Allow the token to be from an application. This is one of [`AllowApplication`] or [`DenyApplication`]. This is deny by default.
+///
+/// # Examples
+///
+/// ```
+/// async fn route(
+///     user: Auth<auth_role::User, AllowUnverified, AllowApplication>
+/// ) -> Response<impl Responder> {
+///     "This will permit the user to be unverified and for the token to be an application token."
+/// }
+/// ```
 pub struct Auth<R: Role, VOpt: VerifiedOpt = DenyUnverified, AOpt: ApplicationOpt = DenyApplication>
 {
     pub user: users::Model,
