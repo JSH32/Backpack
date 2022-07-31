@@ -39,7 +39,7 @@ pub fn get_routes() -> Scope {
 async fn token(
     state: web::Data<State>,
     application_id: web::Path<String>,
-    user: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User>,
 ) -> Response<impl Responder> {
     Ok(
         match user
@@ -76,10 +76,7 @@ async fn token(
     responses((status = 200, body = [ApplicationData]))
 )]
 #[get("")]
-async fn list(
-    state: web::Data<State>,
-    user: Auth<auth_role::User, false, false>,
-) -> Response<impl Responder> {
+async fn list(state: web::Data<State>, user: Auth<auth_role::User>) -> Response<impl Responder> {
     let applications: Vec<ApplicationData> = user
         .find_related(applications::Entity)
         .all(&state.database)
@@ -106,7 +103,7 @@ async fn list(
 #[get("/{application_id}")]
 async fn info(
     state: web::Data<State>,
-    user: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User>,
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(
@@ -138,7 +135,7 @@ async fn info(
 #[post("")]
 async fn create(
     state: web::Data<State>,
-    user: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User>,
     form: web::Json<ApplicationCreate>,
 ) -> Response<impl Responder> {
     let application_count = user
@@ -214,7 +211,7 @@ async fn create(
 #[delete("/{application_id}")]
 async fn delete(
     state: web::Data<State>,
-    user: Auth<auth_role::User, false, false>,
+    user: Auth<auth_role::User>,
     application_id: web::Path<String>,
 ) -> Response<impl Responder> {
     Ok(

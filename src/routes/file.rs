@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use crate::{
     database::entity::files,
     internal::{
-        auth::{auth_role, Auth},
+        auth::{auth_role, AllowApplication, Auth, DenyUnverified},
         file::{get_thumbnail_image, IMAGE_EXTS},
         response::{self, Response},
         validate_paginate,
@@ -53,7 +53,7 @@ pub fn get_routes() -> Scope {
 #[post("")]
 async fn upload(
     state: web::Data<State>,
-    user: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
     file: Multipart<UploadFile>,
 ) -> Response<impl Responder> {
     if file.upload_file.bytes.len() > state.file_size_limit {
@@ -161,7 +161,7 @@ async fn upload(
 #[get("/stats")]
 async fn stats(
     state: web::Data<State>,
-    user: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> Response<impl Responder> {
     // Im not using an ORM for this query
     let usage = state
@@ -203,7 +203,7 @@ async fn stats(
 async fn list(
     state: web::Data<State>,
     page_number: web::Path<usize>,
-    user: Auth<auth_role::User, false, true>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
     query_params: web::Query<HashMap<String, String>>,
 ) -> Response<impl Responder> {
     let query = match query_params.get("query") {
@@ -262,7 +262,7 @@ async fn list(
 async fn info(
     state: web::Data<State>,
     file_id: web::Path<String>,
-    user: Auth<auth_role::User, true, true>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> Response<impl Responder> {
     Ok(
         match files::Entity::find_by_id(file_id.to_string())
@@ -313,7 +313,7 @@ async fn info(
 async fn delete_file(
     state: web::Data<State>,
     file_id: web::Path<String>,
-    user: Auth<auth_role::User, true, true>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> Response<impl Responder> {
     Ok(
         match files::Entity::find_by_id(file_id.to_string())

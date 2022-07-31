@@ -1,3 +1,9 @@
+//! Authentication logic using [`FromRequest`].
+//!
+//! TODO: Replace the use of traits used in generics entirely with const_generics when possible.
+//! Not currently possible due to a rust compiler bug in the nightly build.
+//! https://github.com/rust-lang/rust/issues/84737
+
 use actix_web::{http::StatusCode, web::Data, Error, FromRequest, HttpRequest};
 
 use chrono::Utc;
@@ -38,10 +44,6 @@ struct Claims {
     application_id: Option<String>,
 }
 
-/// TODO: Replace the use of this entirely with const_generics when possible
-/// Not currently possible due to a rust compiler bug in the nightly build
-///
-/// https://github.com/rust-lang/rust/issues/84737
 pub trait Role {
     const LEVEL: UserRole;
 }
@@ -63,18 +65,37 @@ pub mod auth_role {
     define_role!(Admin, UserRole::Admin);
 }
 
-pub struct Auth<
-    R: Role,
-    const ALLOW_UNVERIFIED: bool = false,
-    const ALLOW_APPLICATION: bool = false,
-> {
-    pub user: users::Model,
-    _r: std::marker::PhantomData<R>,
+/// Define an auth option which can be used in generic parameters.
+macro_rules! define_option {
+    ($option:ident, $allow_name:ident, $deny_name:ident) => {
+        pub trait $option {
+            const ALLOW: bool;
+        }
+
+        pub struct $allow_name;
+        impl $option for $allow_name {
+            const ALLOW: bool = true;
+        }
+
+        pub struct $deny_name;
+        impl $option for $deny_name {
+            const ALLOW: bool = false;
+        }
+    };
 }
 
-impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> Deref
-    for Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION>
+define_option!(VerifiedOpt, AllowUnverified, DenyUnverified);
+define_option!(ApplicationOpt, AllowApplication, DenyApplication);
+
+pub struct Auth<R: Role, VOpt: VerifiedOpt = DenyUnverified, AOpt: ApplicationOpt = DenyApplication>
 {
+    pub user: users::Model,
+    _r: std::marker::PhantomData<R>,
+    _v: std::marker::PhantomData<VOpt>,
+    _a: std::marker::PhantomData<AOpt>,
+}
+
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> Deref for Auth<R, VOpt, AOpt> {
     type Target = users::Model;
 
     fn deref(&self) -> &users::Model {
@@ -82,25 +103,18 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> Deref
     }
 }
 
-impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromRequest
-    for Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION>
-{
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> FromRequest for Auth<R, VOpt, AOpt> {
     type Error = Error;
-    type Future = std::pin::Pin<
-        Box<
-            dyn futures::Future<
-                Output = Result<Auth<R, ALLOW_UNVERIFIED, ALLOW_APPLICATION>, Error>,
-            >,
-        >,
-    >;
+    type Future =
+        std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, VOpt, AOpt>, Error>>>>;
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
         let req = req.clone();
 
         Box::pin(async move {
-            let (user_data, is_application) = get_auth_data(req, ALLOW_UNVERIFIED).await?;
+            let (user_data, is_application) = get_auth_data(req, VOpt::ALLOW as bool).await?;
 
-            if (is_application && !ALLOW_APPLICATION)
+            if (is_application && !AOpt::ALLOW)
                 || (UserRole::from(user_data.role.clone()) < R::LEVEL)
             {
                 return Err(Error::from(MessageResponse::unauthorized_error()));
@@ -109,6 +123,8 @@ impl<R: Role, const ALLOW_UNVERIFIED: bool, const ALLOW_APPLICATION: bool> FromR
             Ok(Auth {
                 user: user_data,
                 _r: std::marker::PhantomData,
+                _v: std::marker::PhantomData,
+                _a: std::marker::PhantomData,
             })
         })
     }

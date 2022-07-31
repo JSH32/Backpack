@@ -8,7 +8,7 @@ use crate::{
     database::entity::{registration_keys, users, verifications},
     internal::{
         self,
-        auth::{auth_role, Auth},
+        auth::{auth_role, AllowApplication, AllowUnverified, Auth},
         random_string,
         response::Response,
         user::{new_password, validate_username, verification_email},
@@ -40,7 +40,7 @@ pub fn get_routes() -> Scope {
     security(("apiKey" = []))
 )]
 #[get("")]
-async fn info(user: Auth<auth_role::User, true, true>) -> impl Responder {
+async fn info(user: Auth<auth_role::User, AllowUnverified, AllowApplication>) -> impl Responder {
     HttpResponse::Ok().json(UserData::from(user.user))
 }
 
@@ -61,7 +61,7 @@ async fn info(user: Auth<auth_role::User, true, true>) -> impl Responder {
 )]
 #[put("/settings")]
 async fn settings(
-    user: Auth<auth_role::User, true, false>,
+    user: Auth<auth_role::User, AllowUnverified>,
     state: web::Data<State>,
     form: web::Json<UpdateUserSettings>,
 ) -> Response<impl Responder> {
@@ -351,7 +351,7 @@ async fn create(
 #[patch("/verify/resend")]
 async fn resend_verify(
     state: web::Data<State>,
-    user: Auth<auth_role::User, true, false>,
+    user: Auth<auth_role::User, AllowUnverified>,
 ) -> Response<impl Responder> {
     if let None = state.smtp_client {
         return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
