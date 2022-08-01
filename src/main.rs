@@ -75,7 +75,7 @@ async fn main() -> std::io::Result<()> {
     let sqlx_pool = PgPoolOptions::new()
         .max_connections(100)
         .min_connections(1)
-        .connect_timeout(Duration::from_secs(8))
+        .acquire_timeout(Duration::from_secs(8))
         .idle_timeout(Duration::from_secs(8))
         .max_lifetime(Duration::from_secs(8))
         .connect(&config.database_url)
@@ -278,6 +278,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
                 "[".bright_black(),
                 "]".bright_black()
             ))
+            .unwrap()
             .progress_chars("##-"),
     );
 
