@@ -40,7 +40,7 @@ impl StorageProvider for S3Provider {
             .put_object(PutObjectRequest {
                 bucket: self.bucket.clone(),
                 body: Some(ByteStream::from(data.clone())),
-                key: name.to_string(),
+                key: name.strip_prefix("./").unwrap_or(name).to_string(),
                 acl: Some("public-read".into()),
                 content_type: content_type,
                 ..Default::default()

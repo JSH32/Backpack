@@ -10,7 +10,11 @@ use models::MessageResponse;
 use sea_orm::{EntityTrait, SqlxPostgresConnector};
 use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use state::State;
-use tokio::{fs, runtime::Builder};
+use tokio::{
+    fs,
+    runtime::Builder,
+    sync::mpsc::{unbounded_channel, UnboundedSender},
+};
 
 use internal::file::IMAGE_EXTS;
 use utoipa::OpenApi;
@@ -54,7 +58,7 @@ struct Args {
     generate_thumbnails: bool,
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Setup actix log
     std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
@@ -292,7 +296,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
             .progress_chars("##-"),
     );
 
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = unbounded_channel();
 
     for file in image_files {
         let extension = Path::new(&file.name)
@@ -305,40 +309,68 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
             let state = state.clone();
-            let task_tx = tx.clone();
+            let task_tx: UnboundedSender<Result<String, (String, String)>> = tx.clone();
             let spawner = runtime.handle().clone();
             tokio::spawn(async move {
                 match state.storage.get_object(&file.name).await {
                     Ok(buf) => {
                         // Open a new task on the custom tokio runtime.
                         let resized = spawner
-                            .spawn_blocking(move || {
-                                internal::file::get_thumbnail_image(&buf).unwrap()
-                            })
+                            .spawn_blocking(move || internal::file::get_thumbnail_image(&buf))
                             .await
                             .unwrap();
 
-                        // Write thumbnail object to storage.
-                        if let Err(err) = state
-                            .storage
-                            .put_object(&format!("thumb/{}", file.name), &resized)
-                            .await
-                        {
-                            log::error!("Error putting {}: {}", file.name, err)
-                        }
+                        match resized {
+                            Ok(v) => {
+                                // Write thumbnail object to storage.
+                                if let Err(err) = state
+                                    .storage
+                                    .put_object(&format!("thumb/{}", file.name), &v)
+                                    .await
+                                {
+                                    task_tx
+                                        .send(Err((
+                                            file.name.to_owned(),
+                                            format!("Error putting {}: {}", file.name, err),
+                                        )))
+                                        .unwrap();
+                                }
+                            }
+                            Err(e) => {
+                                task_tx.send(Err((file.name, e.to_string()))).unwrap();
+                                return;
+                            }
+                        };
                     }
-                    Err(err) => log::error!("Error getting {}: {}", file.name, err),
+                    Err(err) => {
+                        task_tx
+                            .send(Err((
+                                file.name.to_owned(),
+                                format!("Error getting {}: {}", file.name, err),
+                            )))
+                            .unwrap();
+                    }
                 }
 
                 // Send completion status of image.
-                let _ = task_tx.send(file.name).unwrap();
+                task_tx.send(Ok(file.name)).unwrap();
             });
         }
     }
 
+    // All errors produced while generating images.
+    let mut errors = vec![];
+
     // Wait for all tasks to finish and handle completions.
-    while let Some(name) = rx.recv().await {
-        progress.set_message(name);
+    while let Some(message) = rx.recv().await {
+        match message {
+            Ok(name) => progress.set_message(name),
+            Err((name, error)) => {
+                progress.set_message(name.to_owned());
+                errors.push(format!("{}: {}", name, error))
+            }
+        };
+
         progress.inc(1);
 
         // Drop the channel receiver and exit once everything has been recieved.
@@ -349,6 +381,15 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
     }
 
     progress.finish_with_message("Finished generating thumbnails");
+
+    // If there were any errors then we should log them.
+    if errors.len() > 0 {
+        log::warn!(
+            "Completed with {} errors:\n{}",
+            errors.len(),
+            errors.join("\n")
+        );
+    }
 
     // Shutdown the temporary runtime for this operation.
     runtime.shutdown_background();
