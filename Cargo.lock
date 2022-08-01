@@ -429,7 +429,6 @@ dependencies = [
  "num_cpus",
  "paste",
  "rand",
- "rayon",
  "regex",
  "rusoto_core",
  "rusoto_s3",
