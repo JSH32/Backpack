@@ -1,17 +1,26 @@
 use crate::database::entity::registration_keys;
 use sea_orm::prelude::{DateTimeUtc, Uuid};
 use serde::{Deserialize, Serialize};
+use utoipa::{Component, IntoParams};
 
-#[derive(Serialize)]
+#[derive(Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrationKeyData {
     pub id: String,
+
+    /// Admin which issued this registration key.
     pub iss_user: String,
-    // Since admin is the only one who can access this
-    // There is no point in hiding it
+
+    /// Registration key.
+    #[component(value_type = String)]
     pub code: Uuid,
+
+    /// Amount of uses left.
     pub uses_left: i32,
+
+    /// Key invalidation date.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[component(value_type = String)]
     pub expiry_date: Option<DateTimeUtc>,
 }
 
@@ -27,8 +36,9 @@ impl From<registration_keys::Model> for RegistrationKeyData {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrationKeyParams {
+    /// Maximum amount of key uses.
     pub max_uses: Option<i32>,
 }

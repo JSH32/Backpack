@@ -14,7 +14,8 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use utoipa::Component;
 
-pub use self::{application::*, auth::*, file::*, user::*};
+use self::admin::registration_key::RegistrationKeyData;
+pub use self::{admin::*, application::*, auth::*, file::*, user::*};
 
 /// Standard message response.
 ///
@@ -138,7 +139,10 @@ impl Responder for MessageResponse {
 }
 
 #[derive(Serialize, Component)]
-#[aliases(FilePage = Page<FileData>)]
+#[aliases(
+    FilePage = Page<FileData>,
+    RegistrationKeyPage = Page<RegistrationKeyData>
+)]
 pub struct Page<T> {
     pub page: usize,
     pub pages: usize,

@@ -7,6 +7,7 @@ use utoipa::OpenApi;
 
 use crate::models::*;
 
+use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
 
 /// Backpack API Documentation
@@ -29,7 +30,11 @@ use crate::routes;
         routes::application::info,
         routes::application::create,
         routes::application::delete,
-        routes::auth::basic
+        routes::auth::basic,
+        routes::admin::registration_key::create,
+        routes::admin::registration_key::list,
+        routes::admin::registration_key::get_one,
+        routes::admin::registration_key::delete
 	),
     components(
 		AppInfo,
@@ -45,14 +50,16 @@ use crate::routes;
         ApplicationData,
         TokenResponse,
         ApplicationCreate,
-        BasicAuthForm
+        BasicAuthForm,
+        RegistrationKeyData
 	),
 	tags(
 		(name = "server", description = "Server information endpoints."),
 		(name = "user", description = "User management endpoints."),
         (name = "file", description = "File management endpoints."),
         (name = "application", description = "Application and token management endpoints."),
-        (name = "authentication", description = "User authentication endpoints.")
+        (name = "authentication", description = "User authentication endpoints."),
+        (name = "admin", description = "Server administration endpoints.")
 	),
     modifiers(&ApiDoc)
 )]

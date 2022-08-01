@@ -16,6 +16,7 @@ use crate::{
 };
 
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, Set};
+use utoipa::IntoParams;
 
 pub fn get_routes() -> Scope {
     web::scope("/registrationKey")
@@ -25,6 +26,19 @@ pub fn get_routes() -> Scope {
         .service(create)
 }
 
+/// Create a registration key
+/// - Minimum required role: `admin`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/admin/registrationKey",
+    tag = "admin",
+    responses(
+        (status = 200, body = RegistrationKeyData),
+        (status = 400, body = MessageResponse, description = "Invalid credentials"),
+    ),
+    security(("apiKey" = [])),
+)]
 #[post("")]
 async fn create(
     state: web::Data<State>,
@@ -42,6 +56,22 @@ async fn create(
     )))
 }
 
+/// Get registration keys
+/// - Minimum required role: `admin`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/admin/registrationKey",
+    tag = "admin",
+    responses(
+        (status = 200, body = RegistrationKeyPage),
+        (status = 400, body = MessageResponse, description = "Invalid credentials"),
+    ),
+    params(
+        ("page_number" = usize, path, description = "Page to get")
+    ),
+    security(("apiKey" = [])),
+)]
 #[get("/list/{page_number}")]
 async fn list(
     state: web::Data<State>,
@@ -67,6 +97,23 @@ async fn list(
     }))
 }
 
+/// Get a single registration key
+/// - Minimum required role: `admin`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/admin/registrationKey",
+    tag = "admin",
+    responses(
+        (status = 200, body = RegistrationKeyData),
+        (status = 404, body = MessageResponse, description = "Registration key was not found"),
+        (status = 400, body = MessageResponse, description = "Invalid credentials"),
+    ),
+    params(
+        ("registration_id" = usize, path, description = "Registration key to get")
+    ),
+    security(("apiKey" = [])),
+)]
 #[get("/{registration_id}")]
 async fn get_one(
     state: web::Data<State>,
@@ -85,6 +132,23 @@ async fn get_one(
     )
 }
 
+/// Delete a registration key
+/// - Minimum required role: `admin`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/admin/registrationKey",
+    tag = "admin",
+    responses(
+        (status = 200, body = MessageResponse, description = "Registration key was deleted"),
+        (status = 404, body = MessageResponse, description = "Registration key was not found"),
+        (status = 400, body = MessageResponse, description = "Invalid credentials"),
+    ),
+    params(
+        ("registration_id" = usize, path, description = "Registration key to delete")
+    ),
+    security(("apiKey" = [])),
+)]
 #[delete("/{registration_id}")]
 async fn delete(
     state: web::Data<State>,

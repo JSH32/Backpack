@@ -33,7 +33,8 @@ pub fn get_routes() -> Scope {
     ),
     params(
         ("application_id" = str, path, description = "Application ID to get token for"),
-    )
+    ),
+    security(("apiKey" = [])),
 )]
 #[get("/{application_id}/token")]
 async fn token(
@@ -73,7 +74,8 @@ async fn token(
 #[utoipa::path(
     context_path = "/api/application",
     tag = "application",
-    responses((status = 200, body = [ApplicationData]))
+    responses((status = 200, body = [ApplicationData])),
+    security(("apiKey" = [])),
 )]
 #[get("")]
 async fn list(state: web::Data<State>, user: Auth<auth_role::User>) -> Response<impl Responder> {
@@ -98,7 +100,8 @@ async fn list(state: web::Data<State>, user: Auth<auth_role::User>) -> Response<
     responses(
         (status = 200, body = ApplicationData),
         (status = 401, body = MessageResponse)
-    )
+    ),
+    security(("apiKey" = [])),
 )]
 #[get("/{application_id}")]
 async fn info(
@@ -130,7 +133,8 @@ async fn info(
         (status = 200, body = ApplicationData),
         (status = 400, body = MessageResponse, description = "Token limit reached or invalid name"),
     ),
-    request_body = ApplicationCreate
+    request_body = ApplicationCreate,
+    security(("apiKey" = [])),
 )]
 #[post("")]
 async fn create(
@@ -206,7 +210,8 @@ async fn create(
     responses(
         (status = 200, body = MessageResponse, description = "Application was deleted"),
         (status = 401, body = MessageResponse, description = "Unauthorized or token does not exist"),
-    )
+    ),
+    security(("apiKey" = [])),
 )]
 #[delete("/{application_id}")]
 async fn delete(
