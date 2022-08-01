@@ -10,7 +10,7 @@ use models::MessageResponse;
 use sea_orm::{EntityTrait, SqlxPostgresConnector};
 use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use state::State;
-use tokio::fs;
+use tokio::{fs, runtime::Builder};
 
 use internal::file::IMAGE_EXTS;
 use utoipa::OpenApi;
@@ -245,11 +245,14 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+/// Regenerate all thumbnails.
+/// This is a multithreaded blocking operation used in the CLI.
 async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
     log::info!("Regenerating image thumbnails");
 
     let files = files::Entity::find().all(&state.database).await?;
 
+    // Get every file which is an image or has an image extension.
     let image_files: Vec<files::Model> = files
         .iter()
         .filter(|file| {
@@ -265,22 +268,31 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
         .map(|v| v.clone())
         .collect();
 
+    // Make a seperate runtime for spawning blocking operations so that hundreds of threads aren't created.
+    let runtime = Builder::new_multi_thread()
+        .worker_threads(1) // We only need blocking threads
+        .max_blocking_threads(num_cpus::get() / 2)
+        .thread_name("backpack-thumbnail-generator")
+        .build()
+        .unwrap();
+
     log::info!(
-        "{} files to generate",
-        image_files.len().to_string().yellow()
+        "{} files to generate with {} threads",
+        image_files.len().to_string().yellow(),
+        (num_cpus::get() / 2).to_string().yellow()
     );
 
     let progress = ProgressBar::new(image_files.len().try_into().unwrap());
     progress.set_style(
         ProgressStyle::default_bar()
-            .template(&format!(
-                "{}{{elapsed_precise}}{} {{bar:40.cyan/blue}} {{pos:>2}}/{{len:2}} {{msg}}",
-                "[".bright_black(),
-                "]".bright_black()
-            ))
+            .template(
+                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>2}/{len:2} {msg}",
+            )
             .unwrap()
             .progress_chars("##-"),
     );
+
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     for file in image_files {
         let extension = Path::new(&file.name)
@@ -292,28 +304,54 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
             .into_iter()
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
-            progress.set_message(file.name.clone());
-            progress.inc(1);
+            let state = state.clone();
+            let task_tx = tx.clone();
+            let spawner = runtime.handle().clone();
+            tokio::spawn(async move {
+                match state.storage.get_object(&file.name).await {
+                    Ok(buf) => {
+                        // Open a new task on the custom tokio runtime.
+                        let resized = spawner
+                            .spawn_blocking(move || {
+                                internal::file::get_thumbnail_image(&buf).unwrap()
+                            })
+                            .await
+                            .unwrap();
 
-            match state.storage.get_object(&file.name).await {
-                Ok(buf) => {
-                    if let Err(err) = state
-                        .storage
-                        .put_object(
-                            &format!("thumb/{}", file.name),
-                            &internal::file::get_thumbnail_image(&buf)?,
-                        )
-                        .await
-                    {
-                        log::error!("Error putting {}: {}", file.name, err)
+                        // Write thumbnail object to storage.
+                        if let Err(err) = state
+                            .storage
+                            .put_object(&format!("thumb/{}", file.name), &resized)
+                            .await
+                        {
+                            log::error!("Error putting {}: {}", file.name, err)
+                        }
                     }
+                    Err(err) => log::error!("Error getting {}: {}", file.name, err),
                 }
-                Err(err) => log::error!("Error getting {}: {}", file.name, err),
-            }
+
+                // Send completion status of image.
+                let _ = task_tx.send(file.name).unwrap();
+            });
+        }
+    }
+
+    // Wait for all tasks to finish and handle completions.
+    while let Some(name) = rx.recv().await {
+        progress.set_message(name);
+        progress.inc(1);
+
+        // Drop the channel receiver and exit once everything has been recieved.
+        if progress.position() == progress.length().unwrap() {
+            drop(tx);
+            break;
         }
     }
 
     progress.finish_with_message("Finished generating thumbnails");
+
+    // Shutdown the temporary runtime for this operation.
+    runtime.shutdown_background();
 
     Ok(())
 }
