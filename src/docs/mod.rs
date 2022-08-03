@@ -14,13 +14,13 @@ use crate::routes;
 #[derive(OpenApi)]
 #[openapi(
     handlers(
-		routes::info,
-		routes::user::info,
-		routes::user::settings,
-		routes::user::create,
-		routes::user::verify,
-		routes::user::resend_verify,
-		routes::file::upload,
+        routes::info,
+        routes::user::info,
+        routes::user::settings,
+        routes::user::create,
+        routes::user::verify,
+        routes::user::resend_verify,
+        routes::file::upload,
         routes::file::stats,
         routes::file::list,
         routes::file::info,
@@ -35,15 +35,15 @@ use crate::routes;
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete
-	),
+    ),
     components(
-		AppInfo,
-		MessageResponse,
-		UserData,
-		UserRole,
-		UpdateUserSettings,
-		UserCreateForm,
-		UploadFile,
+        AppInfo,
+        MessageResponse,
+        UserData,
+        UserRole,
+        UpdateUserSettings,
+        UserCreateForm,
+        UploadFile,
         FileData,
         FileStats,
         FilePage,
@@ -52,15 +52,15 @@ use crate::routes;
         ApplicationCreate,
         BasicAuthForm,
         RegistrationKeyData
-	),
-	tags(
-		(name = "server", description = "Server information endpoints."),
-		(name = "user", description = "User management endpoints."),
+    ),
+    tags(
+        (name = "server", description = "Server information endpoints."),
+        (name = "user", description = "User management endpoints."),
         (name = "file", description = "File management endpoints."),
         (name = "application", description = "Application and token management endpoints."),
         (name = "authentication", description = "User authentication endpoints."),
         (name = "admin", description = "Server administration endpoints.")
-	),
+    ),
     modifiers(&ApiDoc)
 )]
 pub struct ApiDoc;
