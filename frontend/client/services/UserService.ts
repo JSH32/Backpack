@@ -1,10 +1,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { MessageResponse } from '../models/MessageResponse';
 import type { UpdateUserSettings } from '../models/UpdateUserSettings';
 import type { UserCreateForm } from '../models/UserCreateForm';
 import type { UserData } from '../models/UserData';
+import type { UserDeleteForm } from '../models/UserDeleteForm';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -14,7 +14,6 @@ export class UserService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Get current user information
      * Get current user information
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
@@ -31,7 +30,6 @@ export class UserService {
     }
 
     /**
-     * Create a new user
      * Create a new user
      *
      * @param requestBody
@@ -50,7 +48,30 @@ export class UserService {
     }
 
     /**
-     * Change user settings
+     * Delete a user and all files owned by the user
+     * - Minimum required role: `user`
+     * - Allow unverified users: `true`
+     * - Application token allowed: `false`
+     *
+     * @param requestBody Verify your password
+     * @returns MessageResponse User was deleted
+     * @throws ApiError
+     */
+    public delete(
+        requestBody: UserDeleteForm,
+    ): CancelablePromise<MessageResponse> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/api/user',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Incorrect password`,
+            },
+        });
+    }
+
+    /**
      * Change user settings
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
@@ -73,7 +94,6 @@ export class UserService {
 
     /**
      * Resend a verification code to the email
-     * Resend a verification code to the email
      * - Minimum required role: `user`
      * - Allow unverified users: `true`
      * - Application token allowed: `false`
@@ -95,7 +115,6 @@ export class UserService {
     }
 
     /**
-     * Verify using a verification code
      * Verify using a verification code
      *
      * This will be disabled if `smtp` is disabled in server settings

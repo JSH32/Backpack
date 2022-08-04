@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     ffi::OsStr,
     path::{Path, PathBuf},
 };
@@ -22,7 +22,10 @@ use crate::{
         response::{self, Response},
         validate_paginate,
     },
-    models::{FileData, FileStats, MessageResponse, Page, UploadFile},
+    models::{
+        BatchDeleteRequest, BatchDeleteResponse, BatchFileError, FileData, FileStats,
+        MessageResponse, Page, UploadFile,
+    },
     state::State,
 };
 
@@ -32,6 +35,7 @@ pub fn get_routes() -> Scope {
         .service(list)
         .service(info)
         .service(upload)
+        .service(delete_files)
         .service(delete_file)
 }
 
@@ -137,7 +141,7 @@ async fn upload(
             // TODO: Store thumbnail status as a boolean in database just in case
             let _ = state
                 .storage
-                .put_object(&format!("./thumb/{}", &filename), image)
+                .put_object(&format!("thumb/{}", &filename), image)
                 .await;
 
             file_data.set_thumbnail_url(root_path.clone());
@@ -292,7 +296,7 @@ async fn info(
     )
 }
 
-/// Delete file data by ID
+/// Delete file data by ID.
 /// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
@@ -330,10 +334,9 @@ async fn delete_file(
                     v.clone().delete(&state.database).await?;
 
                     // We dont care about the result of this because of discrepancies
-                    let _ = state.storage.delete_object(&v.name).await;
                     let _ = state
                         .storage
-                        .delete_object(&format!("thumb/{}", &v.name))
+                        .delete_objects(vec![v.name.clone(), format!("thumb/{}", &v.name)])
                         .await;
 
                     MessageResponse::new(StatusCode::OK, &format!("File {} was deleted", v.name))
@@ -342,4 +345,69 @@ async fn delete_file(
             None => MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found"),
         },
     )
+}
+
+/// Delete multiple files by ID.
+/// This will ignore any invalid IDs.
+/// - Minimum required role: `user`
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/file",
+    tag = "file",
+    responses(
+        (status = 200, body = BatchDeleteResponse, description = "Information about the batch operation result."),
+    ),
+    request_body(content = BatchDeleteRequest, description = "IDs to delete."),
+    security(("apiKey" = [])),
+)]
+#[delete("/batch")]
+async fn delete_files(
+    state: web::Data<State>,
+    body: web::Json<BatchDeleteRequest>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+) -> Response<impl Responder> {
+    let mut response = BatchDeleteResponse::default();
+
+    let files = files::Entity::find()
+        .filter(files::Column::Id.is_in(body.ids.clone()))
+        .all(&state.database)
+        .await?;
+
+    // All IDs found in the query.
+    let ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
+
+    // Add errors for every ID in the request that was not found in the query.
+    for id in &body.ids {
+        if !ids.contains(id) {
+            response.errors.push(BatchFileError {
+                id: id.to_string(),
+                error: "That file does not exist.".to_string(),
+            })
+        }
+    }
+
+    for file in files {
+        // File must be owned by uploader.
+        if file.uploader != user.id {
+            response.errors.push(BatchFileError {
+                id: file.id,
+                error: "You are not allowed to access this file.".to_string(),
+            });
+
+            continue;
+        }
+
+        file.clone().delete(&state.database).await?;
+
+        // We dont care about the result of this because of possible discrepancies, just pretend the file is deleted.
+        let _ = state
+            .storage
+            .delete_objects(vec![file.name.clone(), format!("thumb/{}", &file.name)])
+            .await;
+
+        response.deleted.push(file.id);
+    }
+
+    Ok(HttpResponse::Ok().json(response))
 }

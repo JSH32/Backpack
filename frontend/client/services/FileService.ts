@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
+import type { BatchDeleteRequest } from '../models/BatchDeleteRequest';
+import type { BatchDeleteResponse } from '../models/BatchDeleteResponse';
 import type { FileData } from '../models/FileData';
 import type { FilePage } from '../models/FilePage';
 import type { FileStats } from '../models/FileStats';
@@ -15,7 +16,6 @@ export class FileService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Upload a file
      * Upload a file
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -41,7 +41,28 @@ export class FileService {
     }
 
     /**
-     * Get a paginated list of files
+     * Delete multiple files by ID.
+     * This will ignore any invalid IDs.
+     * - Minimum required role: `user`
+     * - Allow unverified users: `false`
+     * - Application token allowed: `true`
+     *
+     * @param requestBody IDs to delete.
+     * @returns BatchDeleteResponse Information about the batch operation result.
+     * @throws ApiError
+     */
+    public deleteFiles(
+        requestBody: BatchDeleteRequest,
+    ): CancelablePromise<BatchDeleteResponse> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/api/file/batch',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Get a paginated list of files
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -74,7 +95,6 @@ export class FileService {
 
     /**
      * Get file stats for user
-     * Get file stats for user
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
@@ -90,7 +110,6 @@ export class FileService {
     }
 
     /**
-     * Get file data by ID
      * Get file data by ID
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -117,8 +136,7 @@ export class FileService {
     }
 
     /**
-     * Delete file data by ID
-     * Delete file data by ID
+     * Delete file data by ID.
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`

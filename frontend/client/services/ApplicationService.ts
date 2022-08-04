@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { ApplicationCreate } from '../models/ApplicationCreate';
 import type { ApplicationData } from '../models/ApplicationData';
 import type { MessageResponse } from '../models/MessageResponse';
@@ -14,7 +13,6 @@ export class ApplicationService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Get all applications
      * Get all applications
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -31,7 +29,6 @@ export class ApplicationService {
     }
 
     /**
-     * Create an application
      * Create an application
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -57,7 +54,6 @@ export class ApplicationService {
 
     /**
      * Get token info
-     * Get token info
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
@@ -79,7 +75,6 @@ export class ApplicationService {
     }
 
     /**
-     * Delete an application
      * Delete an application
      * - Minimum required role: `user`
      * - Allow unverified users: `false`
@@ -105,7 +100,6 @@ export class ApplicationService {
     }
 
     /**
-     * Get token by application ID
      * Get token by application ID
      * - Minimum required role: `user`
      * - Allow unverified users: `false`

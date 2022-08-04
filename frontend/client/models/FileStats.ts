@@ -1,9 +1,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 
 /**
- * File stats for user
+ * File stats for user.
  */
 export type FileStats = {
     /**

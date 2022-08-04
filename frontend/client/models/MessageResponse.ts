@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 
 /**
  * Standard message response.
@@ -11,12 +10,12 @@ export type MessageResponse = {
      */
     error?: string;
     /**
-     * Optional data, can be any JSON object
-     */
-    data?: any;
-    /**
      * Message
      */
     message: string;
+    /**
+     * Optional data, can be any JSON object
+     */
+    data?: any;
 };
 

@@ -1,7 +1,4 @@
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use actix_multipart_extract::{File, MultipartForm};
 use serde::{Deserialize, Serialize};
@@ -9,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use utoipa::Component;
 
-use crate::internal::file::IMAGE_EXTS;
+use crate::internal::file::can_have_thumbnail;
 
 use crate::database::entity::files;
 
@@ -62,29 +59,48 @@ impl FileData {
     /// Computes and sets the URL based on root storage path
     /// This will only set if a valid image or extension was sent
     pub fn set_thumbnail_url(&mut self, mut root_path: PathBuf) {
-        let extension = Path::new(&self.name)
-            .extension()
-            .and_then(OsStr::to_str)
-            .unwrap_or("");
-
-        if IMAGE_EXTS
-            .into_iter()
-            .any(|ext| ext.eq(&extension.to_uppercase()))
-        {
+        if can_have_thumbnail(&self.name) {
             root_path.push(format!("thumb/{}", &self.name));
             self.thumbnail_url = Some(root_path.as_path().display().to_string().replace("\\", "/"));
         }
     }
 }
 
-/// File stats for user
+/// File stats for user.
 #[derive(Serialize, Component)]
 pub struct FileStats {
     /// Total usage in bytes
     pub usage: i64,
 }
 
-/// Upload a file
+/// Delete multiple files.
+#[derive(Deserialize, Component)]
+pub struct BatchDeleteRequest {
+    /// IDs to delete.
+    pub ids: Vec<String>,
+}
+
+/// Response containing information about deleted files.
+#[derive(Serialize, Component, Default)]
+pub struct BatchDeleteResponse {
+    /// All successfully deleted files.
+    pub deleted: Vec<String>,
+
+    /// Errors for all failed deletions.
+    pub errors: Vec<BatchFileError>,
+}
+
+/// Error for an individual item in a batch operation.
+#[derive(Serialize, Component)]
+pub struct BatchFileError {
+    /// ID of the item.
+    pub id: String,
+
+    // Error while executing operation.
+    pub error: String,
+}
+
+/// Upload a file.
 #[derive(Deserialize, MultipartForm, Component, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadFile {

@@ -1,10 +1,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { BaseHttpRequest } from './core/BaseHttpRequest';
 import type { OpenAPIConfig } from './core/OpenAPI';
 import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 
+import { AdminService } from './services/AdminService';
 import { ApplicationService } from './services/ApplicationService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { FileService } from './services/FileService';
@@ -15,6 +15,7 @@ type HttpRequestConstructor = new (config: OpenAPIConfig) => BaseHttpRequest;
 
 export class BackpackClient {
 
+    public readonly admin: AdminService;
     public readonly application: ApplicationService;
     public readonly authentication: AuthenticationService;
     public readonly file: FileService;
@@ -36,6 +37,7 @@ export class BackpackClient {
             ENCODE_PATH: config?.ENCODE_PATH,
         });
 
+        this.admin = new AdminService(this.request);
         this.application = new ApplicationService(this.request);
         this.authentication = new AuthenticationService(this.request);
         this.file = new FileService(this.request);

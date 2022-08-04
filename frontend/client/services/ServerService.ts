@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { AppInfo } from '../models/AppInfo';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -11,7 +10,6 @@ export class ServerService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Get public server configuration
      * Get public server configuration
      *
      * @returns AppInfo

@@ -20,11 +20,13 @@ use crate::routes;
         routes::user::create,
         routes::user::verify,
         routes::user::resend_verify,
+        routes::user::delete,
         routes::file::upload,
         routes::file::stats,
         routes::file::list,
         routes::file::info,
         routes::file::delete_file,
+        routes::file::delete_files,
         routes::application::token,
         routes::application::list,
         routes::application::info,
@@ -34,7 +36,7 @@ use crate::routes;
         routes::admin::registration_key::create,
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
-        routes::admin::registration_key::delete
+        routes::admin::registration_key::delete,
     ),
     components(
         AppInfo,
@@ -43,6 +45,7 @@ use crate::routes;
         UserRole,
         UpdateUserSettings,
         UserCreateForm,
+        UserDeleteForm,
         UploadFile,
         FileData,
         FileStats,
@@ -51,7 +54,10 @@ use crate::routes;
         TokenResponse,
         ApplicationCreate,
         BasicAuthForm,
-        RegistrationKeyData
+        RegistrationKeyData,
+        BatchDeleteRequest,
+        BatchDeleteResponse,
+        BatchFileError,
     ),
     tags(
         (name = "server", description = "Server information endpoints."),
@@ -59,7 +65,7 @@ use crate::routes;
         (name = "file", description = "File management endpoints."),
         (name = "application", description = "Application and token management endpoints."),
         (name = "authentication", description = "User authentication endpoints."),
-        (name = "admin", description = "Server administration endpoints.")
+        (name = "admin", description = "Server administration endpoints."),
     ),
     modifiers(&ApiDoc)
 )]

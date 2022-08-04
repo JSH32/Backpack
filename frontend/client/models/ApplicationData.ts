@@ -1,9 +1,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 
 export type ApplicationData = {
-    name: string;
+    /**
+     * User ID who owns the application
+     */
+    userId: string;
+    id: string;
     /**
      * Last time the application was used for a request
      */
@@ -12,10 +15,6 @@ export type ApplicationData = {
      * Only sent when the token is originally created
      */
     token?: string;
-    id: string;
-    /**
-     * User ID who owns the application
-     */
-    userId: string;
+    name: string;
 };
 

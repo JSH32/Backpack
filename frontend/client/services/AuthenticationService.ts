@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { BasicAuthForm } from '../models/BasicAuthForm';
 import type { TokenResponse } from '../models/TokenResponse';
 
@@ -12,7 +11,6 @@ export class AuthenticationService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Login with email and password
      * Login with email and password
      *
      * @param requestBody

@@ -51,7 +51,7 @@ pub struct UserCreateForm {
     pub registration_key: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Component)]
 pub struct UserDeleteForm {
     pub password: String,
 }

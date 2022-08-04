@@ -1,8 +1,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 
-export type BasicAuthForm = {
-    auth: string;
+export type UserDeleteForm = {
     password: string;
 };
 

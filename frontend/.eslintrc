@@ -13,5 +13,6 @@
     "react-hooks/rules-of-hooks": "off",
     "react-hooks/exhaustive-deps": "off",
     "@next/next/link-passhref": "off"
-  }
+  },
+  "ignorePatterns": ["client/**"]
 }

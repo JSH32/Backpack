@@ -1,26 +1,30 @@
-use actix_web::{get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope};
+use actix_web::{
+    delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope,
+};
 use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
 use lettre::AsyncTransport;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, Set};
 use uuid::Uuid;
 
 use crate::{
-    database::entity::{registration_keys, users, verifications},
+    database::entity::{files, registration_keys, users, verifications},
     internal::{
         self,
-        auth::{auth_role, AllowApplication, AllowUnverified, Auth},
+        auth::{auth_role, AllowApplication, AllowUnverified, Auth, DenyApplication},
+        file::can_have_thumbnail,
         random_string,
         response::Response,
         user::{new_password, validate_username, verification_email},
         EMAIL_REGEX,
     },
-    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData},
+    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData, UserDeleteForm},
     state::State,
 };
 
 pub fn get_routes() -> Scope {
     web::scope("/user")
         .service(create)
+        .service(delete)
         .service(settings)
         .service(info)
         .service(resend_verify)
@@ -440,11 +444,62 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
     }
 }
 
-// This needs to delete every file owned by the user
-// #[post("delete")]
-// async fn delete(state: web::Data<State>, auth: auth::middleware::User, form: web::Json<UserDeleteForm>) -> impl Responder {
-//     let matches = match argon2::verify_encoded(&auth.0.password, form.current_password.as_bytes()) {
-//         Ok(matches) => matches,
-//         Err(_) => return MessageResponse::internal_server_error()
-//     };
-// }
+/// Delete a user and all files owned by the user
+/// - Minimum required role: `user`
+/// - Allow unverified users: `true`
+/// - Application token allowed: `false`
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = MessageResponse, description = "User was deleted"),
+        (status = 400, body = MessageResponse, description = "Incorrect password")
+    ),
+    request_body(content = UserDeleteForm, description = "Verify your password"),
+    security(("apiKey" = [])),
+)]
+#[delete("")]
+async fn delete(
+    state: web::Data<State>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication>,
+    form: web::Json<UserDeleteForm>,
+) -> Response<impl Responder> {
+    if !Argon2::default()
+        .verify_password(
+            form.password.as_bytes(),
+            &PasswordHash::new(&user.password)?,
+        )
+        .is_ok()
+    {
+        return Ok(
+            MessageResponse::new(StatusCode::BAD_REQUEST, "Incorrect password").http_response(),
+        );
+    }
+
+    let mut files: Vec<String> = user
+        .find_related(files::Entity)
+        .all(&state.database)
+        .await?
+        .iter()
+        .map(|f| (f.name.to_owned()))
+        .collect();
+
+    // Add all thumbnails
+    files.extend(
+        files
+            .iter()
+            .filter(|f| can_have_thumbnail(f))
+            .map(|f| format!("thumb/{}", f))
+            .collect::<Vec<String>>(),
+    );
+
+    // Delete the user before deleting the files.
+    // File deletion may take a while, if something happens to the server we would rather keep the actual files rather than the records.
+    // This is also to prevent the user from doing anything while the operation is occuring.
+    user.clone().delete(&state.database).await?;
+
+    // Delete every file.
+    let _ = state.storage.delete_objects(files).await;
+
+    Ok(MessageResponse::new(StatusCode::OK, "User deleted").http_response())
+}

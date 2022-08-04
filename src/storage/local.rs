@@ -32,11 +32,14 @@ impl StorageProvider for LocalProvider {
         Ok(())
     }
 
-    async fn delete_object(&self, name: &str) -> Result<(), anyhow::Error> {
-        let mut path = self.path.clone();
-        path.push(name);
+    async fn delete_objects(&self, keys: Vec<String>) -> Result<(), anyhow::Error> {
+        for key in keys {
+            let mut path = self.path.clone();
+            path.push(key);
 
-        tokio::fs::remove_file(path).await?;
+            let _ = tokio::fs::remove_file(path).await;
+        }
+
         Ok(())
     }
 

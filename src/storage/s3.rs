@@ -5,7 +5,10 @@ use infer;
 
 use rusoto_core::{credential, ByteStream, HttpClient, Region};
 
-use rusoto_s3::{DeleteObjectRequest, GetObjectRequest, PutObjectRequest, S3Client, S3};
+use rusoto_s3::{
+    Delete, DeleteObjectsRequest, GetObjectRequest, ObjectIdentifier, PutObjectRequest, S3Client,
+    S3,
+};
 
 pub struct S3Provider {
     bucket: String,
@@ -50,11 +53,20 @@ impl StorageProvider for S3Provider {
         Ok(())
     }
 
-    async fn delete_object(&self, name: &str) -> Result<(), anyhow::Error> {
+    async fn delete_objects(&self, keys: Vec<String>) -> Result<(), anyhow::Error> {
         self.client
-            .delete_object(DeleteObjectRequest {
+            .delete_objects(DeleteObjectsRequest {
                 bucket: self.bucket.clone(),
-                key: name.to_string(),
+                delete: Delete {
+                    objects: keys
+                        .iter()
+                        .map(|key| ObjectIdentifier {
+                            key: key.strip_prefix("./").unwrap_or(key).to_string(),
+                            version_id: None,
+                        })
+                        .collect(),
+                    quiet: Some(true),
+                },
                 ..Default::default()
             })
             .await?;
@@ -62,12 +74,12 @@ impl StorageProvider for S3Provider {
         Ok(())
     }
 
-    async fn get_object(&self, path: &str) -> Result<Vec<u8>, anyhow::Error> {
+    async fn get_object(&self, key: &str) -> Result<Vec<u8>, anyhow::Error> {
         match self
             .client
             .get_object(GetObjectRequest {
                 bucket: self.bucket.clone(),
-                key: path.to_string(),
+                key: key.strip_prefix("./").unwrap_or(key).to_string(),
                 ..Default::default()
             })
             .await?
@@ -75,7 +87,7 @@ impl StorageProvider for S3Provider {
             .take()
         {
             Some(stream) => Ok(stream.map_ok(|b| b.to_vec()).try_concat().await?),
-            None => Err(anyhow::anyhow!(format!("No file stream found on {}", path))),
+            None => Err(anyhow::anyhow!(format!("No file stream found on {}", key))),
         }
     }
 }
