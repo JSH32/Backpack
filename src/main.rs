@@ -7,8 +7,7 @@ use config::StorageConfig;
 use figlet_rs::FIGfont;
 use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
-use sea_orm::{EntityTrait, SqlxPostgresConnector};
-use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, Statement};
 use state::State;
 use tokio::{
     fs,
@@ -19,7 +18,8 @@ use tokio::{
 use internal::file::IMAGE_EXTS;
 use utoipa::OpenApi;
 
-use std::{convert::TryInto, ffi::OsStr, path::Path, time::Duration};
+use migration::{Migrator, MigratorTrait};
+use std::{convert::TryInto, ffi::OsStr, path::Path};
 
 use actix_web::{
     http::StatusCode,
@@ -75,36 +75,19 @@ async fn main() -> std::io::Result<()> {
     let config = config::Config::new();
     let args = Args::parse();
 
-    // Create a SQLx pool for running migrations
-    let sqlx_pool = PgPoolOptions::new()
-        .max_connections(100)
-        .min_connections(1)
-        .acquire_timeout(Duration::from_secs(8))
-        .idle_timeout(Duration::from_secs(8))
-        .max_lifetime(Duration::from_secs(8))
-        .connect(&config.database_url)
+    let database = sea_orm::Database::connect(&config.database_url)
         .await
-        .expect("Could not initialize database connection");
+        .unwrap();
 
-    let pg_version = sqlx::query("SELECT version()")
-        .fetch_one(&sqlx_pool)
-        .await
-        .unwrap()
-        .try_get("version")
-        .unwrap_or("unknown".to_string());
+    log::info!(
+        "Connected to the database ({})",
+        get_db_version(&database).await.unwrap()
+    );
 
-    log::info!("Connected to the database ({})", pg_version);
-
+    // Apply all pending migrations
     if config.run_migrations {
-        let migrator = Migrator::new(Path::new("migrations")).await.unwrap();
-        migrator
-            .run(&sqlx_pool)
-            .await
-            .map_err(|e| anyhow::anyhow!(e.to_string()))
-            .unwrap();
+        Migrator::up(&database, None).await.unwrap();
     }
-
-    let database = SqlxPostgresConnector::from_sqlx_postgres_pool(sqlx_pool);
 
     let storage: Box<dyn StorageProvider> = match &config.storage_provider {
         StorageConfig::Local(v) => {
@@ -247,6 +230,31 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", config.port))?
     .run()
     .await
+}
+
+/// Get database version.
+async fn get_db_version(database: &DatabaseConnection) -> Result<String, anyhow::Error> {
+    let version: String = database
+        .query_one(Statement::from_string(
+            database.get_database_backend(),
+            format!(
+                "select {}() as version;",
+                match database.get_database_backend() {
+                    DbBackend::Sqlite => "sqlite_version",
+                    _ => "version",
+                }
+            )
+            .to_string(),
+        ))
+        .await?
+        .unwrap()
+        .try_get("", "version")?;
+
+    // SQLite version function is just a version number.
+    Ok(match database.get_database_backend() {
+        DbBackend::Sqlite => format!("SQLite {}", version),
+        _ => version,
+    })
 }
 
 /// Regenerate all thumbnails.

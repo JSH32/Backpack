@@ -9,7 +9,7 @@ pub struct RegistrationKeyData {
     pub id: String,
 
     /// Admin which issued this registration key.
-    pub iss_user: String,
+    pub issuer: String,
 
     /// Registration key.
     #[component(value_type = String)]
@@ -30,7 +30,7 @@ impl From<registration_keys::Model> for RegistrationKeyData {
             id: model.id.to_string(),
             code: model.code,
             expiry_date: model.expiry_date,
-            iss_user: model.iss_user,
+            issuer: model.issuer,
             uses_left: model.uses_left,
         }
     }
