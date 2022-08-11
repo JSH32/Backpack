@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "migration"]
+
 [package]
 name = "backpack"
 version = "0.1.0"
@@ -7,16 +10,18 @@ edition = "2018"
 [dependencies.sea-orm]
 version = "0.9" 
 features = [ 
+	"sqlx-sqlite",
 	"sqlx-postgres",
-	"runtime-actix-rustls",
+	"runtime-tokio-rustls",
 	"macros"
 ] 
 
 [dependencies]
+migration = { path = "migration" }
 tokio = { version = "1.10.0", features = ["full"] }
-sqlx = { version = "0.6.0", features = [ "runtime-actix-rustls", "postgres", "chrono" ] }
-clap = { version = "3.1.0", features = ["derive"] }
+clap = { version = "3.2.16", features = ["derive"] }
 serde = "1.0.126"
+sqlx = { version = "0.6.0", features = [ "runtime-tokio-rustls", "postgres", "chrono", "sqlite" ] }
 serde_json = { version = "1.0.64", features = [ "preserve_order" ] }
 jsonwebtoken = "8"
 dotenv = "0.15.0"

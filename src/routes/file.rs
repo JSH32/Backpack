@@ -8,8 +8,8 @@ use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 use nanoid::nanoid;
 use sea_orm::{
-    sea_query::SimpleExpr, ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
-    ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, Set, Statement,
+    sea_query::SimpleExpr, ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, ModelTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -167,19 +167,20 @@ async fn stats(
     state: web::Data<State>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> Response<impl Responder> {
-    // Im not using an ORM for this query
-    let usage = state
-        .database
-        .query_one(Statement::from_sql_and_values(
-            DbBackend::Postgres,
-            r#"SELECT COALESCE(CAST(SUM(size) AS BIGINT), 0) FROM files WHERE uploader = $1"#,
-            vec![user.id.clone().into()],
-        ))
-        .await?;
+    let expr = files::Entity::find()
+        .select_only()
+        .filter(files::Column::Uploader.eq(user.id.clone()))
+        .column_as(files::Column::Size.sum(), "sum")
+        .build(state.database.get_database_backend())
+        .to_owned();
+
+    println!("{}", expr);
+
+    let usage = state.database.query_one(expr).await?;
 
     Ok(HttpResponse::Ok().json(FileStats {
         usage: match usage {
-            Some(v) => v.try_get("", "coalesce")?,
+            Some(v) => v.try_get("", "sum")?,
             None => 0,
         },
     }))

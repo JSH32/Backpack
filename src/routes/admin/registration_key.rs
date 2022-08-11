@@ -47,7 +47,7 @@ async fn create(
 ) -> Response<impl Responder> {
     Ok(HttpResponse::Ok().json(RegistrationKeyData::from(
         registration_keys::ActiveModel {
-            issueru: Set(user.id.to_owned()),
+            issuer: Set(user.id.to_owned()),
             uses_left: Set(query.max_uses.unwrap_or(1)),
             ..Default::default()
         }
