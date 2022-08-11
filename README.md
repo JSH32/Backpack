@@ -23,4 +23,5 @@ I know we aren't even at the version one launch yet, but I have some features in
  - [ ] Multiple language support
  - [ ] Paste support (hastebin, pastebin)
  - [ ] Plugin API (Basic scripting to add functionality/callbacks)
+ - [x] Multiple database support (PostgreSQL, MySQL, SQLite)
  - [x] NextJS client and color themes.
