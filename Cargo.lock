@@ -546,6 +546,7 @@ dependencies = [
  "figlet-rs",
  "futures",
  "git-version",
+ "heck 0.4.0",
  "image",
  "indicatif",
  "infer",

@@ -228,7 +228,6 @@ async fn list(
     }
 
     let storage_url = PathBuf::from(state.storage_url.clone());
-
     Ok(HttpResponse::Ok().json(Page {
         page: *page_number,
         pages,

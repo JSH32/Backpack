@@ -7,6 +7,7 @@ use utoipa::OpenApi;
 
 use crate::models::*;
 
+use crate::models::admin::file::FileQuery;
 use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
 
@@ -37,6 +38,7 @@ use crate::routes;
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
+        routes::admin::file::list
     ),
     components(
         AppInfo,
@@ -58,6 +60,7 @@ use crate::routes;
         BatchDeleteRequest,
         BatchDeleteResponse,
         BatchFileError,
+        FileQuery
     ),
     tags(
         (name = "server", description = "Server information endpoints."),

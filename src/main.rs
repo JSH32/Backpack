@@ -16,6 +16,9 @@ use tokio::{
 };
 
 use internal::file::IMAGE_EXTS;
+use tracing_actix_web::TracingLogger;
+use tracing_forest::ForestLayer;
+use tracing_subscriber::{prelude::*, Registry};
 use utoipa::OpenApi;
 
 use migration::{Migrator, MigratorTrait};
@@ -47,6 +50,7 @@ mod docs;
 mod internal;
 mod models;
 mod routes;
+mod services;
 mod state;
 mod storage;
 
@@ -60,9 +64,14 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let subscriber = tracing_subscriber::fmt()
+        .with_env_filter("RUST_LOG=INFO")
+        .finish();
+    Registry::default().with(ForestLayer::default()).init();
+
     // Setup actix log
-    std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
-    env_logger::init();
+    // std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
+    // env_logger::init();
 
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
@@ -174,7 +183,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let base_storage_path = storage_path.clone();
         App::new()
-            .wrap(Logger::default())
+            .wrap(TracingLogger::default())
+            // .wrap(Logger::default())
             .app_data(api_state.clone())
             .route(
                 "/api/docs/openapi.json",

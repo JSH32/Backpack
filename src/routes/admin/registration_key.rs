@@ -63,10 +63,7 @@ async fn create(
 #[utoipa::path(
     context_path = "/api/admin/registrationKey",
     tag = "admin",
-    responses(
-        (status = 200, body = RegistrationKeyPage),
-        (status = 400, body = MessageResponse, description = "Invalid credentials"),
-    ),
+    responses((status = 200, body = RegistrationKeyPage)),
     params(
         ("page_number" = usize, path, description = "Page to get")
     ),
@@ -107,7 +104,6 @@ async fn list(
     responses(
         (status = 200, body = RegistrationKeyData),
         (status = 404, body = MessageResponse, description = "Registration key was not found"),
-        (status = 400, body = MessageResponse, description = "Invalid credentials"),
     ),
     params(
         ("registration_id" = usize, path, description = "Registration key to get")
@@ -142,7 +138,6 @@ async fn get_one(
     responses(
         (status = 200, body = MessageResponse, description = "Registration key was deleted"),
         (status = 404, body = MessageResponse, description = "Registration key was not found"),
-        (status = 400, body = MessageResponse, description = "Invalid credentials"),
     ),
     params(
         ("registration_id" = usize, path, description = "Registration key to delete")
