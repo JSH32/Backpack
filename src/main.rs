@@ -1,4 +1,7 @@
-use crate::{database::entity::files, docs::ApiDoc, internal::GIT_VERSION};
+use crate::{
+    database::entity::files, docs::ApiDoc, internal::GIT_VERSION,
+    services::registration_key::RegistrationKeyService,
+};
 use actix_http::Uri;
 use actix_multipart_extract::MultipartConfig;
 use clap::Parser;
@@ -9,6 +12,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, Statement};
 use state::State;
+use std::sync::Arc;
 use tokio::{
     fs,
     runtime::Builder,
@@ -16,9 +20,6 @@ use tokio::{
 };
 
 use internal::file::IMAGE_EXTS;
-use tracing_actix_web::TracingLogger;
-use tracing_forest::ForestLayer;
-use tracing_subscriber::{prelude::*, Registry};
 use utoipa::OpenApi;
 
 use migration::{Migrator, MigratorTrait};
@@ -64,14 +65,9 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let subscriber = tracing_subscriber::fmt()
-        .with_env_filter("RUST_LOG=INFO")
-        .finish();
-    Registry::default().with(ForestLayer::default()).init();
-
     // Setup actix log
-    // std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
-    // env_logger::init();
+    std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
+    env_logger::init();
 
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
@@ -84,9 +80,11 @@ async fn main() -> std::io::Result<()> {
     let config = config::Config::new();
     let args = Args::parse();
 
-    let database = sea_orm::Database::connect(&config.database_url)
-        .await
-        .unwrap();
+    let database = Arc::new(
+        sea_orm::Database::connect(&config.database_url)
+            .await
+            .unwrap(),
+    );
 
     log::info!(
         "Connected to the database ({})",
@@ -146,7 +144,7 @@ async fn main() -> std::io::Result<()> {
     let invite_only = config.invite_only;
 
     let api_state = Data::new(state::State {
-        database,
+        database: database.as_ref().clone(),
         storage,
         jwt_key: config.jwt_key,
         smtp_client,
@@ -157,6 +155,8 @@ async fn main() -> std::io::Result<()> {
         file_size_limit: config.file_size_limit * 1000 * 1000,
         invite_only: config.invite_only,
     });
+
+    let registration_key_service = Data::new(RegistrationKeyService::new(database));
 
     // If the generate thumbnails flag is enabled
     if args.generate_thumbnails {
@@ -183,9 +183,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let base_storage_path = storage_path.clone();
         App::new()
-            .wrap(TracingLogger::default())
-            // .wrap(Logger::default())
+            .wrap(Logger::default())
             .app_data(api_state.clone())
+            .app_data(registration_key_service.clone())
             .route(
                 "/api/docs/openapi.json",
                 web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),

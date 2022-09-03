@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
-use utoipa::IntoParams;
 
 use crate::{
     database::entity::files,
@@ -32,7 +31,8 @@ pub fn get_routes() -> Scope {
         (status = 404, body = MessageResponse, description = "Page not found")
     ),
     params(
-        ("page_number" = usize, path, description = "Page to get")
+        ("page_number" = usize, Path, description = "Page to get"),
+        FileQuery
     ),
     security(("apiKey" = [])),
 )]
@@ -44,7 +44,7 @@ async fn list(
     _user: Auth<auth_role::Admin>,
 ) -> Response<impl Responder> {
     let mut condition = Condition::all();
-    if let Some(user_id) = &query.user_id {
+    if let Some(user_id) = &query.user {
         condition = condition.add(files::Column::Uploader.eq(user_id.clone()));
     }
 
@@ -66,7 +66,7 @@ async fn list(
     Ok(HttpResponse::Ok().json(Page {
         page: *page_number,
         pages,
-        list: paginator
+        items: paginator
             .fetch_page(*page_number - 1)
             .await?
             .iter()

@@ -199,8 +199,8 @@ async fn stats(
         (status = 404, body = MessageResponse, description = "Page not found")
     ),
     params(
-        ("page_number" = u64, path, description = "Page to get files by (starts at 1)"),
-        ("query" = Option<str>, query, description = "Query by file name similarity")
+        ("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
+        ("query" = Option<str>, Query, description = "Query by file name similarity")
     ),
     security(("apiKey" = [])),
 )]
@@ -231,7 +231,7 @@ async fn list(
     Ok(HttpResponse::Ok().json(Page {
         page: *page_number,
         pages,
-        list: paginator
+        items: paginator
             .fetch_page(*page_number - 1)
             .await?
             .iter()
@@ -258,7 +258,7 @@ async fn list(
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, path, description = "File ID"),
+        ("file_id" = u64, Path, description = "File ID"),
     ),
     security(("apiKey" = [])),
 )]
@@ -309,7 +309,7 @@ async fn info(
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, path, description = "File ID"),
+        ("file_id" = u64, Path, description = "File ID"),
     ),
     security(("apiKey" = [])),
 )]

@@ -41,7 +41,7 @@ pub fn validate_paginate(page_number: usize, total_pages: usize) -> Option<Messa
         ));
     }
 
-    if total_pages < 1 {
+    if total_pages < page_number {
         return Some(MessageResponse::new(
             StatusCode::NOT_FOUND,
             &format!("There are only {} pages", total_pages),

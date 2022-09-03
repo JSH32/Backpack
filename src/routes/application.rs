@@ -32,7 +32,7 @@ pub fn get_routes() -> Scope {
         (status = 404, body = MessageResponse, description = "Application not found")
     ),
     params(
-        ("application_id" = str, path, description = "Application ID to get token for"),
+        ("application_id" = str, Path, description = "Application ID to get token for"),
     ),
     security(("apiKey" = [])),
 )]

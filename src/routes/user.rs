@@ -284,13 +284,13 @@ async fn create(
 
     // Update the registration key here since we don't want to modify the record if failed
     if let Some(mut registration_key) = registration_key {
-        let uses_left = registration_key.uses_left.clone().unwrap();
-
-        if uses_left <= 1 {
-            registration_key.delete(&state.database).await?;
-        } else {
-            registration_key.uses_left = Set(uses_left - 1);
-            registration_key.update(&state.database).await?;
+        if let Some(uses_left) = registration_key.uses_left.clone().unwrap() {
+            if uses_left <= 1 {
+                registration_key.delete(&state.database).await?;
+            } else {
+                registration_key.uses_left = Set(Some(uses_left - 1));
+                registration_key.update(&state.database).await?;
+            }
         }
     }
 
@@ -408,7 +408,7 @@ async fn resend_verify(
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     params(
-        ("code" = str, path, description = "Verification code to verify"),
+        ("code" = str, Path, description = "Verification code to verify"),
     )
 )]
 #[patch("/verify/{code}")]

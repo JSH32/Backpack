@@ -1,9 +1,10 @@
 use serde::Deserialize;
-use utoipa::{Component, IntoParams};
+use utoipa::IntoParams;
 
-#[derive(Deserialize, IntoParams, Component)]
-#[serde(rename_all = "camelCase")]
+#[derive(Deserialize, IntoParams)]
 pub struct FileQuery {
+    /// Filename search
     pub search: Option<String>,
-    pub user_id: Option<String>,
+    /// File uploader ID
+    pub user: Option<String>,
 }

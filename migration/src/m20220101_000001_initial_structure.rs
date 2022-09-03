@@ -211,12 +211,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .unique_key(),
                     )
-                    .col(
-                        ColumnDef::new(RegistrationKeys::UsesLeft)
-                            .integer()
-                            .not_null()
-                            .default(1),
-                    )
+                    .col(ColumnDef::new(RegistrationKeys::UsesLeft).integer())
                     .col(ColumnDef::new(RegistrationKeys::ExpiryDate).timestamp_with_time_zone())
                     .to_owned(),
             )

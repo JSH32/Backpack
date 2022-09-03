@@ -2,14 +2,14 @@
 /* tslint:disable */
 
 export type FileData = {
-    size: number;
     hash: string;
-    name: string;
-    url?: string;
-    uploader: string;
-    uploaded: number;
     id: string;
+    name: string;
     originalName: string;
+    size: number;
     thumbnailUrl?: string;
+    uploaded: number;
+    uploader: string;
+    url?: string;
 };
 

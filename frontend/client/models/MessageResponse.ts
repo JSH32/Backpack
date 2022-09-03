@@ -5,6 +5,7 @@
  * Standard message response.
  */
 export type MessageResponse = {
+    data: any;
     /**
      * Optional error (only on 500 errors)
      */
@@ -13,9 +14,5 @@ export type MessageResponse = {
      * Message
      */
     message: string;
-    /**
-     * Optional data, can be any JSON object
-     */
-    data?: any;
 };
 

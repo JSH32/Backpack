@@ -2,9 +2,9 @@
 /* tslint:disable */
 
 export type UpdateUserSettings = {
-    newPassword?: string;
-    email?: string;
-    username?: string;
     currentPassword: string;
+    email?: string;
+    newPassword?: string;
+    username?: string;
 };
 

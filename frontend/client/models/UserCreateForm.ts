@@ -2,9 +2,9 @@
 /* tslint:disable */
 
 export type UserCreateForm = {
+    email: string;
     password: string;
     registrationKey?: string;
-    email: string;
     username: string;
 };
 

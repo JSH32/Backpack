@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
+import type { FilePage } from '../models/FilePage';
 import type { MessageResponse } from '../models/MessageResponse';
 import type { RegistrationKeyData } from '../models/RegistrationKeyData';
 import type { RegistrationKeyPage } from '../models/RegistrationKeyPage';
@@ -17,21 +18,21 @@ export class AdminService {
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
-     * @param maxUses Maximum amount of key uses.
+     * @param uses Maximum amount of key uses.
+     * @param expiration Expiration in milliseconds from creation date.
      * @returns RegistrationKeyData
      * @throws ApiError
      */
     public create(
-        maxUses?: number,
+        uses?: number,
+        expiration?: number,
     ): CancelablePromise<RegistrationKeyData> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/admin/registrationKey',
             query: {
-                'max_uses': maxUses,
-            },
-            errors: {
-                400: `Invalid credentials`,
+                'uses': uses,
+                'expiration': expiration,
             },
         });
     }
@@ -54,9 +55,6 @@ export class AdminService {
             url: '/api/admin/registrationKey/list/{page_number}',
             path: {
                 'page_number': pageNumber,
-            },
-            errors: {
-                400: `Invalid credentials`,
             },
         });
     }
@@ -81,7 +79,6 @@ export class AdminService {
                 'registration_id': registrationId,
             },
             errors: {
-                400: `Invalid credentials`,
                 404: `Registration key was not found`,
             },
         });
@@ -107,8 +104,41 @@ export class AdminService {
                 'registration_id': registrationId,
             },
             errors: {
-                400: `Invalid credentials`,
                 404: `Registration key was not found`,
+            },
+        });
+    }
+
+    /**
+     * Get a paginated list of files
+     * - Minimum required role: `admin`
+     * - Allow unverified users: `true`
+     * - Application token allowed: `false`
+     *
+     * @param pageNumber Page to get
+     * @param search Filename search
+     * @param user File uploader ID
+     * @returns FilePage
+     * @throws ApiError
+     */
+    public list1(
+        pageNumber: number,
+        search?: string,
+        user?: string,
+    ): CancelablePromise<FilePage> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/file/list/list/{page_number}',
+            path: {
+                'page_number': pageNumber,
+            },
+            query: {
+                'search': search,
+                'user': user,
+            },
+            errors: {
+                400: `Invalid page number`,
+                404: `Page not found`,
             },
         });
     }

@@ -8,20 +8,21 @@ use crate::{database::entity::settings, internal::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
+use migration::schema;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Display;
-use utoipa::Component;
+use utoipa::ToSchema;
 
-use self::admin::registration_key::RegistrationKeyData;
+use self::registration_key::RegistrationKeyData;
 pub use self::{admin::*, application::*, auth::*, file::*, user::*};
 
 /// Standard message response.
 ///
 /// Usually the only field will be `message`
-#[derive(Serialize, Debug, Component)]
-#[component(example = json!({"message": "string"}))]
+#[derive(Serialize, Debug, ToSchema)]
+#[schema(example = json!({"message": "string"}))]
 pub struct MessageResponse {
     #[serde(skip)]
     code: StatusCode,
@@ -35,6 +36,7 @@ pub struct MessageResponse {
 
     /// Optional data, can be any JSON object
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Object)]
     data: Option<HashMap<String, serde_json::Value>>,
 }
 
@@ -138,7 +140,7 @@ impl Responder for MessageResponse {
     }
 }
 
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[aliases(
     FilePage = Page<FileData>,
     RegistrationKeyPage = Page<RegistrationKeyData>
@@ -146,11 +148,11 @@ impl Responder for MessageResponse {
 pub struct Page<T> {
     pub page: usize,
     pub pages: usize,
-    pub list: Vec<T>,
+    pub items: Vec<T>,
 }
 
 /// Public server configuration
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
     /// App name
