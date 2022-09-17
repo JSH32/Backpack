@@ -1,7 +1,7 @@
 use serde::Deserialize;
-use utoipa::Component;
+use utoipa::ToSchema;
 
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 pub struct BasicAuthForm {
     pub auth: String,
     pub password: String,

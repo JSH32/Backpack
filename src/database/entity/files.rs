@@ -16,6 +16,7 @@ pub struct Model {
     pub hash: String,
     pub uploaded: DateTimeWithTimeZone,
     pub size: i64,
+    pub has_thumbnail: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -94,7 +94,7 @@ export const FileSearch: React.FC<{
         </Box>
       ) : (
         <Flex justifyContent="center" gap="20px" wrap="wrap" mt={6}>
-          {searchResult.list.map((file: FileData) => (
+          {searchResult.items.map((file: FileData) => (
             <FileCard
               key={file.id}
               file={file}

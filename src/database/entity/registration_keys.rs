@@ -13,7 +13,7 @@ pub struct Model {
     pub issuer: String,
     #[sea_orm(unique)]
     pub code: Uuid,
-    pub uses_left: i32,
+    pub uses_left: Option<i32>,
     pub expiry_date: Option<DateTimeUtc>,
 }
 

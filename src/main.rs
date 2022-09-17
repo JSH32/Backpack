@@ -1,4 +1,12 @@
-use crate::{database::entity::files, docs::ApiDoc, internal::GIT_VERSION};
+use crate::{
+    database::entity::files,
+    docs::ApiDoc,
+    internal::GIT_VERSION,
+    services::{
+        application::ApplicationService, auth::AuthService, file::FileService,
+        registration_key::RegistrationKeyService, user::UserService,
+    },
+};
 use actix_http::Uri;
 use actix_multipart_extract::MultipartConfig;
 use clap::Parser;
@@ -8,9 +16,8 @@ use figlet_rs::FIGfont;
 use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, Statement};
-use state::State;
+use std::sync::{Arc, RwLock};
 use tokio::{
-    fs,
     runtime::Builder,
     sync::mpsc::{unbounded_channel, UnboundedSender},
 };
@@ -30,10 +37,6 @@ use actix_web::{
 
 use actix_files::NamedFile;
 
-use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
-
-use storage::{local::LocalProvider, s3::S3Provider, StorageProvider};
-
 #[macro_use]
 extern crate lazy_static;
 
@@ -47,8 +50,7 @@ mod docs;
 mod internal;
 mod models;
 mod routes;
-mod state;
-mod storage;
+mod services;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -75,9 +77,11 @@ async fn main() -> std::io::Result<()> {
     let config = config::Config::new();
     let args = Args::parse();
 
-    let database = sea_orm::Database::connect(&config.database_url)
-        .await
-        .unwrap();
+    let database = Data::new(
+        sea_orm::Database::connect(&config.database_url)
+            .await
+            .unwrap(),
+    );
 
     log::info!(
         "Connected to the database ({})",
@@ -89,69 +93,58 @@ async fn main() -> std::io::Result<()> {
         Migrator::up(&database, None).await.unwrap();
     }
 
-    let storage: Box<dyn StorageProvider> = match &config.storage_provider {
-        StorageConfig::Local(v) => {
-            if !v.path.exists() {
-                fs::create_dir(&v.path).await.expect(&format!(
-                    "Unable to create {} directory",
-                    v.path.to_str().unwrap_or("storage")
-                ));
-            }
-
-            // Thumbnail directory
-            let mut thumb_path = v.path.clone();
-            thumb_path.push("thumb");
-
-            if !thumb_path.exists() {
-                fs::create_dir(&thumb_path)
-                    .await
-                    .expect("Unable to create thumbnail directory");
-            }
-
-            Box::new(LocalProvider::new(v.path.clone()))
-        }
-        StorageConfig::S3(v) => Box::new(S3Provider::new(
-            &v.bucket,
-            &v.access_key,
-            &v.secret_key,
-            v.region.clone(),
-        )),
-    };
-
-    let smtp_client = match config.smtp_config {
-        Some(smtp_config) => {
-            let creds = Credentials::new(smtp_config.username.clone(), smtp_config.password);
-
-            Some((
-                AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_config.server)
-                    .unwrap()
-                    .credentials(creds)
-                    .build(),
-                smtp_config.username,
-            ))
-        }
-        None => None,
-    };
-
     // Get setting as single boolean before client gets moved
     let invite_only = config.invite_only;
 
-    let api_state = Data::new(state::State {
-        database,
-        storage,
-        jwt_key: config.jwt_key,
-        smtp_client,
-        api_url: config.api_url.parse::<Uri>().unwrap(),
-        client_url: config.client_url.parse::<Uri>().unwrap(),
-        storage_url: config.storage_url,
-        // Convert MB to bytes
-        file_size_limit: config.file_size_limit * 1000 * 1000,
-        invite_only: config.invite_only,
-    });
+    // Registration key service.
+    let registration_key_service =
+        Data::new(RegistrationKeyService::new(database.clone().into_inner()));
+
+    // File service.
+    let file_service = Data::new(
+        FileService::new(
+            database.clone().into_inner(),
+            config.storage_provider.clone(),
+            &config.storage_url,
+            config.file_size_limit,
+        )
+        .await,
+    );
+
+    // User service.
+    let user_service = Data::new(UserService::new(
+        database.clone().into_inner(),
+        registration_key_service.clone().into_inner(),
+        file_service.clone().into_inner(),
+        config.smtp_config,
+        &config.client_url,
+        config.invite_only,
+    ));
+
+    let application_service_container = Arc::new(RwLock::new(None));
+
+    // Auth service.
+    let auth_service = Data::new(AuthService::new(
+        user_service.clone().into_inner(),
+        application_service_container.clone(),
+        config.api_url.parse::<Uri>().unwrap(),
+        config.jwt_key,
+    ));
+
+    // Application service.
+    let application_service = Data::new(ApplicationService::new(
+        database.clone().into_inner(),
+        auth_service.clone().into_inner(),
+    ));
+
+    application_service_container
+        .write()
+        .unwrap()
+        .replace(application_service.clone().into_inner());
 
     // If the generate thumbnails flag is enabled
     if args.generate_thumbnails {
-        generate_thumbnails(&api_state).await.unwrap();
+        generate_thumbnails(&database, &file_service).await.unwrap();
         return Ok(());
     }
 
@@ -175,7 +168,12 @@ async fn main() -> std::io::Result<()> {
         let base_storage_path = storage_path.clone();
         App::new()
             .wrap(Logger::default())
-            .app_data(api_state.clone())
+            .app_data(database.clone())
+            .app_data(registration_key_service.clone())
+            .app_data(user_service.clone())
+            .app_data(file_service.clone())
+            .app_data(auth_service.clone())
+            .app_data(application_service.clone())
             .route(
                 "/api/docs/openapi.json",
                 web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
@@ -257,12 +255,16 @@ async fn get_db_version(database: &DatabaseConnection) -> Result<String, anyhow:
     })
 }
 
+/// TODO: Move this to admin panel with a websocket.
 /// Regenerate all thumbnails.
 /// This is a multithreaded blocking operation used in the CLI.
-async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
+async fn generate_thumbnails(
+    database: &Arc<DatabaseConnection>,
+    file_service: &Arc<FileService>,
+) -> anyhow::Result<()> {
     log::info!("Regenerating image thumbnails");
 
-    let files = files::Entity::find().all(&state.database).await?;
+    let files = files::Entity::find().all(database.as_ref()).await?;
 
     // Get every file which is an image or has an image extension.
     let image_files: Vec<files::Model> = files
@@ -316,11 +318,11 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
             .into_iter()
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
-            let state = state.clone();
+            let file_service = file_service.clone();
             let task_tx: UnboundedSender<Result<String, (String, String)>> = tx.clone();
             let spawner = runtime.handle().clone();
             tokio::spawn(async move {
-                match state.storage.get_object(&file.name).await {
+                match file_service.storage.get_object(&file.name).await {
                     Ok(buf) => {
                         // Open a new task on the custom tokio runtime.
                         let resized = spawner
@@ -331,7 +333,7 @@ async fn generate_thumbnails(state: &Data<State>) -> anyhow::Result<()> {
                         match resized {
                             Ok(v) => {
                                 // Write thumbnail object to storage.
-                                if let Err(err) = state
+                                if let Err(err) = file_service
                                     .storage
                                     .put_object(&format!("thumb/{}", file.name), &v)
                                     .await

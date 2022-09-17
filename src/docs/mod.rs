@@ -13,7 +13,7 @@ use crate::routes;
 /// Backpack API Documentation
 #[derive(OpenApi)]
 #[openapi(
-    handlers(
+    paths(
         routes::info,
         routes::user::info,
         routes::user::settings,
@@ -37,27 +37,31 @@ use crate::routes;
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
+        // routes::admin::file::list
     ),
     components(
-        AppInfo,
-        MessageResponse,
-        UserData,
-        UserRole,
-        UpdateUserSettings,
-        UserCreateForm,
-        UserDeleteForm,
-        UploadFile,
-        FileData,
-        FileStats,
-        FilePage,
-        ApplicationData,
-        TokenResponse,
-        ApplicationCreate,
-        BasicAuthForm,
-        RegistrationKeyData,
-        BatchDeleteRequest,
-        BatchDeleteResponse,
-        BatchFileError,
+        schemas(
+            AppInfo,
+            MessageResponse,
+            UserData,
+            UserRole,
+            UpdateUserSettings,
+            UserCreateForm,
+            UserDeleteForm,
+            UploadFile,
+            UploadConflict,
+            FileData,
+            FileStats,
+            FilePage,
+            ApplicationData,
+            TokenResponse,
+            ApplicationCreate,
+            BasicAuthForm,
+            RegistrationKeyData,
+            BatchDeleteRequest,
+            BatchDeleteResponse,
+            BatchFileError,
+        )
     ),
     tags(
         (name = "server", description = "Server information endpoints."),

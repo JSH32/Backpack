@@ -2,22 +2,22 @@
 /* tslint:disable */
 
 export type RegistrationKeyData = {
-    id: string;
     /**
      * Registration key.
      */
     code: string;
     /**
+     * Key invalidation date.
+     */
+    expiryDate: string;
+    id: string;
+    /**
      * Admin which issued this registration key.
      */
-    issUser: string;
+    issuer: string;
     /**
      * Amount of uses left.
      */
-    usesLeft: number;
-    /**
-     * Key invalidation date.
-     */
-    expiryDate?: string;
+    usesLeft?: number;
 };
 

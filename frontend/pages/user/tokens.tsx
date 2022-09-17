@@ -37,27 +37,27 @@ import { Authenticated } from "components/Authenticated"
 import { Page } from "layouts/Page"
 import { useForm } from "react-hook-form"
 import { DataList, DataListCell, DataListHeader, DataListRow } from "components/DataList"
-
+import { Pagination } from "components/Pagination"
 import PlusIcon from "assets/icons/plus.svg"
 import TrashIcon from "assets/icons/trash.svg"
 import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
 import { timeAgo, copyText } from "helpers/util"
-import { ApplicationData } from "@/client"
+import { ApplicationData, ApplicationPage } from "@/client"
 import api from "helpers/api"
 
 const Tokens: NextPage = () => {
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const [applications, setApplications] = React.useState<ApplicationData[]>([])
+  const [applications, setApplications] = React.useState<ApplicationPage | null>()
   const tokenForm = useForm()
   const [loadingTokens, setLoadingTokens] = React.useState(true)
 
   const onDeleteApplication = (id: string) => {
     api.application.delete(id)
       .then(() => {
-        setApplications(applications.filter((app) => app.id !== id))
+        getApplicationPage(1)
         toast({
           title: "Success",
           description: "Application deleted",
@@ -76,6 +76,18 @@ const Tokens: NextPage = () => {
         })
       })
   }
+
+  const getApplicationPage = React.useCallback((page: number) => {
+    api.application.list(page)
+      .then(data => {
+        setApplications(data)
+        setLoadingTokens(false)
+      })
+      .catch(() => {
+        setApplications(null)
+        setLoadingTokens(false)
+      })
+  }, [])
 
   const onCopyToken = React.useCallback((id: string) => {
     api.application.token(id)
@@ -111,7 +123,7 @@ const Tokens: NextPage = () => {
           isClosable: true
         })
         closeForm()
-        setApplications(applications.concat(res))
+        getApplicationPage(1)
       })
       .catch(error => {
         toast({
@@ -129,13 +141,9 @@ const Tokens: NextPage = () => {
     onClose()
   }, [tokenForm.reset])
 
+  // Initial load page 1.
   React.useEffect(() => {
-    api.application.list()
-      .then(data => {
-        setApplications(data)
-        setLoadingTokens(false)
-      })
-      .catch(() => [])
+    getApplicationPage(1)
   }, [])
 
   return (
@@ -190,7 +198,7 @@ const Tokens: NextPage = () => {
                 </ModalContent>
               </Modal>
               <Divider />
-              { applications.length > 0 ? <DataList>
+              { applications !== null ? <DataList>
                 <DataListHeader>
                   <DataListCell
                     colName="name"
@@ -209,7 +217,7 @@ const Tokens: NextPage = () => {
                   </DataListCell>
                   <DataListCell colWidth="3rem" colName="actions" align="flex-end" />
                 </DataListHeader>
-                {applications.map(application => (
+                {applications?.items.map(application => (
                   <DataListRow key={application.id}>
                     <DataListCell colName="name">
                       <Text>{application.name}</Text>
@@ -245,6 +253,16 @@ const Tokens: NextPage = () => {
                   </VStack>}
                 </Center>  
               </DataList>}
+              {applications && (
+                <Flex justifyContent="center" mt={5}>
+                  <Pagination
+                    pages={applications.pages}
+                    currentPage={applications.page}
+                    range={3}
+                    onPageSelect={(page) => getApplicationPage(page)}
+                  />
+                </Flex>
+              )}
             </Stack>
           </Box>
         </Flex>

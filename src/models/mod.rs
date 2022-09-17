@@ -12,16 +12,16 @@ use sea_orm::ActiveEnum;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Display;
-use utoipa::Component;
+use utoipa::ToSchema;
 
-use self::admin::registration_key::RegistrationKeyData;
+use self::registration_key::RegistrationKeyData;
 pub use self::{admin::*, application::*, auth::*, file::*, user::*};
 
 /// Standard message response.
 ///
 /// Usually the only field will be `message`
-#[derive(Serialize, Debug, Component)]
-#[component(example = json!({"message": "string"}))]
+#[derive(Serialize, Debug, ToSchema)]
+#[schema(example = json!({"message": "string"}))]
 pub struct MessageResponse {
     #[serde(skip)]
     code: StatusCode,
@@ -35,6 +35,7 @@ pub struct MessageResponse {
 
     /// Optional data, can be any JSON object
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Object)]
     data: Option<HashMap<String, serde_json::Value>>,
 }
 
@@ -138,19 +139,20 @@ impl Responder for MessageResponse {
     }
 }
 
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[aliases(
     FilePage = Page<FileData>,
-    RegistrationKeyPage = Page<RegistrationKeyData>
+    RegistrationKeyPage = Page<RegistrationKeyData>,
+    ApplicationPage = Page<ApplicationData>
 )]
 pub struct Page<T> {
     pub page: usize,
     pub pages: usize,
-    pub list: Vec<T>,
+    pub items: Vec<T>,
 }
 
 /// Public server configuration
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
     /// App name
@@ -162,7 +164,7 @@ pub struct AppInfo {
     /// Theme color of the Backpack instance
     pub color: String,
 
-    /// Git tag or commit hash.
+    /// Are registration keys enabled?
     pub invite_only: bool,
 
     /// Is SMTP (email verification) enabled on the server?
@@ -170,10 +172,18 @@ pub struct AppInfo {
 
     /// Git tag (version) or commit hash
     pub git_version: String,
+
+    /// Amount of files uploaded.
+    pub uploaded_files: usize,
 }
 
 impl AppInfo {
-    pub fn new(settings_model: settings::Model, invite_only: bool, smtp: bool) -> Self {
+    pub fn new(
+        settings_model: settings::Model,
+        invite_only: bool,
+        smtp: bool,
+        uploaded_files: usize,
+    ) -> Self {
         Self {
             app_name: settings_model.app_name,
             app_description: settings_model.app_description,
@@ -181,6 +191,7 @@ impl AppInfo {
             invite_only,
             smtp,
             git_version: GIT_VERSION.to_string(),
+            uploaded_files,
         }
     }
 }

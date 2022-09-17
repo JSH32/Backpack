@@ -17,21 +17,21 @@ export class AdminService {
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
-     * @param maxUses Maximum amount of key uses.
+     * @param uses Maximum amount of key uses.
+     * @param expiration Expiration in milliseconds from creation date.
      * @returns RegistrationKeyData
      * @throws ApiError
      */
     public create(
-        maxUses?: number,
+        uses?: number,
+        expiration?: number,
     ): CancelablePromise<RegistrationKeyData> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/admin/registrationKey',
             query: {
-                'max_uses': maxUses,
-            },
-            errors: {
-                400: `Invalid credentials`,
+                'uses': uses,
+                'expiration': expiration,
             },
         });
     }
@@ -54,9 +54,6 @@ export class AdminService {
             url: '/api/admin/registrationKey/list/{page_number}',
             path: {
                 'page_number': pageNumber,
-            },
-            errors: {
-                400: `Invalid credentials`,
             },
         });
     }
@@ -81,7 +78,6 @@ export class AdminService {
                 'registration_id': registrationId,
             },
             errors: {
-                400: `Invalid credentials`,
                 404: `Registration key was not found`,
             },
         });
@@ -107,7 +103,6 @@ export class AdminService {
                 'registration_id': registrationId,
             },
             errors: {
-                400: `Invalid credentials`,
                 404: `Registration key was not found`,
             },
         });

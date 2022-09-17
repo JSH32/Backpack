@@ -63,7 +63,7 @@ const FileInfo: React.FC = () => {
             })
     }, [fileInfo])
 
-    return <div className="fileinfo">
+    return <Box className="fileinfo">
         {isError ? <Page title="Invalid File">
             <Result type="error" title="Invalid resource">
                 <Text><chakra.span fontWeight="bold">{id}</chakra.span> was an invalid resource</Text>
@@ -121,7 +121,7 @@ const FileInfo: React.FC = () => {
                     </Flex>
                 </Page>}
         </>}
-    </div>
+    </Box>
 }
 
 export default FileInfo

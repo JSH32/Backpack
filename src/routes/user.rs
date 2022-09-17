@@ -1,24 +1,11 @@
 use actix_web::{
     delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope,
 };
-use argon2::{self, Argon2, PasswordHash, PasswordVerifier};
-use lettre::AsyncTransport;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, Set};
-use uuid::Uuid;
 
 use crate::{
-    database::entity::{files, registration_keys, users, verifications},
-    internal::{
-        self,
-        auth::{auth_role, AllowApplication, AllowUnverified, Auth, DenyApplication},
-        file::can_have_thumbnail,
-        random_string,
-        response::Response,
-        user::{new_password, validate_username, verification_email},
-        EMAIL_REGEX,
-    },
+    internal::auth::{auth_role, AllowApplication, AllowUnverified, Auth, DenyApplication},
     models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData, UserDeleteForm},
-    state::State,
+    services::{user::UserService, ToResponse},
 };
 
 pub fn get_routes() -> Scope {
@@ -65,144 +52,20 @@ async fn info(user: Auth<auth_role::User, AllowUnverified, AllowApplication>) ->
 )]
 #[put("/settings")]
 async fn settings(
-    user: Auth<auth_role::User, AllowUnverified>,
-    state: web::Data<State>,
+    service: web::Data<UserService>,
     form: web::Json<UpdateUserSettings>,
-) -> Response<impl Responder> {
-    // Check if the users password is correct
-    if !Argon2::default()
-        .verify_password(
-            form.current_password.as_bytes(),
-            &PasswordHash::new(&user.password)?,
+    user: Auth<auth_role::User, AllowUnverified>,
+) -> impl Responder {
+    service
+        .update_settings(
+            &user,
+            form.0.email,
+            form.0.username,
+            form.0.new_password,
+            form.0.current_password,
         )
-        .is_ok()
-    {
-        return Ok(
-            MessageResponse::new(StatusCode::BAD_REQUEST, "Incorrect current password")
-                .http_response(),
-        );
-    }
-
-    // We set the properties in here (except current_password) from the if blocks.
-    // So that if we get one error afterwards it does not change partial data
-    let mut to_change = UpdateUserSettings {
-        current_password: "".to_string(), // Don't change this
-
-        email: None,
-        username: None,
-        new_password: None,
-    };
-
-    if let Some(new_password) = &form.new_password {
-        to_change.new_password = match internal::user::new_password(&new_password)? {
-            Ok(v) => Some(v),
-            Err(err) => return Ok(err.http_response()),
-        }
-    }
-
-    if let Some(new_email) = &form.email {
-        if !EMAIL_REGEX.is_match(&new_email) {
-            return Ok(
-                MessageResponse::new(StatusCode::BAD_REQUEST, "Invalid email was provided")
-                    .http_response(),
-            );
-        }
-
-        if users::Entity::find()
-            .filter(users::Column::Email.eq(new_email.to_owned()))
-            .one(&state.database)
-            .await?
-            .is_some()
-        {
-            return MessageResponse::ok(
-                StatusCode::CONFLICT,
-                "An account with that email already exists!",
-            );
-        }
-
-        to_change.email = Some(new_email.to_string());
-    }
-
-    if let Some(new_username) = &form.username {
-        if let Err(err) = validate_username(&new_username) {
-            return Ok(err.http_response());
-        }
-
-        if users::Entity::find()
-            .filter(users::Column::Username.eq(new_username.to_owned()))
-            .one(&state.database)
-            .await?
-            .is_some()
-        {
-            return MessageResponse::ok(
-                StatusCode::CONFLICT,
-                "An account with that username already exists!",
-            );
-        }
-
-        to_change.username = Some(new_username.to_string());
-    }
-
-    let mut update_model = users::ActiveModel {
-        id: Set(user.id.to_owned()),
-        ..Default::default()
-    };
-
-    // Update email if change validated
-    if let Some(email) = &to_change.email {
-        update_model.email = Set(email.to_owned());
-
-        if let Some(_) = &state.smtp_client {
-            update_model.verified = Set(false)
-        }
-    }
-
-    // Update password if change validated
-    if let Some(new_password) = to_change.new_password {
-        update_model.password = Set(new_password);
-    }
-
-    // Update username if change validated
-    if let Some(new_username) = to_change.username {
-        update_model.username = Set(new_username);
-    }
-
-    // Perform all updates
-    update_model.update(&state.database).await?;
-
-    // After the update we need to send the new verification email if the email was updated
-    if let (Some(email), Some(smtp)) = (to_change.email, &state.smtp_client) {
-        // If email validation is on we need to resend the email and unverify the user
-        let random_code = random_string(72);
-
-        let success = verifications::ActiveModel {
-            user_id: Set(user.id.to_owned()),
-            code: Set(random_code.to_owned()),
-            ..Default::default()
-        }
-        .insert(&state.database)
         .await
-        .is_err();
-
-        if success {
-            let email =
-                verification_email(&state.client_url.to_string(), &smtp.1, &email, &random_code);
-            let mailer = smtp.clone().0;
-            tokio::spawn(async move {
-                let _ = mailer.send(email).await;
-            });
-        }
-    }
-
-    // Send updated user data in case of data change
-    Ok(HttpResponse::Ok().json(UserData::from(
-        users::Entity::find_by_id(user.id.to_owned())
-            .one(&state.database)
-            .await?
-            .ok_or(DbErr::Custom(
-                "user was not found even though we just did an update".to_string(),
-            ))?,
-    )))
+        .to_response::<UserData>(StatusCode::OK)
 }
 
 /// Create a new user
@@ -218,122 +81,22 @@ async fn settings(
 )]
 #[post("")]
 async fn create(
-    state: web::Data<State>,
+    service: web::Data<UserService>,
     form: web::Json<UserCreateForm>,
-) -> Response<impl Responder> {
-    let registration_key: Option<registration_keys::ActiveModel> = if state.invite_only {
-        if let Some(key) = &form.registration_key {
-            let uuid_key = match Uuid::parse_str(key) {
-                Ok(v) => v,
-                Err(_) => {
-                    return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid registration key")
-                }
-            };
-
-            match registration_keys::Entity::find()
-                .filter(registration_keys::Column::Code.eq(uuid_key))
-                .one(&state.database)
-                .await?
-            {
-                Some(v) => Some(v.into()),
-                None => {
-                    return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid registration key")
-                }
-            }
-        } else {
-            return MessageResponse::ok(StatusCode::BAD_REQUEST, "Registration key required");
-        }
-    } else {
-        None
-    };
-
-    // Check if username length is within bounds
-    if let Err(err) = validate_username(&form.username) {
-        return Ok(err.http_response());
-    }
-
-    if !EMAIL_REGEX.is_match(&form.email) {
-        return MessageResponse::ok(StatusCode::BAD_REQUEST, "Invalid email was provided");
-    }
-
-    // Check if user with same email was found
-    if users::Entity::find()
-        .filter(users::Column::Email.eq(form.email.to_owned()))
-        .one(&state.database)
-        .await?
-        .is_some()
-    {
-        return MessageResponse::ok(
-            StatusCode::CONFLICT,
-            "An account with that email already exists!",
-        );
-    }
-
-    // Check if user with same username was found
-    if users::Entity::find()
-        .filter(users::Column::Username.eq(form.username.to_owned()))
-        .one(&state.database)
-        .await?
-        .is_some()
-    {
-        return MessageResponse::ok(
-            StatusCode::CONFLICT,
-            "An account with that username already exists!",
-        );
-    }
-
-    // Update the registration key here since we don't want to modify the record if failed
-    if let Some(mut registration_key) = registration_key {
-        let uses_left = registration_key.uses_left.clone().unwrap();
-
-        if uses_left <= 1 {
-            registration_key.delete(&state.database).await?;
-        } else {
-            registration_key.uses_left = Set(uses_left - 1);
-            registration_key.update(&state.database).await?;
-        }
-    }
-
-    let user_data: users::Model = users::ActiveModel {
-        username: Set(form.username.to_owned()),
-        email: Set(form.email.to_owned()),
-        password: Set(match new_password(&form.password)? {
-            Ok(password_hashed) => password_hashed,
-            Err(err) => return Ok(err.http_response()),
-        }),
-        ..Default::default()
-    }
-    .insert(&state.database)
-    .await?;
-
-    // Send the user an email
-    if let Some(smtp) = &state.smtp_client {
-        let random_code = random_string(72);
-
-        let success = verifications::ActiveModel {
-            user_id: Set(user_data.id.to_owned()),
-            code: Set(random_code.to_owned()),
-            ..Default::default()
-        }
-        .insert(&state.database)
+) -> impl Responder {
+    match service
+        .create_user(
+            form.0.username,
+            form.0.email,
+            form.0.password,
+            form.0.registration_key,
+        )
         .await
-        .is_ok();
-
-        if success {
-            let email = verification_email(
-                &state.client_url.to_string(),
-                &smtp.1,
-                &user_data.email,
-                &random_code,
-            );
-            let mailer = smtp.clone().0;
-            tokio::spawn(async move {
-                let _ = mailer.send(email).await;
-            });
-        }
+    {
+        Ok(_) => MessageResponse::new(StatusCode::OK, "User has successfully been created")
+            .http_response(),
+        Err(e) => e.to_response(),
     }
-
-    MessageResponse::ok(StatusCode::OK, "User has successfully been created")
 }
 
 /// Resend a verification code to the email
@@ -354,46 +117,17 @@ async fn create(
 )]
 #[patch("/verify/resend")]
 async fn resend_verify(
-    state: web::Data<State>,
+    service: web::Data<UserService>,
     user: Auth<auth_role::User, AllowUnverified>,
-) -> Response<impl Responder> {
-    if let None = state.smtp_client {
-        return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
+) -> impl Responder {
+    match service.resend_verification(&user).await {
+        Ok(v) => MessageResponse::new(
+            StatusCode::OK,
+            &format!("Verification email resent to {}", v),
+        )
+        .http_response(),
+        Err(e) => e.to_response(),
     }
-
-    if user.verified {
-        return MessageResponse::ok(StatusCode::CONFLICT, "You are already verified");
-    }
-
-    let mut verification_model = verifications::ActiveModel {
-        user_id: Set(user.id.to_owned()),
-        ..Default::default()
-    };
-
-    verification_model.clone().delete(&state.database).await?;
-
-    // Update model and create new verification
-    let random_code = random_string(72);
-    verification_model.code = Set(random_code.to_owned());
-    verification_model.insert(&state.database).await?;
-
-    let smtp = state.smtp_client.as_ref().unwrap();
-    let email = verification_email(
-        &state.client_url.to_string(),
-        &smtp.1,
-        &user.email,
-        &random_code,
-    );
-
-    let mailer = smtp.clone().0;
-    tokio::spawn(async move {
-        let _ = mailer.send(email).await;
-    });
-
-    MessageResponse::ok(
-        StatusCode::OK,
-        &format!("Verification email resent to {}", user.email),
-    )
 }
 
 /// Verify using a verification code
@@ -408,39 +142,14 @@ async fn resend_verify(
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     params(
-        ("code" = str, path, description = "Verification code to verify"),
+        ("code" = str, Path, description = "Verification code to verify"),
     )
 )]
 #[patch("/verify/{code}")]
-async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<impl Responder> {
-    if let None = state.smtp_client {
-        return MessageResponse::ok(StatusCode::GONE, "SMTP is disabled");
-    }
-
-    match verifications::Entity::find()
-        .filter(verifications::Column::Code.eq(code.to_owned()))
-        .find_also_related(users::Entity)
-        .one(&state.database)
-        .await?
-    {
-        Some((verification, user_data_opt)) => {
-            // This can't really be None
-            let user_data = user_data_opt.unwrap();
-
-            verification.delete(&state.database).await?;
-
-            let mut active_user: users::ActiveModel = user_data.into();
-            active_user.verified = Set(true);
-            active_user.update(&state.database).await?;
-
-            MessageResponse::ok(StatusCode::OK, "User has been verified")
-        }
-        None => {
-            return MessageResponse::ok(
-                StatusCode::BAD_REQUEST,
-                "Invalid verification code was provided",
-            )
-        }
+async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> impl Responder {
+    match service.verify_by_code(&code).await {
+        Ok(_) => MessageResponse::new(StatusCode::OK, "User has been verified").http_response(),
+        Err(e) => e.to_response(),
     }
 }
 
@@ -460,46 +169,12 @@ async fn verify(state: web::Data<State>, code: web::Path<String>) -> Response<im
 )]
 #[delete("")]
 async fn delete(
-    state: web::Data<State>,
+    service: web::Data<UserService>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication>,
     form: web::Json<UserDeleteForm>,
-) -> Response<impl Responder> {
-    if !Argon2::default()
-        .verify_password(
-            form.password.as_bytes(),
-            &PasswordHash::new(&user.password)?,
-        )
-        .is_ok()
-    {
-        return Ok(
-            MessageResponse::new(StatusCode::BAD_REQUEST, "Incorrect password").http_response(),
-        );
+) -> impl Responder {
+    match service.delete(&user, Some(&form.password)).await {
+        Ok(_) => MessageResponse::new(StatusCode::OK, "User has been deleted").http_response(),
+        Err(e) => e.to_response(),
     }
-
-    let mut files: Vec<String> = user
-        .find_related(files::Entity)
-        .all(&state.database)
-        .await?
-        .iter()
-        .map(|f| (f.name.to_owned()))
-        .collect();
-
-    // Add all thumbnails
-    files.extend(
-        files
-            .iter()
-            .filter(|f| can_have_thumbnail(f))
-            .map(|f| format!("thumb/{}", f))
-            .collect::<Vec<String>>(),
-    );
-
-    // Delete the user before deleting the files.
-    // File deletion may take a while, if something happens to the server we would rather keep the actual files rather than the records.
-    // This is also to prevent the user from doing anything while the operation is occuring.
-    user.clone().delete(&state.database).await?;
-
-    // Delete every file.
-    let _ = state.storage.delete_objects(files).await;
-
-    Ok(MessageResponse::new(StatusCode::OK, "User deleted").http_response())
 }

@@ -2,9 +2,12 @@
 /* tslint:disable */
 
 export type UserCreateForm = {
-    password: string;
-    registrationKey?: string;
     email: string;
+    password: string;
+    /**
+     * Only needed when service is invite_only.
+     */
+    registrationKey?: string;
     username: string;
 };
 

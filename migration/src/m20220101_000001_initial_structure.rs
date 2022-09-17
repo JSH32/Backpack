@@ -166,6 +166,12 @@ impl MigrationTrait for Migration {
                             .extra("DEFAULT CURRENT_TIMESTAMP".into()),
                     )
                     .col(ColumnDef::new(Files::Size).big_integer().not_null())
+                    .col(
+                        ColumnDef::new(Files::HasThumbnail)
+                            .boolean()
+                            .default(false)
+                            .not_null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .from(Files::Table, Files::Uploader)
@@ -211,12 +217,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .unique_key(),
                     )
-                    .col(
-                        ColumnDef::new(RegistrationKeys::UsesLeft)
-                            .integer()
-                            .not_null()
-                            .default(1),
-                    )
+                    .col(ColumnDef::new(RegistrationKeys::UsesLeft).integer())
                     .col(ColumnDef::new(RegistrationKeys::ExpiryDate).timestamp_with_time_zone())
                     .to_owned(),
             )
@@ -288,6 +289,7 @@ enum Files {
     Id,
     Name,
     OriginalName,
+    HasThumbnail,
     Uploader,
     Hash,
     Uploaded,

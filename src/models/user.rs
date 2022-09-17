@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use utoipa::Component;
+use utoipa::ToSchema;
 
 use crate::database::entity::{sea_orm_active_enums::Role, users};
 
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 pub struct UserData {
     pub id: String,
     pub username: String,
@@ -25,7 +25,7 @@ impl From<users::Model> for UserData {
 }
 
 /// User access level (user, admin)
-#[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd, Component)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, PartialOrd, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum UserRole {
     User,
@@ -41,22 +41,22 @@ impl From<Role> for UserRole {
     }
 }
 
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
-    // Only needed when invite_only
+    /// Only needed when service is invite_only.
     pub registration_key: Option<String>,
 }
 
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 pub struct UserDeleteForm {
     pub password: String,
 }
 
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -68,6 +68,6 @@ pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_password: Option<String>,
 
-    // Always require old password to change options
+    /// Always require old password to change options.
     pub current_password: String,
 }

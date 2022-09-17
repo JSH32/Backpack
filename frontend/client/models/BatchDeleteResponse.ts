@@ -7,7 +7,7 @@ import type { BatchFileError } from './BatchFileError';
  * Response containing information about deleted files.
  */
 export type BatchDeleteResponse = {
-    errors: Array<BatchFileError>;
     deleted: Array<string>;
+    errors: Array<BatchFileError>;
 };
 

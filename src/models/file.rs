@@ -4,31 +4,25 @@ use actix_multipart_extract::{File, MultipartForm};
 use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
-use utoipa::Component;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::internal::file::can_have_thumbnail;
 
 use crate::database::entity::files;
 
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FileData {
     pub id: String,
     pub uploader: String,
     pub name: String,
     pub original_name: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail_url: Option<String>,
-
     pub hash: String,
-
-    #[component(value_type = f64)]
-    pub uploaded: DateTime<Utc>,
     pub size: i64,
+    #[schema(value_type = f64)]
+    pub uploaded: DateTime<Utc>,
 }
 
 impl From<files::Model> for FileData {
@@ -67,21 +61,21 @@ impl FileData {
 }
 
 /// File stats for user.
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 pub struct FileStats {
     /// Total usage in bytes
     pub usage: i64,
 }
 
 /// Delete multiple files.
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 pub struct BatchDeleteRequest {
     /// IDs to delete.
     pub ids: Vec<String>,
 }
 
 /// Response containing information about deleted files.
-#[derive(Serialize, Component, Default)]
+#[derive(Serialize, ToSchema, Default)]
 pub struct BatchDeleteResponse {
     /// All successfully deleted files.
     pub deleted: Vec<String>,
@@ -91,7 +85,7 @@ pub struct BatchDeleteResponse {
 }
 
 /// Error for an individual item in a batch operation.
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 pub struct BatchFileError {
     /// ID of the item.
     pub id: String,
@@ -100,10 +94,22 @@ pub struct BatchFileError {
     pub error: String,
 }
 
+/// Identical file was already uploaded.
+#[derive(Serialize, ToSchema)]
+pub struct UploadConflict {
+    pub message: String,
+    pub file: FileData,
+}
+
 /// Upload a file.
-#[derive(Deserialize, MultipartForm, Component, Debug)]
+#[derive(Deserialize, MultipartForm, ToSchema, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadFile {
-    #[component(value_type = String, format = ComponentFormat::Binary)]
+    #[schema(value_type = String, format = Binary)]
     pub upload_file: File,
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct FileQuery {
+    pub query: Option<String>,
 }

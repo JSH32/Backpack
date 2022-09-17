@@ -1,32 +1,19 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::ops::Deref;
 
 use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
-use nanoid::nanoid;
-use sea_orm::{
-    sea_query::SimpleExpr, ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, ModelTrait,
-    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
-};
-use serde_json::json;
-use sha2::{Digest, Sha256};
 
+use crate::services::ToPageResponse;
 use crate::{
-    database::entity::files,
-    internal::{
-        auth::{auth_role, AllowApplication, Auth, DenyUnverified},
-        file::{get_thumbnail_image, IMAGE_EXTS},
-        response::{self, Response},
-        validate_paginate,
-    },
+    internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
     models::{
-        BatchDeleteRequest, BatchDeleteResponse, BatchFileError, FileData, FileStats,
-        MessageResponse, Page, UploadFile,
+        BatchDeleteRequest, BatchDeleteResponse, FileData, FileQuery, FileStats, UploadConflict,
+        UploadFile,
     },
-    state::State,
+    services::{
+        file::{FileService, UploadResult},
+        ToMessageResponse, ToResponse,
+    },
 };
 
 pub fn get_routes() -> Scope {
@@ -56,100 +43,23 @@ pub fn get_routes() -> Scope {
 )]
 #[post("")]
 async fn upload(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
     file: Multipart<UploadFile>,
-) -> Response<impl Responder> {
-    if file.upload_file.bytes.len() > state.file_size_limit {
-        return MessageResponse::ok(
-            StatusCode::PAYLOAD_TOO_LARGE,
-            &format!(
-                "File was larger than the size limit of {}mb",
-                state.file_size_limit / 1000 / 1000
-            ),
-        );
-    }
-
-    let extension = Path::new(&file.upload_file.name)
-        .extension()
-        .and_then(OsStr::to_str)
-        .unwrap_or("");
-
-    // New filename, collision not likely with NanoID
-    let filename = nanoid!(10) + "." + extension;
-
-    let hash = &format!("{:x}", Sha256::digest(&file.upload_file.bytes));
-
-    let file_exists = files::Entity::find()
-        .filter(files::Column::Hash.eq(hash.to_owned()))
-        .one(&state.database)
-        .await?;
-
-    if let Some(file) = file_exists {
-        // Push the existing file name for the matching hash
-        let mut file_url = PathBuf::from(&state.storage_url);
-        file_url.push(file.name);
-
-        // let mut object = serde_json::Map::new();
-        let mut object = HashMap::new();
-        object.insert(
-            "url".to_string(),
-            json!(&file_url.as_path().display().to_string().replace("\\", "/")),
-        );
-
-        return MessageResponse::ok_with_data(
-            StatusCode::CONFLICT,
-            "You have already uploaded this file",
-            object,
-        );
-    }
-
-    let file_model = files::ActiveModel {
-        uploader: Set(user.id.to_owned()),
-        name: Set(filename.to_owned()),
-        original_name: Set(file.upload_file.name.to_owned()),
-        hash: Set(hash.to_owned()),
-        size: Set(file.upload_file.bytes.len() as i64),
-        ..Default::default()
-    }
-    .insert(&state.database)
-    .await?;
-
-    // Upload file to storage provider
-    // If this fails attempt to delete the file from database
-    if let Err(err) = state
-        .storage
-        .put_object(&filename, &file.upload_file.bytes)
+) -> impl Responder {
+    match service
+        .upload_file(&user.id, &file.upload_file.name, &file.upload_file.bytes)
         .await
     {
-        let _ = file_model.delete(&state.database).await;
-        return Err(response::Error(err));
+        Ok(v) => match v {
+            UploadResult::Success(file) => HttpResponse::Ok().json(file),
+            UploadResult::Conflict(file) => HttpResponse::Conflict().json(UploadConflict {
+                message: "File was already uploaded".into(),
+                file,
+            }),
+        },
+        Err(e) => e.to_response(),
     }
-
-    let root_path = PathBuf::from(&state.storage_url);
-
-    let mut file_data = FileData::from(file_model);
-
-    // Create thumbnail
-    if IMAGE_EXTS
-        .into_iter()
-        .any(|ext| ext.eq(&extension.to_uppercase()))
-    {
-        // We don't care if this fails. Thumbnail can fail for whatever reason due to image encoding
-        // User/API caller should not expect thumbnail to ALWAYS exist
-        if let Ok(image) = &get_thumbnail_image(&file.upload_file.bytes) {
-            // TODO: Store thumbnail status as a boolean in database just in case
-            let _ = state
-                .storage
-                .put_object(&format!("thumb/{}", &filename), image)
-                .await;
-
-            file_data.set_thumbnail_url(root_path.clone());
-        }
-    }
-
-    file_data.set_url(root_path.clone());
-    Ok(HttpResponse::Ok().json(file_data))
 }
 
 /// Get file stats for user
@@ -164,26 +74,13 @@ async fn upload(
 )]
 #[get("/stats")]
 async fn stats(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
-) -> Response<impl Responder> {
-    let expr = files::Entity::find()
-        .select_only()
-        .filter(files::Column::Uploader.eq(user.id.clone()))
-        .column_as(files::Column::Size.sum(), "sum")
-        .build(state.database.get_database_backend())
-        .to_owned();
-
-    println!("{}", expr);
-
-    let usage = state.database.query_one(expr).await?;
-
-    Ok(HttpResponse::Ok().json(FileStats {
-        usage: match usage {
-            Some(v) => v.try_get("", "sum")?,
-            None => 0,
-        },
-    }))
+) -> impl Responder {
+    service
+        .user_stats(&user.id)
+        .await
+        .to_response::<FileStats>(StatusCode::OK)
 }
 
 /// Get a paginated list of files
@@ -199,51 +96,27 @@ async fn stats(
         (status = 404, body = MessageResponse, description = "Page not found")
     ),
     params(
-        ("page_number" = u64, path, description = "Page to get files by (starts at 1)"),
-        ("query" = Option<str>, query, description = "Query by file name similarity")
+        ("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
+        FileQuery
     ),
     security(("apiKey" = [])),
 )]
 #[get("/list/{page_number}")]
 async fn list(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     page_number: web::Path<usize>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
-    query_params: web::Query<HashMap<String, String>>,
-) -> Response<impl Responder> {
-    let query = match query_params.get("query") {
-        Some(str) => files::Column::Name.like(&format!("%{}%", str)),
-        None => SimpleExpr::Custom("true".to_string()),
-    };
-
-    let paginator = files::Entity::find()
-        .filter(files::Column::Uploader.eq(user.id.to_owned()))
-        .filter(query)
-        .order_by_desc(files::Column::Uploaded)
-        .paginate(&state.database, 25);
-
-    let pages = paginator.num_pages().await?;
-    if let Some(err) = validate_paginate(*page_number, pages) {
-        return Ok(err.http_response());
-    }
-
-    let storage_url = PathBuf::from(state.storage_url.clone());
-
-    Ok(HttpResponse::Ok().json(Page {
-        page: *page_number,
-        pages,
-        list: paginator
-            .fetch_page(*page_number - 1)
-            .await?
-            .iter()
-            .map(|model| {
-                let mut file_data = FileData::from(model.to_owned());
-                file_data.set_url(storage_url.clone());
-                file_data.set_thumbnail_url(storage_url.clone());
-                file_data
-            })
-            .collect(),
-    }))
+    query: web::Query<FileQuery>,
+) -> impl Responder {
+    service
+        .get_file_page(
+            *page_number,
+            25,
+            Some(&user.id),
+            query.query.as_ref().map(Deref::deref),
+        )
+        .await
+        .to_page_response::<FileData>(StatusCode::OK)
 }
 
 /// Get file data by ID
@@ -259,42 +132,20 @@ async fn list(
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, path, description = "File ID"),
+        ("file_id" = u64, Path, description = "File ID"),
     ),
     security(("apiKey" = [])),
 )]
 #[get("/{file_id}")]
 async fn info(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     file_id: web::Path<String>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
-) -> Response<impl Responder> {
-    Ok(
-        match files::Entity::find_by_id(file_id.to_string())
-            .one(&state.database)
-            .await?
-        {
-            Some(v) => {
-                if v.uploader != user.id {
-                    MessageResponse::new(
-                        StatusCode::FORBIDDEN,
-                        "You are not allowed to access this file",
-                    )
-                    .http_response()
-                } else {
-                    let storage_url = PathBuf::from(&state.storage_url);
-
-                    let mut file = FileData::from(v);
-                    file.set_url(storage_url.clone());
-                    file.set_thumbnail_url(storage_url);
-
-                    HttpResponse::Ok().json(file)
-                }
-            }
-            None => MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found")
-                .http_response(),
-        },
-    )
+) -> impl Responder {
+    service
+        .get_file(&file_id, Some(&user.id))
+        .await
+        .to_response::<FileData>(StatusCode::OK)
 }
 
 /// Delete file data by ID.
@@ -310,42 +161,20 @@ async fn info(
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, path, description = "File ID"),
+        ("file_id" = u64, Path, description = "File ID"),
     ),
     security(("apiKey" = [])),
 )]
 #[delete("/{file_id}")]
 async fn delete_file(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     file_id: web::Path<String>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
-) -> Response<impl Responder> {
-    Ok(
-        match files::Entity::find_by_id(file_id.to_string())
-            .one(&state.database)
-            .await?
-        {
-            Some(v) => {
-                if v.uploader != user.id {
-                    MessageResponse::new(
-                        StatusCode::FORBIDDEN,
-                        "You are not allowed to access this file",
-                    )
-                } else {
-                    v.clone().delete(&state.database).await?;
-
-                    // We dont care about the result of this because of discrepancies
-                    let _ = state
-                        .storage
-                        .delete_objects(vec![v.name.clone(), format!("thumb/{}", &v.name)])
-                        .await;
-
-                    MessageResponse::new(StatusCode::OK, &format!("File {} was deleted", v.name))
-                }
-            }
-            None => MessageResponse::new(StatusCode::NOT_FOUND, "That file was not found"),
-        },
-    )
+) -> impl Responder {
+    service
+        .delete_file(&file_id, Some(&user.id))
+        .await
+        .to_message_response(StatusCode::OK)
 }
 
 /// Delete multiple files by ID.
@@ -364,51 +193,12 @@ async fn delete_file(
 )]
 #[delete("/batch")]
 async fn delete_files(
-    state: web::Data<State>,
+    service: web::Data<FileService>,
     body: web::Json<BatchDeleteRequest>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
-) -> Response<impl Responder> {
-    let mut response = BatchDeleteResponse::default();
-
-    let files = files::Entity::find()
-        .filter(files::Column::Id.is_in(body.ids.clone()))
-        .all(&state.database)
-        .await?;
-
-    // All IDs found in the query.
-    let ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
-
-    // Add errors for every ID in the request that was not found in the query.
-    for id in &body.ids {
-        if !ids.contains(id) {
-            response.errors.push(BatchFileError {
-                id: id.to_string(),
-                error: "That file does not exist.".to_string(),
-            })
-        }
-    }
-
-    for file in files {
-        // File must be owned by uploader.
-        if file.uploader != user.id {
-            response.errors.push(BatchFileError {
-                id: file.id,
-                error: "You are not allowed to access this file.".to_string(),
-            });
-
-            continue;
-        }
-
-        file.clone().delete(&state.database).await?;
-
-        // We dont care about the result of this because of possible discrepancies, just pretend the file is deleted.
-        let _ = state
-            .storage
-            .delete_objects(vec![file.name.clone(), format!("thumb/{}", &file.name)])
-            .await;
-
-        response.deleted.push(file.id);
-    }
-
-    Ok(HttpResponse::Ok().json(response))
+) -> impl Responder {
+    service
+        .delete_batch(&body.ids, Some(&user.id))
+        .await
+        .to_response::<BatchDeleteResponse>(StatusCode::OK)
 }

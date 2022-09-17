@@ -1,24 +1,23 @@
 use sea_orm::prelude::DateTimeUtc;
 use serde::{Deserialize, Serialize};
-use utoipa::Component;
+use utoipa::ToSchema;
 
 use crate::database::entity::applications;
 
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationData {
     pub id: String,
     pub name: String,
 
     /// Last time the application was used for a request
-    #[component(value_type = String)]
+    #[schema(value_type = String)]
     pub last_accessed: DateTimeUtc,
 
     /// User ID who owns the application
     pub user_id: String,
 
     /// Only sent when the token is originally created
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
 
@@ -36,13 +35,13 @@ impl From<applications::Model> for ApplicationData {
 }
 
 /// Token data response
-#[derive(Serialize, Component)]
+#[derive(Serialize, ToSchema)]
 pub struct TokenResponse {
     pub token: String,
 }
 
 /// Application create request
-#[derive(Deserialize, Component)]
+#[derive(Deserialize, ToSchema)]
 pub struct ApplicationCreate {
     pub name: String,
 }

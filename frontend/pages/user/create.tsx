@@ -29,7 +29,7 @@ import { VerificationMessage } from "components/VerificationMessage"
 import { NextPage } from "next"
 import { useRouter } from "next/router"
 import { useAppInfo } from "helpers/info"
-import { UserCreateForm, UserService } from "@/client"
+import { UserCreateForm } from "@/client"
 import api from "helpers/api"
 
 const UserCreate: NextPage = () => {

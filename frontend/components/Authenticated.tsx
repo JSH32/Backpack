@@ -22,7 +22,7 @@ export const Authenticated: React.FC<{
             .then(data => {
                 setUserData(data)
             })
-            .catch(err => {
+            .catch(() => {
                 Router.replace("/user/login")
             })
 
@@ -30,13 +30,16 @@ export const Authenticated: React.FC<{
         return observe(store, "userData", data => setUserData(data.newValue as UserData))
     }, [])
     
-    // While user data was not loaded just send back nothing
-    if (!userData || userData.verified === undefined)
-        return <Page></Page>
-
-    // SMTP verification was enabled and the user was not verified
-    if (appInfo?.smtp && !allowUnverified && !userData.verified)
-        return <VerificationMessage email={userData.email}/>
-
-    return <Page>{children}</Page>
+    return <>
+        {!userData || userData.verified === undefined ? 
+            // User data wasn't loaded, render empty page.
+            <Page></Page> 
+        : appInfo?.smtp && !allowUnverified && !userData.verified ? 
+            // SMTP verification was enabled and the user was not verified
+            <VerificationMessage email={userData.email}/> 
+        :
+            // Everything is fine. Load page.
+            <Page>{children}</Page>
+        }
+    </>
 }
