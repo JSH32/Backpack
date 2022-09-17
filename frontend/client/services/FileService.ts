@@ -69,7 +69,7 @@ export class FileService {
      * - Application token allowed: `true`
      *
      * @param pageNumber Page to get files by (starts at 1)
-     * @param query Query by file name similarity
+     * @param query
      * @returns FilePage
      * @throws ApiError
      */

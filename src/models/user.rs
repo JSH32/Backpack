@@ -47,7 +47,7 @@ pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
-    // Only needed when invite_only
+    /// Only needed when service is invite_only.
     pub registration_key: Option<String>,
 }
 
@@ -68,6 +68,6 @@ pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_password: Option<String>,
 
-    // Always require old password to change options
+    /// Always require old password to change options.
     pub current_password: String,
 }

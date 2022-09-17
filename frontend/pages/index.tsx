@@ -2,15 +2,12 @@ import type { NextPage } from "next"
 
 import * as React from "react"
 import UploadIcon from "/assets/icons/upload.svg"
-import { Heading, Icon, Text, VStack } from "@chakra-ui/react"
+import { Heading, HStack, Icon, Text, VStack } from "@chakra-ui/react"
 import { Page } from "layouts/Page"
 import { observer } from "mobx-react-lite"
 import { useAppInfo } from "helpers/info"
 
 const Home: NextPage = observer(() => {
-    // File counter
-    const [count] = React.useState(420)
-
     const appInfo = useAppInfo()
 
     return <Page title={appInfo?.appName}>
@@ -24,7 +21,10 @@ const Home: NextPage = observer(() => {
                     fontSize="6xl">
                     {appInfo?.appName}</Heading>
             <Text fontSize="xl">{appInfo?.appDescription}</Text>
-            <Text fontSize="2xl">{count} <Icon as={UploadIcon}/></Text>
+            <HStack>
+                <Text fontSize="2xl">{appInfo?.uploadedFiles}</Text>
+                <Icon as={UploadIcon} fontSize="xl"/>
+            </HStack>
         </VStack>
     </Page>
 })

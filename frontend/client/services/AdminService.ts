@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* tslint:disable */
-import type { FilePage } from '../models/FilePage';
 import type { MessageResponse } from '../models/MessageResponse';
 import type { RegistrationKeyData } from '../models/RegistrationKeyData';
 import type { RegistrationKeyPage } from '../models/RegistrationKeyPage';
@@ -105,40 +104,6 @@ export class AdminService {
             },
             errors: {
                 404: `Registration key was not found`,
-            },
-        });
-    }
-
-    /**
-     * Get a paginated list of files
-     * - Minimum required role: `admin`
-     * - Allow unverified users: `true`
-     * - Application token allowed: `false`
-     *
-     * @param pageNumber Page to get
-     * @param search Filename search
-     * @param user File uploader ID
-     * @returns FilePage
-     * @throws ApiError
-     */
-    public list1(
-        pageNumber: number,
-        search?: string,
-        user?: string,
-    ): CancelablePromise<FilePage> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/file/list/list/{page_number}',
-            path: {
-                'page_number': pageNumber,
-            },
-            query: {
-                'search': search,
-                'user': user,
-            },
-            errors: {
-                400: `Invalid page number`,
-                404: `Page not found`,
             },
         });
     }

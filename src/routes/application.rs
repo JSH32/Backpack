@@ -55,7 +55,7 @@ async fn token(
 #[utoipa::path(
     context_path = "/api/application",
     tag = "application",
-    responses((status = 200, body = [ApplicationData])),
+    responses((status = 200, body = ApplicationPage)),
     params(
         ("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
     ),
@@ -70,7 +70,7 @@ async fn list(
     service
         .get_page(
             *page_number,
-            10,
+            5,
             Some(Condition::any().add(applications::Column::UserId.eq(user.id.to_owned()))),
         )
         .await

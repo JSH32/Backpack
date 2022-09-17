@@ -293,7 +293,7 @@ impl FileService {
         }
 
         if let Some(query) = query {
-            conditions = conditions.add(files::Column::Name.eq(format!("%{}%", query)));
+            conditions = conditions.add(files::Column::Name.like(&format!("%{}%", query)));
         }
 
         let page = self.get_page(page, page_size, Some(conditions)).await?;

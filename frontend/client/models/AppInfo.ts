@@ -22,12 +22,16 @@ export type AppInfo = {
      */
     gitVersion: string;
     /**
-     * Git tag or commit hash.
+     * Are registration keys enabled?
      */
     inviteOnly: boolean;
     /**
      * Is SMTP (email verification) enabled on the server?
      */
     smtp: boolean;
+    /**
+     * Amount of files uploaded.
+     */
+    uploadedFiles: number;
 };
 

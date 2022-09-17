@@ -2,6 +2,7 @@
 /* tslint:disable */
 import type { ApplicationCreate } from '../models/ApplicationCreate';
 import type { ApplicationData } from '../models/ApplicationData';
+import type { ApplicationPage } from '../models/ApplicationPage';
 import type { MessageResponse } from '../models/MessageResponse';
 import type { TokenResponse } from '../models/TokenResponse';
 
@@ -11,22 +12,6 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ApplicationService {
 
     constructor(public readonly httpRequest: BaseHttpRequest) {}
-
-    /**
-     * Get all applications
-     * - Minimum required role: `user`
-     * - Allow unverified users: `false`
-     * - Application token allowed: `false`
-     *
-     * @returns ApplicationData
-     * @throws ApiError
-     */
-    public list(): CancelablePromise<Array<ApplicationData>> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/application',
-        });
-    }
 
     /**
      * Create an application
@@ -48,6 +33,28 @@ export class ApplicationService {
             mediaType: 'application/json',
             errors: {
                 400: `Token limit reached or invalid name`,
+            },
+        });
+    }
+
+    /**
+     * Get all applications
+     * - Minimum required role: `user`
+     * - Allow unverified users: `false`
+     * - Application token allowed: `false`
+     *
+     * @param pageNumber Page to get applications by (starts at 1)
+     * @returns ApplicationPage
+     * @throws ApiError
+     */
+    public list(
+        pageNumber: number,
+    ): CancelablePromise<ApplicationPage> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/application/list/{page_number}',
+            path: {
+                'page_number': pageNumber,
             },
         });
     }

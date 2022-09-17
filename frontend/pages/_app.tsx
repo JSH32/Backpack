@@ -9,7 +9,7 @@ import getConfig from "next/config"
 import { AppInfo } from "@/client"
 import api from "helpers/api"
 
-const { serverRuntimeConfig, publicRuntimeConfig } = getConfig()
+const { serverRuntimeConfig } = getConfig()
 
 const theme = extendTheme({
     fonts: {

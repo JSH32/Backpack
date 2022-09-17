@@ -117,7 +117,7 @@ impl UserService {
             .by_condition(
                 Condition::any()
                     .add(users::Column::Username.eq(username.to_owned()))
-                    .add(users::Column::Username.eq(email.to_owned())),
+                    .add(users::Column::Email.eq(email.to_owned())),
             )
             .await
         {
@@ -134,9 +134,10 @@ impl UserService {
                 )));
             }
             Err(e) => match e {
-                // Only error if there was a database error. Otherwise intended behavior.
-                ServiceError::DbErr(_) => return Err(e),
-                _ => {}
+                // Only error if there was an actual error.
+                // Not finding a result is intended.
+                ServiceError::NotFound(_) => {}
+                _ => return Err(e),
             },
         }
 

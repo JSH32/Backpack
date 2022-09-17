@@ -49,6 +49,7 @@ use crate::routes;
             UserCreateForm,
             UserDeleteForm,
             UploadFile,
+            UploadConflict,
             FileData,
             FileStats,
             FilePage,
@@ -59,7 +60,7 @@ use crate::routes;
             RegistrationKeyData,
             BatchDeleteRequest,
             BatchDeleteResponse,
-            BatchFileError
+            BatchFileError,
         )
     ),
     tags(

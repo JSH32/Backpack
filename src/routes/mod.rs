@@ -1,10 +1,10 @@
 use crate::{
-    database::entity::settings,
+    database::entity::{files, settings},
     models::AppInfo,
     services::{user::UserService, ServiceError},
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait};
 
 pub mod admin;
 pub mod application;
@@ -45,6 +45,14 @@ async fn info(
                 },
                 user_service.invite_only(),
                 user_service.smtp_enabled(),
+                match files::Entity::find()
+                    .count(database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))
+                {
+                    Ok(v) => v,
+                    Err(e) => return e.to_response(),
+                },
             ))
         }
         Err(e) => e.to_response(),

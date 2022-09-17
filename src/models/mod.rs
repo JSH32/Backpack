@@ -142,7 +142,8 @@ impl Responder for MessageResponse {
 #[derive(Serialize, ToSchema)]
 #[aliases(
     FilePage = Page<FileData>,
-    RegistrationKeyPage = Page<RegistrationKeyData>
+    RegistrationKeyPage = Page<RegistrationKeyData>,
+    ApplicationPage = Page<ApplicationData>
 )]
 pub struct Page<T> {
     pub page: usize,
@@ -171,10 +172,18 @@ pub struct AppInfo {
 
     /// Git tag (version) or commit hash
     pub git_version: String,
+
+    /// Amount of files uploaded.
+    pub uploaded_files: usize,
 }
 
 impl AppInfo {
-    pub fn new(settings_model: settings::Model, invite_only: bool, smtp: bool) -> Self {
+    pub fn new(
+        settings_model: settings::Model,
+        invite_only: bool,
+        smtp: bool,
+        uploaded_files: usize,
+    ) -> Self {
         Self {
             app_name: settings_model.app_name,
             app_description: settings_model.app_description,
@@ -182,6 +191,7 @@ impl AppInfo {
             invite_only,
             smtp,
             git_version: GIT_VERSION.to_string(),
+            uploaded_files,
         }
     }
 }

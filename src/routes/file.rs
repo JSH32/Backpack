@@ -97,6 +97,7 @@ async fn stats(
     ),
     params(
         ("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
+        FileQuery
     ),
     security(("apiKey" = [])),
 )]
