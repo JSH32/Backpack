@@ -8,7 +8,6 @@ use crate::{database::entity::settings, internal::GIT_VERSION};
 use actix_http::body::BoxBody;
 use actix_web::{http::StatusCode, HttpRequest, HttpResponse, Responder, ResponseError};
 use core::fmt;
-use migration::schema;
 use sea_orm::ActiveEnum;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -164,7 +163,7 @@ pub struct AppInfo {
     /// Theme color of the Backpack instance
     pub color: String,
 
-    /// Git tag or commit hash.
+    /// Are registration keys enabled?
     pub invite_only: bool,
 
     /// Is SMTP (email verification) enabled on the server?

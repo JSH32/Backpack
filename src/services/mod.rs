@@ -1,10 +1,13 @@
 use crate::models::{MessageResponse, Page};
 use actix_http::StatusCode;
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse, ResponseError};
 use serde::Serialize;
 use thiserror::Error;
 
+pub mod application;
+pub mod auth;
 pub mod data_service;
+pub mod file;
 pub mod registration_key;
 pub mod user;
 
@@ -76,10 +79,20 @@ impl<T> ToPageResponse<T> for ServiceResult<ServicePage<T>> {
 pub enum ServiceError {
     #[error("Database error: {0}")]
     DbErr(sea_orm::DbErr),
+    #[error("Server error: {0}")]
+    ServerError(anyhow::Error),
     #[error("{0} was not found")]
     NotFound(String),
     #[error("{0}")]
     InvalidData(String),
+    #[error("{0}")]
+    Conflict(String),
+    #[error("{0}")]
+    TooLarge(String),
+    #[error("{0}")]
+    Unauthorized(String),
+    #[error("You are not allowed to access this {resource}")]
+    Forbidden { id: String, resource: String },
 }
 
 impl ServiceError {
@@ -87,16 +100,43 @@ impl ServiceError {
         let message = self.to_string();
 
         MessageResponse::new(
-            match self {
-                Self::DbErr(_) => {
+            match self.http_code() {
+                StatusCode::INTERNAL_SERVER_ERROR => {
+                    // This is worth logging.
                     log::error!("{}", message);
                     StatusCode::INTERNAL_SERVER_ERROR
                 }
-                Self::NotFound(_) => StatusCode::NOT_FOUND,
-                Self::InvalidData(_) => StatusCode::BAD_REQUEST,
+                v => v,
             },
             &message,
         )
         .http_response()
+    }
+
+    pub fn http_code(&self) -> StatusCode {
+        match self {
+            Self::DbErr(_) | Self::ServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::NotFound(_) => StatusCode::NOT_FOUND,
+            Self::InvalidData(_) => StatusCode::BAD_REQUEST,
+            Self::Conflict(_) => StatusCode::CONFLICT,
+            Self::TooLarge(_) => StatusCode::PAYLOAD_TOO_LARGE,
+            Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            Self::Forbidden { id: _, resource: _ } => StatusCode::FORBIDDEN,
+        }
+    }
+
+    /// Create a simple unauthorized error.
+    pub fn unauthorized() -> ServiceError {
+        ServiceError::Unauthorized("You are not authorized to make this request".into())
+    }
+}
+
+impl ResponseError for ServiceError {
+    fn status_code(&self) -> StatusCode {
+        self.http_code()
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        self.to_response()
     }
 }

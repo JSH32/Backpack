@@ -1,8 +1,10 @@
 use crate::{
-    database::entity::settings, internal::response::Response, models::AppInfo, state::State,
+    database::entity::settings,
+    models::AppInfo,
+    services::{user::UserService, ServiceError},
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
-use sea_orm::EntityTrait;
+use sea_orm::{DatabaseConnection, EntityTrait};
 
 pub mod admin;
 pub mod application;
@@ -23,20 +25,28 @@ pub fn get_routes() -> Scope {
     )
 )]
 #[get("/info")]
-async fn info(state: web::Data<State>) -> Response<impl Responder> {
-    let settings = settings::Entity::find_by_id(true)
-        .one(&state.database)
-        .await?
-        .unwrap();
-
-    Ok(HttpResponse::Ok().json(AppInfo::new(
-        settings::Model {
-            one_row_enforce: true,
-            app_name: settings.app_name,
-            app_description: settings.app_description,
-            color: settings.color,
-        },
-        state.invite_only,
-        state.smtp_client.is_some(),
-    )))
+async fn info(
+    user_service: web::Data<UserService>,
+    database: web::Data<DatabaseConnection>,
+) -> impl Responder {
+    match settings::Entity::find_by_id(true)
+        .one(database.as_ref())
+        .await
+        .map_err(|e| ServiceError::DbErr(e))
+    {
+        Ok(settings) => {
+            let settings = settings.unwrap();
+            HttpResponse::Ok().json(AppInfo::new(
+                settings::Model {
+                    one_row_enforce: true,
+                    app_name: settings.app_name,
+                    app_description: settings.app_description,
+                    color: settings.color,
+                },
+                user_service.invite_only(),
+                user_service.smtp_enabled(),
+            ))
+        }
+        Err(e) => e.to_response(),
+    }
 }

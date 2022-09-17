@@ -4,7 +4,7 @@ use actix_multipart_extract::{File, MultipartForm};
 use serde::{Deserialize, Serialize};
 
 use chrono::{DateTime, Utc};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::internal::file::can_have_thumbnail;
 
@@ -17,18 +17,12 @@ pub struct FileData {
     pub uploader: String,
     pub name: String,
     pub original_name: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail_url: Option<String>,
-
     pub hash: String,
-
+    pub size: i64,
     #[schema(value_type = f64)]
     pub uploaded: DateTime<Utc>,
-    pub size: i64,
 }
 
 impl From<files::Model> for FileData {
@@ -100,10 +94,22 @@ pub struct BatchFileError {
     pub error: String,
 }
 
+/// Identical file was already uploaded.
+#[derive(Serialize, ToSchema)]
+pub struct UploadConflict {
+    pub message: String,
+    pub file: FileData,
+}
+
 /// Upload a file.
 #[derive(Deserialize, MultipartForm, ToSchema, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadFile {
     #[schema(value_type = String, format = Binary)]
     pub upload_file: File,
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct FileQuery {
+    pub query: Option<String>,
 }

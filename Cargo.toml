@@ -11,6 +11,7 @@ edition = "2018"
 version = "0.9" 
 features = [ 
 	"sqlx-sqlite",
+	"sqlx-mysql",
 	"sqlx-postgres",
 	"runtime-tokio-rustls",
 	"macros"

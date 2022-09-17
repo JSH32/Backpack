@@ -166,6 +166,12 @@ impl MigrationTrait for Migration {
                             .extra("DEFAULT CURRENT_TIMESTAMP".into()),
                     )
                     .col(ColumnDef::new(Files::Size).big_integer().not_null())
+                    .col(
+                        ColumnDef::new(Files::HasThumbnail)
+                            .boolean()
+                            .default(false)
+                            .not_null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .from(Files::Table, Files::Uploader)
@@ -283,6 +289,7 @@ enum Files {
     Id,
     Name,
     OriginalName,
+    HasThumbnail,
     Uploader,
     Hash,
     Uploaded,
