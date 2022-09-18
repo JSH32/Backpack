@@ -1,6 +1,6 @@
 import "../styles/globals.scss"
 import { mode } from "@chakra-ui/theme-tools"
-import { ChakraProvider, extendTheme } from "@chakra-ui/react"
+import { ChakraProvider, cookieStorageManagerSSR, extendTheme, localStorageManager } from "@chakra-ui/react"
 import React from "react"
 import App, { AppContext } from "next/app"
 import { AppInfoContext } from "helpers/info"
@@ -29,10 +29,15 @@ const theme = extendTheme({
     }
 })
 
-const MyApp = ({ Component, pageProps, appInfo }: any) => {
+const MyApp = ({ Component, pageProps, appInfo, cookies }: any) => {
+  const colorModeManager =
+    typeof cookies === "string"
+      ? cookieStorageManagerSSR(cookies)
+      : localStorageManager
+
   return (
     <AppInfoContext.Provider value={appInfo}>
-      <ChakraProvider theme={{...theme, colors: { ...theme.colors, primary: theme.colors[appInfo.color] }}}>
+      <ChakraProvider colorModeManager={colorModeManager} theme={{...theme, colors: { ...theme.colors, primary: theme.colors[appInfo.color] }}}>
         <Component {...pageProps} />
       </ChakraProvider>
     </AppInfoContext.Provider>
@@ -50,7 +55,7 @@ MyApp.getInitialProps = async (appContext: AppContext) => {
     appInfo = await api.server.info()
   }
 
-  return { ...appProps, appInfo }
+  return { ...appProps, appInfo, cookies: appContext.ctx.req?.headers.cookie ?? "" }
 }
 
 export default MyApp

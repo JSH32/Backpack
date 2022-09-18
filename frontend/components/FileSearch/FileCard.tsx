@@ -1,5 +1,5 @@
 import { Box, Button, Flex, Heading, HStack, Text, Tooltip, useColorModeValue, Icon, Image } from "@chakra-ui/react"
-import { dateToString, getExtension, isExtImage } from "helpers/util"
+import { dateToString, getExtension } from "helpers/util"
 import * as React from "react"
 import InfoIcon from "assets/icons/info.svg"
 import DeleteIcon from "assets/icons/trash.svg"
@@ -12,12 +12,12 @@ const FileCard: React.FC<{
 }> = ({ file, onDetails, onDelete }) => {
     const ext = getExtension(file.name)
 
-    return <Box 
+    return <Box
         bg={useColorModeValue("white", "gray.700")}
         rounded="lg"
         boxShadow="lg"
         position="relative">
-        { isExtImage(ext) ? <Image
+        { file.thumbnailUrl ? <Image
             w="200px"
             h="200px"
             objectFit="cover"

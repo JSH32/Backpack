@@ -44,7 +44,7 @@ import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
 import { timeAgo, copyText } from "helpers/util"
-import { ApplicationData, ApplicationPage } from "@/client"
+import { ApplicationPage } from "@/client"
 import api from "helpers/api"
 
 const Tokens: NextPage = () => {

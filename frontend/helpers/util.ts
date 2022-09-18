@@ -42,9 +42,6 @@ export const dateToString = (date: Date): string => {
 export const getExtension = (fileName: string): string =>
     fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase()
 
-export const isExtImage = (ext: string): boolean =>
-    ["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"].includes(ext)
-
 export const copyText = (text: string) => {
     const tempInput = document.createElement("input")
     tempInput.value = text

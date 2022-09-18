@@ -2,7 +2,7 @@ import * as React from "react"
 import { Resource } from "components/Resource"
 import Router, { useRouter } from "next/router"
 import { Result } from "components/Result"
-import { convertBytes, dateToString, getExtension, isExtImage } from "helpers/util"
+import { convertBytes, dateToString } from "helpers/util"
 import TrashIcon from "assets/icons/trash.svg"
 import { Page } from "layouts/Page"
 
@@ -77,7 +77,7 @@ const FileInfo: React.FC = () => {
                 </Button>}
                 id={fileInfo.id}>
                 <Box mt={5}>
-                    {isExtImage(getExtension(fileInfo.name)) ?
+                    { fileInfo.thumbnailUrl ?
                         <Image mb="10px" maxH="300px" src={fileInfo.url} alt={fileInfo.name} /> : <></>}
                     <Divider />
                     <Table wordBreak="break-all" sx={{ "font-variant-numeric": "unset;" }}>
