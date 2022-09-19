@@ -30,21 +30,25 @@ import { default as RouterLink } from "next/link"
 
 import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
+import DiscordSVG from "assets/icons/discord.svg"
 
 import styles from "styles/login.module.scss"
 import { BasicAuthForm } from "@/client"
 import api from "helpers/api"
 import getConfig from "next/config"
+import { useAppInfo } from "helpers/info"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
     const router = useRouter()
+    const appInfo = useAppInfo()
+    const { publicRuntimeConfig } = getConfig()
 
     const { token, fail } = router.query
-    const { publicRuntimeConfig } = getConfig()
 
     const { register, handleSubmit } = useForm()
     const toast = useToast()
+    
 
     React.useEffect(() => {
         if (fail) {
@@ -123,22 +127,56 @@ const Login: NextPage = () => {
                     boxShadow="lg"
                     p={8}>
                     <Stack spacing={2}>
-                        <Button w="full" variant="outline" leftIcon={<Icon as={GoogleSVG} />} onClick={() => oauthSignIn("google")}>
-                            <Center>
-                                <Text>Sign in with Google</Text>
-                            </Center>
-                        </Button>
-                        <Button w="full" colorScheme="blackAlpha" color="white" bg="black" variant="solid" leftIcon={<Icon color="white.500" as={GithubSVG} />} onClick={() => oauthSignIn("github")}>
-                            <Center>
-                                <Text>Sign in with Github</Text>
-                            </Center>
-                        </Button>
+                        { appInfo?.oauthProviders.google && 
+                            <Button 
+                                w="full" 
+                                variant="outline" 
+                                leftIcon={<Icon as={GoogleSVG} mt="2px"/>}
+                                onClick={() => oauthSignIn("google")}
+                            >
+                                <Center>
+                                    <Text>Sign in with Google</Text>
+                                </Center>
+                            </Button> 
+                        }
+                        { appInfo?.oauthProviders.github && 
+                            <Button 
+                                w="full" 
+                                colorScheme="blackAlpha" 
+                                color="white" 
+                                bg="black" 
+                                variant="solid" 
+                                leftIcon={<Icon as={GithubSVG} mt="2px"/>} 
+                                onClick={() => oauthSignIn("github")}
+                            >
+                                <Center>
+                                    <Text>Sign in with Github</Text>
+                                </Center>
+                            </Button>
+                        }
+                        { appInfo?.oauthProviders.discord && 
+                            <Button 
+                                w="full" 
+                                colorScheme="purple" 
+                                color="white" 
+                                bg="#404EED" 
+                                leftIcon={<Icon as={DiscordSVG} mt="3px" fontSize="xl"/>} 
+                                onClick={() => oauthSignIn("discord")}
+                                _hover={{ bg: "#5865F2" }}
+                            >
+                                <Center>
+                                    <Text>Sign in with Discord</Text>
+                                </Center>
+                            </Button>
+                        }
                     </Stack>
-                    <Box className={styles.separator}>
-                        <Divider borderColor="white.500" />
-                        <chakra.span>or</chakra.span>
-                        <Divider borderColor="white.500" />
-                    </Box>
+                    { Object.values(appInfo?.oauthProviders as any).some(v => v === true) && 
+                        <Box className={styles.separator}>
+                            <Divider borderColor="white.500" />
+                            <chakra.span>or</chakra.span>
+                            <Divider borderColor="white.500" />
+                        </Box> 
+                    }
                     <form onSubmit={handleSubmit(formSubmit as any)}>
                         <Stack spacing={5}>
                             <Stack spacing={2}>

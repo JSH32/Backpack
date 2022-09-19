@@ -23,6 +23,7 @@ pub struct Config {
     pub run_migrations: bool,
     pub google_oauth: Option<OAuthConfig>,
     pub github_oauth: Option<OAuthConfig>,
+    pub discord_oauth: Option<OAuthConfig>,
 }
 
 #[derive(Clone)]
@@ -122,6 +123,15 @@ impl Config {
                     true => Some(OAuthConfig {
                         client_id: get_env("GITHUB_CLIENT_ID"),
                         client_secret: get_env("GITHUB_CLIENT_SECRET"),
+                    }),
+                    false => None,
+                }
+            },
+            discord_oauth: {
+                match get_env_or("DISCORD_OAUTH_ENABLED", false) {
+                    true => Some(OAuthConfig {
+                        client_id: get_env("DISCORD_CLIENT_ID"),
+                        client_secret: get_env("DISCORD_CLIENT_SECRET"),
                     }),
                     false => None,
                 }

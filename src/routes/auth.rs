@@ -16,6 +16,8 @@ pub fn get_routes() -> Scope {
         .service(google_auth)
         .service(github_login)
         .service(github_auth)
+        .service(discord_login)
+        .service(discord_auth)
 }
 
 /// Login with email and password.
@@ -103,7 +105,7 @@ async fn google_auth(
 }
 
 /// Initiate Github OAuth authentication.
-/// This redirects to google to authenticate the user.
+/// This redirects to github to authenticate the user.
 #[utoipa::path(
     context_path = "/api/auth",
     tag = "authentication",
@@ -128,4 +130,32 @@ async fn github_auth(
     params: web::Query<AuthRequest>,
 ) -> impl Responder {
     define_oauth_route_auth!(service, &params, OAuthProvider::Github)
+}
+
+/// Initiate Discord OAuth authentication.
+/// This redirects to discord to authenticate the user.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    responses((status = 200, body = TokenResponse)),
+)]
+#[get("/discord/login")]
+async fn discord_login(service: web::Data<AuthService>) -> impl Responder {
+    define_oauth_route_login!(service, OAuthProvider::Discord)
+}
+
+/// Discord OAuth redirect URL.
+/// This redirects to frontend with token if a valid user was found with the parameters.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    responses((status = 200, body = TokenResponse)),
+    request_body(content = AuthRequest)
+)]
+#[get("/discord/auth")]
+async fn discord_auth(
+    service: web::Data<AuthService>,
+    params: web::Query<AuthRequest>,
+) -> impl Responder {
+    define_oauth_route_auth!(service, &params, OAuthProvider::Discord)
 }

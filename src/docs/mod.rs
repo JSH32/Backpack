@@ -33,6 +33,10 @@ use crate::routes;
         routes::application::create,
         routes::application::delete,
         routes::auth::basic,
+        routes::auth::google_login,
+        routes::auth::google_auth,
+        routes::auth::github_login,
+        routes::auth::github_auth,
         routes::admin::registration_key::create,
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
@@ -57,10 +61,12 @@ use crate::routes;
             TokenResponse,
             ApplicationCreate,
             BasicAuthForm,
+            AuthRequest,
             RegistrationKeyData,
             BatchDeleteRequest,
             BatchDeleteResponse,
             BatchFileError,
+            OAuthProviders
         )
     ),
     tags(

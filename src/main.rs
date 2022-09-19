@@ -131,6 +131,7 @@ async fn main() -> std::io::Result<()> {
         &config.client_url,
         config.google_oauth,
         config.github_oauth,
+        config.discord_oauth,
     ));
 
     // Application service.

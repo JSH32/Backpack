@@ -11,10 +11,7 @@ use oauth2::{
 use rand::rngs::OsRng;
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
 use crate::{
     config::OAuthConfig,
@@ -32,6 +29,7 @@ use super::{
 pub enum OAuthProvider {
     Google,
     Github,
+    Discord,
 }
 
 struct EmailRequest {
@@ -144,6 +142,20 @@ impl OAuthClient {
     }
 }
 
+/// Extract any string field from the root of a [`serde_json::Value`].
+/// This returns [`None`] if this fails.
+fn root_json_str_parse(object: serde_json::Value, field: &str) -> Option<String> {
+    let object = serde_json::from_value::<serde_json::Value>(object);
+
+    if let Ok(serde_json::Value::Object(object)) = object {
+        if let Some(serde_json::Value::String(str)) = object.get(field) {
+            return Some(str.to_owned());
+        }
+    }
+
+    None
+}
+
 /// Handles authentication and validation.
 pub struct AuthService {
     user_service: Arc<UserService>,
@@ -156,6 +168,7 @@ pub struct AuthService {
 
     google_oauth_client: Option<OAuthClient>,
     github_oauth_client: Option<OAuthClient>,
+    discord_oauth_client: Option<OAuthClient>,
 }
 
 impl AuthService {
@@ -167,6 +180,7 @@ impl AuthService {
         client_url: &str,
         google_oauth: Option<OAuthConfig>,
         github_oauth: Option<OAuthConfig>,
+        discord_oauth: Option<OAuthConfig>,
     ) -> Self {
         Self {
             user_service,
@@ -188,17 +202,7 @@ impl AuthService {
                                 token
                             )
                         }),
-                        email_retrieve: |res| {
-                            if let serde_json::Value::Object(obj) = res {
-                                if let Some(serde_json::Value::String(email)) = obj.get("email") {
-                                    Some(email.to_owned())
-                                } else {
-                                    None
-                                }
-                            } else {
-                                None
-                            }
-                        },
+                        email_retrieve: |obj| root_json_str_parse(obj, "email"),
                     },
                 )),
                 None => None,
@@ -231,6 +235,22 @@ impl AuthService {
 
                             None
                         },
+                    },
+                )),
+                None => None,
+            },
+            discord_oauth_client: match discord_oauth {
+                Some(config) => Some(OAuthClient::new(
+                    config,
+                    "https://discord.com/oauth2/authorize",
+                    "https://discord.com/api/oauth2/token",
+                    &format!("{}/api/auth/discord/auth", api_url),
+                    &[&"identify", "email"],
+                    EmailRequest {
+                        request_endpoint: RequestEndpoint::Bearer(
+                            "https://discord.com/api/v10/users/@me".into(),
+                        ),
+                        email_retrieve: |obj| root_json_str_parse(obj, "email"),
                     },
                 )),
                 None => None,
@@ -355,6 +375,11 @@ impl AuthService {
         Ok(crate::models::TokenResponse { token: jwt })
     }
 
+    /// Check if the OAuth provider is enabled.
+    pub fn oauth_enabled(&self, provider_type: OAuthProvider) -> bool {
+        self.get_client(provider_type).is_ok()
+    }
+
     /// Initiate an oauth login.
     /// Start the login session by redirecting the user to the provider URL.
     pub fn oauth_login(&self, provider_type: OAuthProvider) -> ServiceResult<oauth2::url::Url> {
@@ -382,6 +407,7 @@ impl AuthService {
         let provider = match provider_type {
             OAuthProvider::Google => &self.google_oauth_client,
             OAuthProvider::Github => &self.github_oauth_client,
+            OAuthProvider::Discord => &self.discord_oauth_client,
         };
 
         match provider {

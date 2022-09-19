@@ -1,6 +1,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 
+import type { OAuthProviders } from './OAuthProviders';
+
 /**
  * Public server configuration
  */
@@ -25,6 +27,7 @@ export type AppInfo = {
      * Are registration keys enabled?
      */
     inviteOnly: boolean;
+    oauthProviders: OAuthProviders;
     /**
      * Is SMTP (email verification) enabled on the server?
      */
