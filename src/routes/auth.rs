@@ -1,7 +1,7 @@
 use crate::{
     models::{auth::BasicAuthForm, AuthRequest, TokenResponse},
     services::{
-        auth::{AuthService, OAuthProvider},
+        auth::{oauth::OAuthProvider, AuthService},
         ServiceError, ToResponse,
     },
 };

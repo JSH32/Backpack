@@ -2,7 +2,7 @@ use crate::{
     database::entity::{files, settings},
     models::{AppInfo, OAuthProviders},
     services::{
-        auth::{AuthService, OAuthProvider},
+        auth::{oauth::OAuthProvider, AuthService},
         user::UserService,
         ServiceError,
     },
