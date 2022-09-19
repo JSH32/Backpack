@@ -55,27 +55,24 @@ impl AuthService {
             jwt_key: jwt_key.into(),
             client_url: client_url.into(),
             google_oauth_client: match google_oauth {
-                Some(config) => Some(OAuthClient::new(
-                    OAuthProvider::Google,
-                    config,
-                    &format!("{}/api/auth/google/auth", api_url),
-                )),
+                Some(config) => Some(
+                    OAuthProvider::Google
+                        .new_client(config, &format!("{}/api/auth/google/callback", api_url)),
+                ),
                 None => None,
             },
             github_oauth_client: match github_oauth {
-                Some(config) => Some(OAuthClient::new(
-                    OAuthProvider::Github,
-                    config,
-                    &format!("{}/api/auth/github/auth", api_url),
-                )),
+                Some(config) => Some(
+                    OAuthProvider::Github
+                        .new_client(config, &format!("{}/api/auth/github/callback", api_url)),
+                ),
                 None => None,
             },
             discord_oauth_client: match discord_oauth {
-                Some(config) => Some(OAuthClient::new(
-                    OAuthProvider::Discord,
-                    config,
-                    &format!("{}/api/auth/discord/auth", api_url),
-                )),
+                Some(config) => Some(
+                    OAuthProvider::Discord
+                        .new_client(config, &format!("{}/api/auth/discord/callback", api_url)),
+                ),
                 None => None,
             },
         }

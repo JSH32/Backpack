@@ -19,41 +19,20 @@ pub enum OAuthProvider {
     Discord,
 }
 
-struct EmailRequest {
-    request_endpoint: RequestEndpoint,
-    /// Email retriever using result data.
-    email_retrieve: fn(serde_json::Value) -> Option<String>,
-}
-
-/// User request endpoint configuration for getting email.
-enum RequestEndpoint {
-    /// Format URL with token as argument.
-    FormatUrl(fn(&str) -> String),
-    /// Automatically use token in `Authorization` header.
-    Bearer(String),
-}
-
-pub struct OAuthClient {
-    http_client: reqwest::Client,
-    client: BasicClient,
-    scopes: Vec<Scope>,
-    email_request: EmailRequest,
-}
-
-impl OAuthClient {
+impl OAuthProvider {
     /// Create new client for the provider.
     ///
     /// # Arguments
     ///
     /// * `config` - OAuth config.
-    /// * `redirect_url` - Redirect URL.
-    pub fn new(provider: OAuthProvider, config: OAuthConfig, redirect_url: &str) -> Self {
-        match provider {
-            OAuthProvider::Google => Self::new_client(
+    /// * `callback_url` - Callback URL.
+    pub fn new_client(&self, config: OAuthConfig, callback_url: &str) -> OAuthClient {
+        match self {
+            OAuthProvider::Google => OAuthClient::new(
                 config,
                 "https://accounts.google.com/o/oauth2/v2/auth",
                 "https://www.googleapis.com/oauth2/v3/token",
-                redirect_url,
+                callback_url,
                 &[&"https://www.googleapis.com/auth/userinfo.email"],
                 EmailRequest {
                     request_endpoint: RequestEndpoint::FormatUrl(|token| {
@@ -65,11 +44,11 @@ impl OAuthClient {
                     email_retrieve: |obj| root_json_str_parse(obj, "email"),
                 },
             ),
-            OAuthProvider::Github => Self::new_client(
+            OAuthProvider::Github => OAuthClient::new(
                 config,
                 "https://github.com/login/oauth/authorize",
                 "https://github.com/login/oauth/access_token",
-                redirect_url,
+                callback_url,
                 &[&"user"],
                 EmailRequest {
                     request_endpoint: RequestEndpoint::Bearer(
@@ -94,11 +73,11 @@ impl OAuthClient {
                     },
                 },
             ),
-            OAuthProvider::Discord => Self::new_client(
+            OAuthProvider::Discord => OAuthClient::new(
                 config,
                 "https://discord.com/oauth2/authorize",
                 "https://discord.com/api/oauth2/token",
-                redirect_url,
+                callback_url,
                 &[&"identify", "email"],
                 EmailRequest {
                     request_endpoint: RequestEndpoint::Bearer(
@@ -109,8 +88,31 @@ impl OAuthClient {
             ),
         }
     }
+}
 
-    fn new_client(
+struct EmailRequest {
+    request_endpoint: RequestEndpoint,
+    /// Email retriever using result data.
+    email_retrieve: fn(serde_json::Value) -> Option<String>,
+}
+
+/// User request endpoint configuration for getting email.
+enum RequestEndpoint {
+    /// Format URL with token as argument.
+    FormatUrl(fn(&str) -> String),
+    /// Automatically use token in `Authorization` header.
+    Bearer(String),
+}
+
+pub struct OAuthClient {
+    http_client: reqwest::Client,
+    client: BasicClient,
+    scopes: Vec<Scope>,
+    email_request: EmailRequest,
+}
+
+impl OAuthClient {
+    fn new(
         oauth_config: OAuthConfig,
         auth_url: &str,
         token_url: &str,
