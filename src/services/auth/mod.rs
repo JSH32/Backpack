@@ -217,10 +217,22 @@ impl AuthService {
             .get_email(auth_request)
             .await?;
 
-        let user = self
+        let user = match self
             .user_service
-            .by_condition(Condition::all().add(users::Column::Email.eq(email)))
-            .await?;
+            .by_condition(Condition::all().add(users::Column::Email.eq(email.clone())))
+            .await
+        {
+            Ok(v) => v,
+            Err(e) => {
+                return match e {
+                    ServiceError::NotFound(_) => Err(ServiceError::NotFound(format!(
+                        "User with email ({})",
+                        email
+                    ))),
+                    _ => Err(e),
+                }
+            }
+        };
 
         self.new_jwt(&user.id, None)
     }
