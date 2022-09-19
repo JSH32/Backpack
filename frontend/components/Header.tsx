@@ -2,7 +2,6 @@ import { toJS } from "mobx"
 import { observer } from "mobx-react-lite"
 import * as React from "react"
 import Router from "next/router"
-import store from "helpers/store"
 
 import SunIcon from "/assets/icons/sun.svg"
 import MoonIcon from "/assets/icons/moon.svg"
@@ -29,6 +28,7 @@ import {
 
 import RouteLink from "next/link"
 import { useAppInfo } from "helpers/info"
+import { useStore } from "helpers/store"
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -61,15 +61,16 @@ interface NavItem {
 const Header: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode()
   const appInfo = useAppInfo()
+  const store = useStore()
 
   const User = observer(() => {
     const onLogout = async () => {
       localStorage.removeItem("token")
-      store.setUserInfo(undefined)
+      store?.setUserInfo(undefined)
       Router.push("/")
     }
 
-    const userData = toJS(store.userData)
+    const userData = toJS(store?.userData)
     return !userData ? (
       <Button variant="link">
         <RouteLink href="/user/login">Sign in</RouteLink>

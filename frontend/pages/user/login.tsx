@@ -25,46 +25,70 @@ import {
 import { Page } from "layouts/Page"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
-import store from "helpers/store"
 import { default as RouterLink } from "next/link"
 
 import GoogleSVG from "assets/icons/google.svg"
 import GithubSVG from "assets/icons/github.svg"
+import DiscordSVG from "assets/icons/discord.svg"
 
 import styles from "styles/login.module.scss"
 import { BasicAuthForm } from "@/client"
 import api from "helpers/api"
+import getConfig from "next/config"
+import { useAppInfo } from "helpers/info"
+import { useStore } from "helpers/store"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
     const router = useRouter()
+    const appInfo = useAppInfo()
+    const { publicRuntimeConfig } = getConfig()
+
+    const { token, fail } = router.query
 
     const { register, handleSubmit } = useForm()
     const toast = useToast()
+    const store = useStore()
 
     React.useEffect(() => {
-        if (store.userData != null) 
+        if (fail) {
+            toast({
+                title: "Authentication Error",
+                description: fail,
+                status: "error",
+                duration: 5000,
+                isClosable: true
+            })
+        } else if (token != null) {
+            tokenLogin(token as string)
+        } else if (store?.userData != null) {
             router.replace("/user/uploads")
+        }
+    }, [])
+
+    const tokenLogin = React.useCallback((token: string) => {
+        localStorage.setItem("token", token)
+
+        api.user.info().then(userInfo => {
+            store?.setUserInfo(userInfo)
+            userInfo.verified 
+                ? router.replace("/user/uploads") 
+                : setPostLoginUnverifiedEmail(userInfo.email)
+
+            toast({
+                title: "Logged in",
+                description: `Welcome ${userInfo.username}`,
+                status: "success",
+                duration: 5000,
+                isClosable: true
+            })
+        })
     }, [])
 
     const formSubmit = (data: BasicAuthForm) => {
         api.authentication.basic(data)
             .then(tokenRes => {
-                localStorage.setItem("token", tokenRes.token)
-                api.user.info().then(userInfo => {
-                    store.setUserInfo(userInfo)
-                    userInfo.verified 
-                        ? router.replace("/user/uploads") 
-                        : setPostLoginUnverifiedEmail(userInfo.email)
-
-                    toast({
-                        title: "Logged in",
-                        description: `Welcome ${userInfo.username}`,
-                        status: "success",
-                        duration: 5000,
-                        isClosable: true
-                    })
-                })
+                tokenLogin(tokenRes.token)
             })
             .catch(error => {
                 toast({
@@ -76,6 +100,10 @@ const Login: NextPage = () => {
                 })
             })
     }
+
+    const oauthSignIn = React.useCallback((provider: string) => {
+        window.location.replace(`${publicRuntimeConfig.apiRoot}/api/auth/${provider}/login`)
+    }, [])
 
     if (postLoginUnverifiedEmail != null)
         return <VerificationMessage email={postLoginUnverifiedEmail} />
@@ -99,22 +127,56 @@ const Login: NextPage = () => {
                     boxShadow="lg"
                     p={8}>
                     <Stack spacing={2}>
-                        <Button w="full" variant="outline" leftIcon={<Icon as={GoogleSVG} />}>
-                            <Center>
-                                <Text>Sign in with Google</Text>
-                            </Center>
-                        </Button>
-                        <Button w="full" colorScheme="blackAlpha" color="white" bg="black" variant="solid" leftIcon={<Icon color="white.500" as={GithubSVG} />}>
-                            <Center>
-                                <Text>Sign in with Github</Text>
-                            </Center>
-                        </Button>
+                        { appInfo?.oauthProviders.google && 
+                            <Button 
+                                w="full" 
+                                variant="outline" 
+                                leftIcon={<Icon as={GoogleSVG} mt="2px"/>}
+                                onClick={() => oauthSignIn("google")}
+                            >
+                                <Center>
+                                    <Text>Sign in with Google</Text>
+                                </Center>
+                            </Button> 
+                        }
+                        { appInfo?.oauthProviders.github && 
+                            <Button 
+                                w="full" 
+                                colorScheme="blackAlpha" 
+                                color="white" 
+                                bg="black" 
+                                variant="solid" 
+                                leftIcon={<Icon as={GithubSVG} mt="2px"/>} 
+                                onClick={() => oauthSignIn("github")}
+                            >
+                                <Center>
+                                    <Text>Sign in with Github</Text>
+                                </Center>
+                            </Button>
+                        }
+                        { appInfo?.oauthProviders.discord && 
+                            <Button 
+                                w="full" 
+                                colorScheme="purple" 
+                                color="white" 
+                                bg="#404EED" 
+                                leftIcon={<Icon as={DiscordSVG} mt="3px" fontSize="xl"/>} 
+                                onClick={() => oauthSignIn("discord")}
+                                _hover={{ bg: "#5865F2" }}
+                            >
+                                <Center>
+                                    <Text>Sign in with Discord</Text>
+                                </Center>
+                            </Button>
+                        }
                     </Stack>
-                    <Box className={styles.separator}>
-                        <Divider borderColor="white.500" />
-                        <chakra.span>or</chakra.span>
-                        <Divider borderColor="white.500" />
-                    </Box>
+                    { Object.values(appInfo?.oauthProviders as any).some(v => v === true) && 
+                        <Box className={styles.separator}>
+                            <Divider borderColor="white.500" />
+                            <chakra.span>or</chakra.span>
+                            <Divider borderColor="white.500" />
+                        </Box> 
+                    }
                     <form onSubmit={handleSubmit(formSubmit as any)}>
                         <Stack spacing={5}>
                             <Stack spacing={2}>

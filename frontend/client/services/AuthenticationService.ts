@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
+import type { AuthRequest } from '../models/AuthRequest';
 import type { BasicAuthForm } from '../models/BasicAuthForm';
 import type { TokenResponse } from '../models/TokenResponse';
 
@@ -11,7 +12,7 @@ export class AuthenticationService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Login with email and password
+     * Login with email and password.
      *
      * @param requestBody
      * @returns TokenResponse
@@ -28,6 +29,105 @@ export class AuthenticationService {
             errors: {
                 400: `Invalid credentials`,
             },
+        });
+    }
+
+    /**
+     * Callback for Discord OAuth provider.
+     * This redirects to frontend with token if a valid user was found with the parameters.
+     *
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public discordCallback(
+        requestBody: AuthRequest,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/discord/callback',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Discord OAuth2 authentication.
+     * Redirects to Discord to authenticate the user.
+     *
+     * @returns void
+     * @throws ApiError
+     */
+    public discordLogin(): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/discord/login',
+        });
+    }
+
+    /**
+     * Callback for Github OAuth provider.
+     * This redirects to frontend with token if a valid user was found with the parameters.
+     *
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public githubCallback(
+        requestBody: AuthRequest,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/github/callback',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Github OAuth2 authentication.
+     * Redirects to Github to authenticate the user.
+     *
+     * @returns void
+     * @throws ApiError
+     */
+    public githubLogin(): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/github/login',
+        });
+    }
+
+    /**
+     * Callback for Google OAuth provider.
+     * This redirects to frontend with token if a valid user was found with the parameters.
+     *
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public googleCallback(
+        requestBody: AuthRequest,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/google/callback',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Google OAuth2 authentication.
+     * Redirects to Google to authenticate the user.
+     *
+     * @returns void
+     * @throws ApiError
+     */
+    public googleLogin(): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/google/login',
         });
     }
 

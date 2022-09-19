@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from "@chakra-ui/icons"
 import { Alert, Text, AlertIcon, Box, Button, Divider, Heading, HStack, Icon, Menu, MenuButton, MenuGroup, MenuItem, MenuList, Stack, useColorModeValue, VStack, Flex } from "@chakra-ui/react"
-import store from "helpers/store"
+import { useStore } from "helpers/store"
 import { toJS } from "mobx"
 import { observer } from "mobx-react-lite"
 import { useRouter } from "next/router"
@@ -39,8 +39,9 @@ export const SettingsLayout: React.FC<{
     children?: JSX.Element | JSX.Element[]
 }> = observer(({ tab, children }) => {
     const router = useRouter()
+    const store = useStore()
     
-    const userData = toJS(store.userData)
+    const userData = toJS(store?.userData)
 
     return <Authenticated allowUnverified>
         <Page title="Settings">

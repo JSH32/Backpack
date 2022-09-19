@@ -21,6 +21,15 @@ pub struct Config {
     pub smtp_config: Option<SMTPConfig>,
     pub invite_only: bool,
     pub run_migrations: bool,
+    pub google_oauth: Option<OAuthConfig>,
+    pub github_oauth: Option<OAuthConfig>,
+    pub discord_oauth: Option<OAuthConfig>,
+}
+
+#[derive(Clone)]
+pub struct OAuthConfig {
+    pub client_id: String,
+    pub client_secret: String,
 }
 
 #[derive(Clone)]
@@ -96,6 +105,33 @@ impl Config {
                         username: get_env("SMTP_USERNAME"),
                         password: get_env("SMTP_PASSWORD"),
                         server: get_env("SMTP_SERVER"),
+                    }),
+                    false => None,
+                }
+            },
+            google_oauth: {
+                match get_env_or("GOOGLE_OAUTH_ENABLED", false) {
+                    true => Some(OAuthConfig {
+                        client_id: get_env("GOOGLE_CLIENT_ID"),
+                        client_secret: get_env("GOOGLE_CLIENT_SECRET"),
+                    }),
+                    false => None,
+                }
+            },
+            github_oauth: {
+                match get_env_or("GITHUB_OAUTH_ENABLED", false) {
+                    true => Some(OAuthConfig {
+                        client_id: get_env("GITHUB_CLIENT_ID"),
+                        client_secret: get_env("GITHUB_CLIENT_SECRET"),
+                    }),
+                    false => None,
+                }
+            },
+            discord_oauth: {
+                match get_env_or("DISCORD_OAUTH_ENABLED", false) {
+                    true => Some(OAuthConfig {
+                        client_id: get_env("DISCORD_CLIENT_ID"),
+                        client_secret: get_env("DISCORD_CLIENT_SECRET"),
                     }),
                     false => None,
                 }

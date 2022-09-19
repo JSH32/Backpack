@@ -21,7 +21,7 @@ const rewrites = async () => {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   rewrites,
   webpack(config) {
     config.module.rules.push({

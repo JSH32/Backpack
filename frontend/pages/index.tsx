@@ -10,7 +10,7 @@ import { useAppInfo } from "helpers/info"
 const Home: NextPage = observer(() => {
     const appInfo = useAppInfo()
 
-    return <Page title={appInfo?.appName}>
+    return <Page title={"hi"}>
         <VStack
             h="100vh"
             justifyContent="center"

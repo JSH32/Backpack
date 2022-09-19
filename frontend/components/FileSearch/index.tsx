@@ -27,10 +27,9 @@ export const FileSearch: React.FC<{
 
   const [queryString, setQueryString] = React.useState<string>("")
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [initialLoading, setInitialLoading] = React.useState(false)
+  const [initialLoading, setInitialLoading] = React.useState(true)
   
   React.useEffect(() => {
-    setInitialLoading(true)
     onSearch(1, "")
       .then(setSearchResult)
       .catch(() => setSearchResult(null))

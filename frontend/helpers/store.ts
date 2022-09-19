@@ -1,8 +1,12 @@
 import { UserData } from "@/client"
 import { action, makeAutoObservable, observable } from "mobx"
 import api from "helpers/api"
+import { enableStaticRendering } from "mobx-react-lite"
+import React from "react"
 
-class Store {
+enableStaticRendering(typeof window === "undefined")
+
+export class Store {
     @observable userData: UserData | undefined = undefined
 
     constructor() {
@@ -17,4 +21,5 @@ class Store {
     }
 }
 
-export default new Store()
+export const StoreContext = React.createContext<Store | null>(null)
+export const useStore = (): Store | null => React.useContext(StoreContext)

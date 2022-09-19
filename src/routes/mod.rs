@@ -1,7 +1,11 @@
 use crate::{
     database::entity::{files, settings},
-    models::AppInfo,
-    services::{user::UserService, ServiceError},
+    models::{AppInfo, OAuthProviders},
+    services::{
+        auth::{oauth::OAuthProvider, AuthService},
+        user::UserService,
+        ServiceError,
+    },
 };
 use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait};
@@ -27,6 +31,7 @@ pub fn get_routes() -> Scope {
 #[get("/info")]
 async fn info(
     user_service: web::Data<UserService>,
+    auth_service: web::Data<AuthService>,
     database: web::Data<DatabaseConnection>,
 ) -> impl Responder {
     match settings::Entity::find_by_id(true)
@@ -52,6 +57,11 @@ async fn info(
                 {
                     Ok(v) => v,
                     Err(e) => return e.to_response(),
+                },
+                OAuthProviders {
+                    google: auth_service.oauth_enabled(OAuthProvider::Google),
+                    github: auth_service.oauth_enabled(OAuthProvider::Github),
+                    discord: auth_service.oauth_enabled(OAuthProvider::Discord),
                 },
             ))
         }

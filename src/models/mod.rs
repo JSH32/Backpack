@@ -151,6 +151,14 @@ pub struct Page<T> {
     pub items: Vec<T>,
 }
 
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct OAuthProviders {
+    pub google: bool,
+    pub github: bool,
+    pub discord: bool,
+}
+
 /// Public server configuration
 #[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -175,6 +183,9 @@ pub struct AppInfo {
 
     /// Amount of files uploaded.
     pub uploaded_files: usize,
+
+    /// Enabled OAuth providers.
+    pub oauth_providers: OAuthProviders,
 }
 
 impl AppInfo {
@@ -183,6 +194,7 @@ impl AppInfo {
         invite_only: bool,
         smtp: bool,
         uploaded_files: usize,
+        oauth_providers: OAuthProviders,
     ) -> Self {
         Self {
             app_name: settings_model.app_name,
@@ -192,6 +204,7 @@ impl AppInfo {
             smtp,
             git_version: GIT_VERSION.to_string(),
             uploaded_files,
+            oauth_providers,
         }
     }
 }

@@ -7,7 +7,6 @@ use crate::{
         registration_key::RegistrationKeyService, user::UserService,
     },
 };
-use actix_http::Uri;
 use actix_multipart_extract::MultipartConfig;
 use clap::Parser;
 use colored::*;
@@ -127,8 +126,12 @@ async fn main() -> std::io::Result<()> {
     let auth_service = Data::new(AuthService::new(
         user_service.clone().into_inner(),
         application_service_container.clone(),
-        config.api_url.parse::<Uri>().unwrap(),
-        config.jwt_key,
+        &config.api_url,
+        &config.jwt_key,
+        &config.client_url,
+        config.google_oauth,
+        config.github_oauth,
+        config.discord_oauth,
     ));
 
     // Application service.

@@ -3,18 +3,24 @@ use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, Pa
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use rand::rngs::OsRng;
+use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
 use crate::{
+    config::OAuthConfig,
     database::entity::{applications, users},
-    models::TokenResponse,
+    models::{AuthRequest, TokenResponse},
 };
+
+use self::oauth::{OAuthClient, OAuthProvider};
 
 use super::{
     application::ApplicationService, prelude::DataService, user::UserService, ServiceError,
     ServiceResult,
 };
+
+pub mod oauth;
 
 /// Handles authentication and validation.
 pub struct AuthService {
@@ -23,20 +29,55 @@ pub struct AuthService {
     application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
     api_url: Uri,
     jwt_key: String,
+    /// Root URL of client.
+    pub client_url: String,
+
+    google_oauth_client: Option<OAuthClient>,
+    github_oauth_client: Option<OAuthClient>,
+    discord_oauth_client: Option<OAuthClient>,
 }
 
 impl AuthService {
     pub fn new(
         user_service: Arc<UserService>,
         application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
-        api_url: Uri,
-        jwt_key: String,
+        api_url: &str,
+        jwt_key: &str,
+        client_url: &str,
+        google_oauth: Option<OAuthConfig>,
+        github_oauth: Option<OAuthConfig>,
+        discord_oauth: Option<OAuthConfig>,
     ) -> Self {
         Self {
             user_service,
             application_service,
-            api_url,
-            jwt_key,
+            api_url: api_url.parse::<Uri>().unwrap(),
+            jwt_key: jwt_key.into(),
+            client_url: client_url.into(),
+            google_oauth_client: match google_oauth {
+                Some(config) => Some(OAuthClient::new(
+                    OAuthProvider::Google,
+                    config,
+                    &format!("{}/api/auth/google/auth", api_url),
+                )),
+                None => None,
+            },
+            github_oauth_client: match github_oauth {
+                Some(config) => Some(OAuthClient::new(
+                    OAuthProvider::Github,
+                    config,
+                    &format!("{}/api/auth/github/auth", api_url),
+                )),
+                None => None,
+            },
+            discord_oauth_client: match discord_oauth {
+                Some(config) => Some(OAuthClient::new(
+                    OAuthProvider::Discord,
+                    config,
+                    &format!("{}/api/auth/discord/auth", api_url),
+                )),
+                None => None,
+            },
         }
     }
 
@@ -151,6 +192,53 @@ impl AuthService {
         .map_err(|e| ServiceError::ServerError(e.into()))?;
 
         Ok(TokenResponse { token: jwt })
+    }
+
+    /// Check if the OAuth provider is enabled.
+    pub fn oauth_enabled(&self, provider_type: OAuthProvider) -> bool {
+        self.get_oauth_client(provider_type).is_ok()
+    }
+
+    /// Initiate an oauth login.
+    /// Start the login session by redirecting the user to the provider URL.
+    pub fn oauth_login(&self, provider_type: OAuthProvider) -> ServiceResult<oauth2::url::Url> {
+        self.get_oauth_client(provider_type)?.login()
+    }
+
+    /// Use auth params provided by the provider to get a JWT token.
+    /// Returns new JWT key.
+    pub async fn oauth_authenticate(
+        &self,
+        provider_type: OAuthProvider,
+        auth_request: &AuthRequest,
+    ) -> ServiceResult<TokenResponse> {
+        let email = self
+            .get_oauth_client(provider_type)?
+            .get_email(auth_request)
+            .await?;
+
+        let user = self
+            .user_service
+            .by_condition(Condition::all().add(users::Column::Email.eq(email)))
+            .await?;
+
+        self.new_jwt(&user.id, None)
+    }
+
+    fn get_oauth_client(&self, provider_type: OAuthProvider) -> ServiceResult<&OAuthClient> {
+        let provider = match provider_type {
+            OAuthProvider::Google => &self.google_oauth_client,
+            OAuthProvider::Github => &self.github_oauth_client,
+            OAuthProvider::Discord => &self.discord_oauth_client,
+        };
+
+        match provider {
+            Some(v) => Ok(v),
+            None => Err(ServiceError::InvalidData(format!(
+                "{} OAuth provider was not enabled for this service.",
+                provider_type.to_string()
+            ))),
+        }
     }
 }
 

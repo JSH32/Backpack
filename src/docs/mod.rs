@@ -32,11 +32,18 @@ use crate::routes;
         routes::application::info,
         routes::application::create,
         routes::application::delete,
-        routes::auth::basic,
         routes::admin::registration_key::create,
         routes::admin::registration_key::list,
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
+        routes::auth::basic,
+        // All oauth provider routes
+        routes::auth::google::google_login,
+        routes::auth::google::google_callback,
+        routes::auth::github::github_login,
+        routes::auth::github::github_callback,
+        routes::auth::discord::discord_login,
+        routes::auth::discord::discord_callback,
         // routes::admin::file::list
     ),
     components(
@@ -57,10 +64,12 @@ use crate::routes;
             TokenResponse,
             ApplicationCreate,
             BasicAuthForm,
+            AuthRequest,
             RegistrationKeyData,
             BatchDeleteRequest,
             BatchDeleteResponse,
             BatchFileError,
+            OAuthProviders
         )
     ),
     tags(
