@@ -62,3 +62,5 @@ actix-multipart-extract = "0.1.4"
 num_cpus = "1.0"
 heck = "0.4.0"
 macro_rules_attribute = "0.1.2"
+oauth2 = "4.2.3"
+reqwest = { version = "0.11.11", features = [ "json" ] }

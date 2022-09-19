@@ -34,37 +34,57 @@ import GithubSVG from "assets/icons/github.svg"
 import styles from "styles/login.module.scss"
 import { BasicAuthForm } from "@/client"
 import api from "helpers/api"
+import getConfig from "next/config"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
     const router = useRouter()
 
+    const { token, fail } = router.query
+    const { publicRuntimeConfig } = getConfig()
+
     const { register, handleSubmit } = useForm()
     const toast = useToast()
 
     React.useEffect(() => {
-        if (store.userData != null) 
+        if (fail) {
+            toast({
+                title: "Authentication Error",
+                description: fail,
+                status: "error",
+                duration: 5000,
+                isClosable: true
+            })
+        } else if (token != null) {
+            tokenLogin(token as string)
+        } else if (store.userData != null) {
             router.replace("/user/uploads")
+        }
+    }, [])
+
+    const tokenLogin = React.useCallback((token: string) => {
+        localStorage.setItem("token", token)
+
+        api.user.info().then(userInfo => {
+            store.setUserInfo(userInfo)
+            userInfo.verified 
+                ? router.replace("/user/uploads") 
+                : setPostLoginUnverifiedEmail(userInfo.email)
+
+            toast({
+                title: "Logged in",
+                description: `Welcome ${userInfo.username}`,
+                status: "success",
+                duration: 5000,
+                isClosable: true
+            })
+        })
     }, [])
 
     const formSubmit = (data: BasicAuthForm) => {
         api.authentication.basic(data)
             .then(tokenRes => {
-                localStorage.setItem("token", tokenRes.token)
-                api.user.info().then(userInfo => {
-                    store.setUserInfo(userInfo)
-                    userInfo.verified 
-                        ? router.replace("/user/uploads") 
-                        : setPostLoginUnverifiedEmail(userInfo.email)
-
-                    toast({
-                        title: "Logged in",
-                        description: `Welcome ${userInfo.username}`,
-                        status: "success",
-                        duration: 5000,
-                        isClosable: true
-                    })
-                })
+                tokenLogin(tokenRes.token)
             })
             .catch(error => {
                 toast({
@@ -76,6 +96,10 @@ const Login: NextPage = () => {
                 })
             })
     }
+
+    const oauthSignIn = React.useCallback((provider: string) => {
+        window.location.replace(`${publicRuntimeConfig.apiRoot}/api/auth/${provider}/login`)
+    }, [])
 
     if (postLoginUnverifiedEmail != null)
         return <VerificationMessage email={postLoginUnverifiedEmail} />
@@ -99,12 +123,12 @@ const Login: NextPage = () => {
                     boxShadow="lg"
                     p={8}>
                     <Stack spacing={2}>
-                        <Button w="full" variant="outline" leftIcon={<Icon as={GoogleSVG} />}>
+                        <Button w="full" variant="outline" leftIcon={<Icon as={GoogleSVG} />} onClick={() => oauthSignIn("google")}>
                             <Center>
                                 <Text>Sign in with Google</Text>
                             </Center>
                         </Button>
-                        <Button w="full" colorScheme="blackAlpha" color="white" bg="black" variant="solid" leftIcon={<Icon color="white.500" as={GithubSVG} />}>
+                        <Button w="full" colorScheme="blackAlpha" color="white" bg="black" variant="solid" leftIcon={<Icon color="white.500" as={GithubSVG} />} onClick={() => oauthSignIn("github")}>
                             <Center>
                                 <Text>Sign in with Github</Text>
                             </Center>
