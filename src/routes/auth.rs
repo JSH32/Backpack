@@ -13,11 +13,11 @@ pub fn get_routes() -> Scope {
     web::scope("/auth")
         .service(basic)
         .service(google::google_login)
-        .service(google::google_auth)
+        .service(google::google_callback)
         .service(github::github_login)
-        .service(github::github_auth)
+        .service(github::github_callback)
         .service(discord::discord_login)
-        .service(discord::discord_auth)
+        .service(discord::discord_callback)
 }
 
 /// Login with email and password.
@@ -70,7 +70,7 @@ macro_rules! define_oauth_route {(
             }
         });
 
-        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/auth") in {
+        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/callback") in {
             paste! {
                 #[doc = "Callback for " [<$provider_name:camel>] " OAuth provider."]
                 #[doc = "This redirects to frontend with token if a valid user was found with the parameters."]
@@ -80,7 +80,7 @@ macro_rules! define_oauth_route {(
                     request_body(content = AuthRequest)
                 )]
                 #[get($path)]
-                pub async fn [<$provider_name _auth>](
+                pub async fn [<$provider_name _callback>](
                     service: web::Data<AuthService>,
                     params: web::Query<AuthRequest>,
                 ) -> impl Responder {

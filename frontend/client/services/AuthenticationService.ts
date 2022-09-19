@@ -40,12 +40,12 @@ export class AuthenticationService {
      * @returns void
      * @throws ApiError
      */
-    public discordAuth(
+    public discordCallback(
         requestBody: AuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/auth/discord/auth',
+            url: '/api/auth/discord/callback',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -73,12 +73,12 @@ export class AuthenticationService {
      * @returns void
      * @throws ApiError
      */
-    public githubAuth(
+    public githubCallback(
         requestBody: AuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/auth/github/auth',
+            url: '/api/auth/github/callback',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -106,12 +106,12 @@ export class AuthenticationService {
      * @returns void
      * @throws ApiError
      */
-    public googleAuth(
+    public googleCallback(
         requestBody: AuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/auth/google/auth',
+            url: '/api/auth/google/callback',
             body: requestBody,
             mediaType: 'application/json',
         });

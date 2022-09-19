@@ -39,11 +39,11 @@ use crate::routes;
         routes::auth::basic,
         // All oauth provider routes
         routes::auth::google::google_login,
-        routes::auth::google::google_auth,
+        routes::auth::google::google_callback,
         routes::auth::github::github_login,
-        routes::auth::github::github_auth,
+        routes::auth::github::github_callback,
         routes::auth::discord::discord_login,
-        routes::auth::discord::discord_auth,
+        routes::auth::discord::discord_callback,
         // routes::admin::file::list
     ),
     components(
