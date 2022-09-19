@@ -12,12 +12,12 @@ use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder, Scope
 pub fn get_routes() -> Scope {
     web::scope("/auth")
         .service(basic)
-        .service(google_login)
-        .service(google_auth)
-        .service(github_login)
-        .service(github_auth)
-        .service(discord_login)
-        .service(discord_auth)
+        .service(google::google_login)
+        .service(google::google_auth)
+        .service(github::github_login)
+        .service(github::github_auth)
+        .service(discord::discord_login)
+        .service(discord::discord_auth)
 }
 
 /// Login with email and password.
@@ -38,124 +38,79 @@ async fn basic(service: web::Data<AuthService>, form: web::Json<BasicAuthForm>) 
         .to_response::<TokenResponse>(StatusCode::OK)
 }
 
-macro_rules! define_oauth_route_auth {
-    ($auth_service:expr, $auth_params:expr, $variant:expr) => {
-        HttpResponse::Found()
-            .append_header((
-                header::LOCATION,
-                match $auth_service
-                    .oauth_authenticate($variant, $auth_params)
-                    .await
-                {
-                    // TODO: Allow frontend to be disabled and instead just return the raw token response.
-                    // Frontend should get this parameter on load and put the token into headers.
-                    Ok(v) => format!("{}/user/login?token={}", $auth_service.client_url, v.token),
-                    Err(e) => format!(
-                        "{}/user/login?fail={}",
-                        $auth_service.client_url,
-                        match e {
-                            ServiceError::ServerError(_) | ServiceError::DbErr(_) =>
-                                return e.to_response(),
-                            _ => e.to_string(),
-                        }
-                    ),
-                },
-            ))
-            .finish()
+// INFO: Should we actually be documenting these routes in OpenAPI?
+// It will generate a bunch of API routes on the client and most of the time this is not directly accessed.
+// This is especially true for the oauth callback.
+macro_rules! define_oauth_route {(
+    $provider_name:ident,
+    $provider:expr $(,)?
+) => (
+    pub mod $provider_name {
+        use super::*;
+        use paste::paste;
+        use with_builtin_macros::with_builtin;
+
+        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/login") in {
+            paste! {
+                #[doc = [<$provider_name:camel>] " OAuth2 authentication."]
+                #[doc = "Redirects to " [<$provider_name:camel>] " to authenticate the user."]
+                #[utoipa::path(
+                    context_path = "/api/auth",
+                    tag = "authentication",
+                )]
+                #[get($path)]
+                pub async fn [<$provider_name _login>](service: web::Data<AuthService>) -> impl Responder {
+                    match service.oauth_login($provider) {
+                        Ok(v) => HttpResponse::Found()
+                            .append_header((header::LOCATION, v.to_string()))
+                            .finish(),
+                        Err(e) => e.to_response(),
+                    }
+                }
+            }
+        });
+
+        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/auth") in {
+            paste! {
+                #[doc = "Callback for " [<$provider_name:camel>] " OAuth provider."]
+                #[doc = "This redirects to frontend with token if a valid user was found with the parameters."]
+                #[utoipa::path(
+                    context_path = "/api/auth",
+                    tag = "authentication",
+                    request_body(content = AuthRequest)
+                )]
+                #[get($path)]
+                pub async fn [<$provider_name _auth>](
+                    service: web::Data<AuthService>,
+                    params: web::Query<AuthRequest>,
+                ) -> impl Responder {
+                    HttpResponse::Found()
+                        .append_header((
+                            header::LOCATION,
+                            match service
+                                .oauth_authenticate($provider, &params)
+                                .await
+                            {
+                                // TODO: Allow frontend to be disabled and instead just return the raw token response.
+                                // Frontend should get this parameter on load and put the token into headers.
+                                Ok(v) => format!("{}/user/login?token={}", service.client_url, v.token),
+                                Err(e) => format!(
+                                    "{}/user/login?fail={}",
+                                    service.client_url,
+                                    match e {
+                                        ServiceError::ServerError(_) | ServiceError::DbErr(_) =>
+                                            return e.to_response(),
+                                        _ => e.to_string(),
+                                    }
+                                ),
+                            }
+                        )).finish()
+                }
+            }
+        });
     }
-}
+)}
 
-macro_rules! define_oauth_route_login {
-    ($auth_service:expr, $variant:expr) => {
-        match $auth_service.oauth_login($variant) {
-            Ok(v) => HttpResponse::Found()
-                .append_header((header::LOCATION, v.to_string()))
-                .finish(),
-            Err(e) => e.to_response(),
-        }
-    };
-}
-
-/// Initiate Google OAuth authentication.
-/// This redirects to google to authenticate the user.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-)]
-#[get("/google/login")]
-async fn google_login(service: web::Data<AuthService>) -> impl Responder {
-    define_oauth_route_login!(service, OAuthProvider::Google)
-}
-
-/// Google OAuth redirect URL.
-/// This redirects to frontend with token if a valid user was found with the parameters.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-    request_body(content = AuthRequest)
-)]
-#[get("/google/auth")]
-async fn google_auth(
-    service: web::Data<AuthService>,
-    params: web::Query<AuthRequest>,
-) -> impl Responder {
-    define_oauth_route_auth!(service, &params, OAuthProvider::Google)
-}
-
-/// Initiate Github OAuth authentication.
-/// This redirects to github to authenticate the user.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-)]
-#[get("/github/login")]
-async fn github_login(service: web::Data<AuthService>) -> impl Responder {
-    define_oauth_route_login!(service, OAuthProvider::Github)
-}
-
-/// Github OAuth redirect URL.
-/// This redirects to frontend with token if a valid user was found with the parameters.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-    request_body(content = AuthRequest)
-)]
-#[get("/github/auth")]
-async fn github_auth(
-    service: web::Data<AuthService>,
-    params: web::Query<AuthRequest>,
-) -> impl Responder {
-    define_oauth_route_auth!(service, &params, OAuthProvider::Github)
-}
-
-/// Initiate Discord OAuth authentication.
-/// This redirects to discord to authenticate the user.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-)]
-#[get("/discord/login")]
-async fn discord_login(service: web::Data<AuthService>) -> impl Responder {
-    define_oauth_route_login!(service, OAuthProvider::Discord)
-}
-
-/// Discord OAuth redirect URL.
-/// This redirects to frontend with token if a valid user was found with the parameters.
-#[utoipa::path(
-    context_path = "/api/auth",
-    tag = "authentication",
-    responses((status = 200, body = TokenResponse)),
-    request_body(content = AuthRequest)
-)]
-#[get("/discord/auth")]
-async fn discord_auth(
-    service: web::Data<AuthService>,
-    params: web::Query<AuthRequest>,
-) -> impl Responder {
-    define_oauth_route_auth!(service, &params, OAuthProvider::Discord)
-}
+define_oauth_route!(google, OAuthProvider::Google);
+define_oauth_route!(github, OAuthProvider::Github);
+define_oauth_route!(discord, OAuthProvider::Discord);

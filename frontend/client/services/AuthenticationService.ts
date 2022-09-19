@@ -33,16 +33,49 @@ export class AuthenticationService {
     }
 
     /**
-     * Github OAuth redirect URL.
+     * Callback for Discord OAuth provider.
      * This redirects to frontend with token if a valid user was found with the parameters.
      *
      * @param requestBody
-     * @returns TokenResponse
+     * @returns void
+     * @throws ApiError
+     */
+    public discordAuth(
+        requestBody: AuthRequest,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/discord/auth',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Discord OAuth2 authentication.
+     * Redirects to Discord to authenticate the user.
+     *
+     * @returns void
+     * @throws ApiError
+     */
+    public discordLogin(): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/discord/login',
+        });
+    }
+
+    /**
+     * Callback for Github OAuth provider.
+     * This redirects to frontend with token if a valid user was found with the parameters.
+     *
+     * @param requestBody
+     * @returns void
      * @throws ApiError
      */
     public githubAuth(
         requestBody: AuthRequest,
-    ): CancelablePromise<TokenResponse> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/github/auth',
@@ -52,13 +85,13 @@ export class AuthenticationService {
     }
 
     /**
-     * Initiate Github OAuth authentication.
-     * This redirects to github to authenticate the user.
+     * Github OAuth2 authentication.
+     * Redirects to Github to authenticate the user.
      *
-     * @returns TokenResponse
+     * @returns void
      * @throws ApiError
      */
-    public githubLogin(): CancelablePromise<TokenResponse> {
+    public githubLogin(): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/github/login',
@@ -66,16 +99,16 @@ export class AuthenticationService {
     }
 
     /**
-     * Google OAuth redirect URL.
+     * Callback for Google OAuth provider.
      * This redirects to frontend with token if a valid user was found with the parameters.
      *
      * @param requestBody
-     * @returns TokenResponse
+     * @returns void
      * @throws ApiError
      */
     public googleAuth(
         requestBody: AuthRequest,
-    ): CancelablePromise<TokenResponse> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/google/auth',
@@ -85,13 +118,13 @@ export class AuthenticationService {
     }
 
     /**
-     * Initiate Google OAuth authentication.
-     * This redirects to google to authenticate the user.
+     * Google OAuth2 authentication.
+     * Redirects to Google to authenticate the user.
      *
-     * @returns TokenResponse
+     * @returns void
      * @throws ApiError
      */
-    public googleLogin(): CancelablePromise<TokenResponse> {
+    public googleLogin(): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/google/login',
