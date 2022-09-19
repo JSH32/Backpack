@@ -25,7 +25,6 @@ import {
 import { Page } from "layouts/Page"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
-import store from "helpers/store"
 import { default as RouterLink } from "next/link"
 
 import GoogleSVG from "assets/icons/google.svg"
@@ -37,6 +36,7 @@ import { BasicAuthForm } from "@/client"
 import api from "helpers/api"
 import getConfig from "next/config"
 import { useAppInfo } from "helpers/info"
+import { useStore } from "helpers/store"
 
 const Login: NextPage = () => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
@@ -48,7 +48,7 @@ const Login: NextPage = () => {
 
     const { register, handleSubmit } = useForm()
     const toast = useToast()
-    
+    const store = useStore()
 
     React.useEffect(() => {
         if (fail) {
@@ -61,7 +61,7 @@ const Login: NextPage = () => {
             })
         } else if (token != null) {
             tokenLogin(token as string)
-        } else if (store.userData != null) {
+        } else if (store?.userData != null) {
             router.replace("/user/uploads")
         }
     }, [])
@@ -70,7 +70,7 @@ const Login: NextPage = () => {
         localStorage.setItem("token", token)
 
         api.user.info().then(userInfo => {
-            store.setUserInfo(userInfo)
+            store?.setUserInfo(userInfo)
             userInfo.verified 
                 ? router.replace("/user/uploads") 
                 : setPostLoginUnverifiedEmail(userInfo.email)

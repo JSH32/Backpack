@@ -25,21 +25,22 @@ import {
 import { observer } from "mobx-react-lite"
 import { useForm } from "react-hook-form"
 import { toJS } from "mobx"
-import store from "helpers/store"
 import { 
     ProfileTab, 
     SettingsLayout 
 } from "layouts/SettingsLayout"
 import api from "helpers/api"
+import { useStore } from "helpers/store"
 
 const Profile: NextPage = observer(() => {
     const changeForm = useForm()
     const finalSubmitForm = useForm()
+    const store = useStore()
 
     const { isOpen, onOpen, onClose } = useDisclosure()
     const toast = useToast()
 
-    const userData = toJS(store.userData)
+    const userData = toJS(store?.userData)
     const [newData, setNewData] = React.useState<any>({})
 
     const closeFinalForm = React.useCallback(() => {
@@ -64,7 +65,7 @@ const Profile: NextPage = observer(() => {
                     <form onSubmit={finalSubmitForm.handleSubmit(form => {
                         api.user.settings({ ...newData, currentPassword: form.password })
                             .then(newData => {
-                                store.setUserInfo(newData)
+                                store?.setUserInfo(newData)
                                 toast({
                                     title: "Settings changed",
                                     description: "Your settings have been changed",

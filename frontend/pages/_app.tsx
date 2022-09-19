@@ -8,6 +8,8 @@ import axios from "axios"
 import getConfig from "next/config"
 import { AppInfo } from "@/client"
 import api from "helpers/api"
+import { Provider } from "mobx-react"
+import { Store, StoreContext } from "helpers/store"
 
 const { serverRuntimeConfig } = getConfig()
 
@@ -35,10 +37,18 @@ const MyApp = ({ Component, pageProps, appInfo, cookies }: any) => {
       ? cookieStorageManagerSSR(cookies)
       : localStorageManager
 
+  const [dataStore, setDataStore] = React.useState<Store | null>(null)
+
+  React.useEffect(() => {
+    setDataStore(new Store())
+  }, [])
+
   return (
     <AppInfoContext.Provider value={appInfo}>
       <ChakraProvider colorModeManager={colorModeManager} theme={{...theme, colors: { ...theme.colors, primary: theme.colors[appInfo.color] }}}>
-        <Component {...pageProps} />
+        <StoreContext.Provider value={dataStore}>
+          <Component {...pageProps} />
+        </StoreContext.Provider>
       </ChakraProvider>
     </AppInfoContext.Provider>
   )

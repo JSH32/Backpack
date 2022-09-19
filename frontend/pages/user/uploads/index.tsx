@@ -36,6 +36,8 @@ const UploadFiles: React.FC = () => {
             .catch(() => setUsage("0 Bytes"))
     }, [searchReload])
 
+    
+
     const shadowUploader = React.useRef(null)
     const uploadButtonCallback = React.useCallback(() => {
         (shadowUploader.current as any)?.click()
