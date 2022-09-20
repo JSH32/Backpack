@@ -50,6 +50,12 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(
+                        ColumnDef::new(Users::Created)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                    )
+                    .col(
                         ColumnDef::new(Users::Role)
                             .enumeration("role", ["user", "admin"])
                             .default("user")
@@ -74,6 +80,12 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Applications::Name).string_len(16).not_null())
                     .col(
                         ColumnDef::new(Applications::LastAccessed)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                    )
+                    .col(
+                        ColumnDef::new(Applications::Created)
                             .timestamp_with_time_zone()
                             .not_null()
                             .extra("DEFAULT CURRENT_TIMESTAMP".into()),
@@ -263,6 +275,7 @@ enum Users {
     Username,
     Password,
     Verified,
+    Created,
     Role,
 }
 
@@ -273,6 +286,7 @@ enum Applications {
     UserId,
     Name,
     LastAccessed,
+    Created,
 }
 
 #[derive(Iden)]

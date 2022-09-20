@@ -15,6 +15,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub username: String,
     pub password: String,
+    pub created: DateTimeUtc,
     pub verified: bool,
     pub role: Role,
 }

@@ -2,6 +2,10 @@
 /* tslint:disable */
 
 export type ApplicationData = {
+    /**
+     * Date of application creation
+     */
+    created: string;
     id: string;
     /**
      * Last time the application was used for a request

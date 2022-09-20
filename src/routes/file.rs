@@ -112,8 +112,8 @@ async fn list(
         .get_file_page(
             *page_number,
             25,
-            Some(&user.id),
-            query.query.as_ref().map(Deref::deref),
+            Some(user.id.to_owned()),
+            query.query.to_owned(),
         )
         .await
         .to_page_response::<FileData>(StatusCode::OK)

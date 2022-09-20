@@ -283,8 +283,8 @@ impl FileService {
         &self,
         page: usize,
         page_size: usize,
-        user_id: Option<&str>,
-        query: Option<&str>,
+        user_id: Option<String>,
+        query: Option<String>,
     ) -> ServiceResult<ServicePage<FileData>> {
         let mut conditions = Condition::all();
 

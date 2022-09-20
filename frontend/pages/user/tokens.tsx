@@ -211,6 +211,11 @@ const Tokens: NextPage = () => {
                     <span>ID</span>
                   </DataListCell>
                   <DataListCell
+                    colName="created"
+                    isVisible={{ base: true, lg: true }}>
+                    <span>Created</span>
+                  </DataListCell>
+                  <DataListCell
                     colName="lastAccessed"
                     isVisible={{ base: true, lg: true }}>
                     <span>Last Accessed</span>
@@ -224,6 +229,9 @@ const Tokens: NextPage = () => {
                     </DataListCell>
                     <DataListCell colName="id">
                       <Text>{application.id}</Text>
+                    </DataListCell>
+                    <DataListCell colName="created">
+                      <Text>{timeAgo.format(new Date(application.created))}</Text>
                     </DataListCell>
                     <DataListCell colName="lastAccessed">
                       <Text>{timeAgo.format(new Date(application.lastAccessed))}</Text>
