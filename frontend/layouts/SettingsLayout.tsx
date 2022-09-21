@@ -43,7 +43,7 @@ export const SettingsLayout: React.FC<{
     
     const userData = toJS(store?.userData)
 
-    return <Authenticated allowUnverified>
+    return <Authenticated allowUnverified allowUnregistered>
         <Page title="Settings">
             <Flex mt="7em" justify="center">
                 <Box w={{ base: "90vw", md: "700px" }}>

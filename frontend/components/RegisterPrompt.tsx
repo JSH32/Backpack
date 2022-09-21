@@ -71,7 +71,7 @@ export const RegisterPrompt: React.FC = () => {
 								<FormLabel>Registration Code</FormLabel>
 								<Input {...register("registrationCode", { required: true })} />
 							</FormControl>
-							<Button type="submit">
+							<Button type="submit" colorScheme="primary">
 								Register
 							</Button>
 						</Stack>
