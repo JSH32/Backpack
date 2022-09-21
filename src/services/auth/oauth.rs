@@ -11,7 +11,7 @@ use serde::Deserialize;
 
 use crate::config::OAuthConfig;
 use crate::database::entity::sea_orm_active_enums::AuthMethod;
-use crate::models::AuthRequest;
+use crate::models::OAuthRequest;
 use crate::services::{ServiceError, ServiceResult};
 
 /// All OAuth providers.
@@ -256,7 +256,10 @@ impl OAuthClient {
     }
 
     /// Use auth params provided by the provider to get the user data.
-    pub async fn get_user_data(&self, oauth_request: &AuthRequest) -> ServiceResult<OAuthUserData> {
+    pub async fn get_user_data(
+        &self,
+        oauth_request: &OAuthRequest,
+    ) -> ServiceResult<OAuthUserData> {
         let code = AuthorizationCode::new(oauth_request.code.clone());
 
         // Exchange the code with a token.

@@ -10,7 +10,7 @@ use std::sync::{Arc, RwLock};
 use crate::{
     config::OAuthConfig,
     database::entity::{applications, sea_orm_active_enums::AuthMethod, users},
-    models::{AuthRequest, TokenResponse},
+    models::{OAuthRequest, TokenResponse},
 };
 
 use self::{
@@ -219,7 +219,7 @@ impl AuthService {
     pub async fn oauth_authenticate(
         &self,
         provider_type: OAuthProvider,
-        auth_request: &AuthRequest,
+        auth_request: &OAuthRequest,
     ) -> ServiceResult<TokenResponse> {
         let oauth_data = self
             .get_oauth_client(provider_type)?

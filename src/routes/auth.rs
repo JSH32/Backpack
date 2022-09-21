@@ -1,6 +1,6 @@
 use crate::{
     internal::auth::{auth_role, AllowUnregistered, AllowUnverified, Auth, DenyApplication},
-    models::{auth::BasicAuthForm, AuthMethods, AuthRequest, TokenResponse},
+    models::{auth::BasicAuthForm, AuthMethods, OAuthRequest, TokenResponse},
     services::{
         auth::{auth_method::AuthMethodService, oauth::OAuthProvider, AuthService},
         ServiceError, ToResponse,
@@ -96,12 +96,12 @@ macro_rules! define_oauth_route {(
                 #[utoipa::path(
                     context_path = "/api/auth",
                     tag = "authentication",
-                    request_body(content = AuthRequest)
+                    request_body(content = OAuthRequest)
                 )]
                 #[get($path)]
                 pub async fn [<$provider_name _callback>](
                     service: web::Data<AuthService>,
-                    params: web::Query<AuthRequest>,
+                    params: web::Query<OAuthRequest>,
                 ) -> impl Responder {
                     HttpResponse::Found()
                         .append_header((

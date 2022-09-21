@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 import type { AuthMethods } from '../models/AuthMethods';
-import type { AuthRequest } from '../models/AuthRequest';
 import type { BasicAuthForm } from '../models/BasicAuthForm';
+import type { OAuthRequest } from '../models/OAuthRequest';
 import type { TokenResponse } from '../models/TokenResponse';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -42,7 +42,7 @@ export class AuthenticationService {
      * @throws ApiError
      */
     public discordCallback(
-        requestBody: AuthRequest,
+        requestBody: OAuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
@@ -75,7 +75,7 @@ export class AuthenticationService {
      * @throws ApiError
      */
     public githubCallback(
-        requestBody: AuthRequest,
+        requestBody: OAuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
@@ -108,7 +108,7 @@ export class AuthenticationService {
      * @throws ApiError
      */
     public googleCallback(
-        requestBody: AuthRequest,
+        requestBody: OAuthRequest,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',

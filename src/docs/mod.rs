@@ -66,7 +66,7 @@ use crate::routes;
             TokenResponse,
             ApplicationCreate,
             BasicAuthForm,
-            AuthRequest,
+            OAuthRequest,
             RegistrationKeyData,
             BatchDeleteRequest,
             BatchDeleteResponse,
