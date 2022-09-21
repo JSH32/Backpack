@@ -2,11 +2,9 @@ use std::pin::Pin;
 
 use derive_more::Display;
 use futures::Future;
-use oauth2::basic::BasicClient;
-use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
+    ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use serde::de::DeserializeOwned;
 use serde::Deserialize;

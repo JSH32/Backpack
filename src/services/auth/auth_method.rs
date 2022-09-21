@@ -6,11 +6,9 @@ use crate::{
         ServiceError, ServiceResult,
     },
 };
+
 use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
-    ModelTrait, QueryFilter, Set,
-};
+use sea_orm::{prelude::*, Condition, IntoActiveModel, Set};
 use std::sync::Arc;
 
 use super::new_password;
@@ -63,6 +61,7 @@ impl AuthMethodService {
     }
 
     /// Get a user by authentication method and value.
+    /// This also updates `last_accessed`
     pub async fn get_user_by_value(
         &self,
         method: AuthMethod,
@@ -76,11 +75,23 @@ impl AuthMethodService {
             )
             .await
         {
-            Ok(v) => v
-                .find_related(users::Entity)
-                .one(self.database.as_ref())
-                .await
-                .map_err(|e| ServiceError::DbErr(e)),
+            Ok(v) => {
+                let user = v
+                    .find_related(users::Entity)
+                    .one(self.database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))?;
+
+                // Update `last_accessed`.
+                let mut active_method = v.into_active_model();
+                active_method.last_accessed = Set(Utc::now());
+                active_method
+                    .update(self.database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))?;
+
+                Ok(user)
+            }
             Err(e) => match e {
                 ServiceError::NotFound(_) => Ok(None),
                 _ => Err(e),
