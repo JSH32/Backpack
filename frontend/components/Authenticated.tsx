@@ -5,12 +5,16 @@ import { VerificationMessage } from "./VerificationMessage"
 import { useAppInfo } from "helpers/info"
 import { UserData } from "@/client"
 import api from "helpers/api"
-import { useStore } from "helpers/store"
+import { Store, useStore } from "helpers/store"
+import { RegisterPrompt } from "./RegisterPrompt"
+import { observer } from "mobx-react-lite"
+import { observe } from "mobx"
 
 export const Authenticated: React.FC<{
     allowUnverified?: boolean,
+    allowUnregistered?: boolean,
     children: React.ReactNode
-}> = ({ allowUnverified, children }) => {
+}> = ({ allowUnverified, allowUnregistered, children }) => {
     const appInfo = useAppInfo()
     const store = useStore()
     const [userData, setUserData] = React.useState<UserData | null>(store?.userData || null)
@@ -25,12 +29,22 @@ export const Authenticated: React.FC<{
             .catch(() => {
                 Router.replace("/user/login")
             })
+
+        // Watch changes so we can reload this componment and re-evaluate if we should lock the route
+        if (store) {
+            return observe(store, "userData", (data: any) => {
+                setUserData(data.newValue as UserData)
+            })
+        }
     }, [store])
     
     return <>
         {!userData || userData.verified === undefined ? 
             // User data wasn't loaded, render empty page.
             <Page></Page> 
+        : appInfo?.inviteOnly && !userData.registered && !allowUnregistered ?
+            // User exists but needs to be verified with a registration code.
+            <RegisterPrompt/>
         : appInfo?.smtp && !allowUnverified && !userData.verified ? 
             // SMTP verification was enabled and the user was not verified
             <VerificationMessage email={userData.email}/> 

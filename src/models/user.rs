@@ -9,6 +9,9 @@ pub struct UserData {
     pub username: String,
     pub email: String,
     pub verified: bool,
+    /// Has the user already verified with a registration key?
+    /// This will be true always if service is in `invite_only` mode.
+    pub registered: bool,
     pub role: UserRole,
 }
 
@@ -19,6 +22,7 @@ impl From<users::Model> for UserData {
             username: user.username,
             email: user.email,
             verified: user.verified,
+            registered: user.registered,
             role: UserRole::from(user.role),
         }
     }
