@@ -63,7 +63,7 @@ const Profile: NextPage = observer(() => {
                 <ModalOverlay />
                 <ModalContent>
                     <form onSubmit={finalSubmitForm.handleSubmit(form => {
-                        api.user.settings({ ...newData, currentPassword: form.password })
+                        api.user.settings({ ...newData, currentPassword: form?.password })
                             .then(newData => {
                                 store?.setUserInfo(newData)
                                 toast({
@@ -91,10 +91,12 @@ const Profile: NextPage = observer(() => {
                             <Text fontWeight="bold">This will change the following</Text>
                             <UnorderedList>
                                 {Object.keys(newData).map(field => <ListItem key={field}>{field}</ListItem>)}
-                                <FormControl mt={"20px"} isRequired>
-                                    <FormLabel>Current password</FormLabel>
-                                    <Input id="password" type="password" {...finalSubmitForm.register("password")} />
-                                </FormControl>
+                                { store?.authMethods?.password &&
+                                    <FormControl mt={"20px"} isRequired>
+                                        <FormLabel>Current password</FormLabel>
+                                        <Input id="password" type="password" {...finalSubmitForm.register("password")} />
+                                    </FormControl>
+                                }
                             </UnorderedList>
                         </ModalBody>
                         <ModalFooter>

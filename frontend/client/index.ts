@@ -12,6 +12,7 @@ export type { AppInfo } from './models/AppInfo';
 export type { ApplicationCreate } from './models/ApplicationCreate';
 export type { ApplicationData } from './models/ApplicationData';
 export type { ApplicationPage } from './models/ApplicationPage';
+export type { AuthMethods } from './models/AuthMethods';
 export type { AuthRequest } from './models/AuthRequest';
 export type { BasicAuthForm } from './models/BasicAuthForm';
 export type { BatchDeleteRequest } from './models/BatchDeleteRequest';

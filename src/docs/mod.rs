@@ -21,6 +21,7 @@ use crate::routes;
         routes::user::verify,
         routes::user::resend_verify,
         routes::user::delete,
+        routes::user::register_key,
         routes::file::upload,
         routes::file::stats,
         routes::file::list,
@@ -37,6 +38,7 @@ use crate::routes;
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
         routes::auth::basic,
+        routes::auth::enabled_methods,
         // All oauth provider routes
         routes::auth::google::google_login,
         routes::auth::google::google_callback,
@@ -69,7 +71,8 @@ use crate::routes;
             BatchDeleteRequest,
             BatchDeleteResponse,
             BatchFileError,
-            OAuthProviders
+            OAuthProviders,
+            AuthMethods
         )
     ),
     tags(

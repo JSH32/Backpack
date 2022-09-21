@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
+import type { AuthMethods } from '../models/AuthMethods';
 import type { AuthRequest } from '../models/AuthRequest';
 import type { BasicAuthForm } from '../models/BasicAuthForm';
 import type { TokenResponse } from '../models/TokenResponse';
@@ -128,6 +129,19 @@ export class AuthenticationService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/google/login',
+        });
+    }
+
+    /**
+     * Get all enabled auth methods for this user.
+     *
+     * @returns AuthMethods
+     * @throws ApiError
+     */
+    public enabledMethods(): CancelablePromise<AuthMethods> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/auth/methods',
         });
     }
 

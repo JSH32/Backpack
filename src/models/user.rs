@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::database::entity::{sea_orm_active_enums::Role, users};
 
@@ -47,13 +47,21 @@ pub struct UserCreateForm {
     pub username: String,
     pub email: String,
     pub password: String,
-    /// Only needed when service is invite_only.
+    /// Required when creating a user with password.
     pub registration_key: Option<String>,
+}
+
+/// Used when registering an existing account with a registration key.
+#[derive(Deserialize, IntoParams)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistrationParams {
+    pub key: String,
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct UserDeleteForm {
-    pub password: String,
+    /// This is required if a password has been set prior.
+    pub password: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -68,6 +76,6 @@ pub struct UpdateUserSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_password: Option<String>,
 
-    /// Always require old password to change options.
-    pub current_password: String,
+    /// This is required if a password has been set prior.
+    pub current_password: Option<String>,
 }

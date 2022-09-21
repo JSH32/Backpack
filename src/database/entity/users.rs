@@ -14,10 +14,10 @@ pub struct Model {
     pub email: String,
     #[sea_orm(unique)]
     pub username: String,
-    pub password: String,
     pub created: DateTimeUtc,
     pub verified: bool,
     pub role: Role,
+    pub registered: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -28,6 +28,8 @@ pub enum Relation {
     Applications,
     #[sea_orm(has_one = "super::verifications::Entity")]
     Verifications,
+    #[sea_orm(has_many = "super::auth_methods::Entity")]
+    AuthMethods,
 }
 
 impl Related<super::applications::Entity> for Entity {
@@ -45,6 +47,12 @@ impl Related<super::verifications::Entity> for Entity {
 impl Related<super::files::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Files.def()
+    }
+}
+
+impl Related<super::auth_methods::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AuthMethods.def()
     }
 }
 

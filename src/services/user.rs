@@ -10,14 +10,16 @@ use sea_orm::{
 use std::sync::Arc;
 
 use super::{
-    auth::{new_password, validate_password},
+    auth::{auth_method::AuthMethodService, new_password, validate_password},
     file::FileService,
     prelude::*,
     registration_key::RegistrationKeyService,
 };
 use crate::{
     config::SMTPConfig,
-    database::entity::{files, users, verifications},
+    database::entity::{
+        auth_methods, files, sea_orm_active_enums::AuthMethod, users, verifications,
+    },
     internal::random_string,
 };
 
@@ -25,6 +27,7 @@ pub struct UserService {
     database: Arc<DatabaseConnection>,
     registration_key_service: Arc<RegistrationKeyService>,
     file_service: Arc<FileService>,
+    auth_method_service: Arc<AuthMethodService>,
     // If we need to send more emails, this should be split into an email service.
     smtp: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>,
     client_url: String,
@@ -38,6 +41,7 @@ impl UserService {
         database: Arc<DatabaseConnection>,
         registration_key_service: Arc<RegistrationKeyService>,
         file_service: Arc<FileService>,
+        auth_method_service: Arc<AuthMethodService>,
         smtp_config: Option<SMTPConfig>,
         client_url: &str,
         use_key: bool,
@@ -46,6 +50,7 @@ impl UserService {
             database,
             registration_key_service,
             file_service,
+            auth_method_service,
             smtp: match smtp_config {
                 Some(config) => {
                     let creds = Credentials::new(config.username.clone(), config.password);
@@ -96,14 +101,14 @@ impl UserService {
     ///
     /// * `username` - Users username
     /// * `email` - User email
-    /// * `password` - User password (this will be hashed)
-    /// * `key` - Registration key.
+    /// * `auth_method` - Authentication method
+    /// * `registration_key` - Registration key. This can always be validated later.
     pub async fn create_user(
         &self,
         username: String,
         email: String,
-        password: String,
-        key: Option<String>,
+        auth_method: (AuthMethod, String),
+        registration_key: Option<String>,
     ) -> ServiceResult<users::Model> {
         validate_username(&username)?;
         if !EMAIL_REGEX.is_match(&email) {
@@ -141,32 +146,85 @@ impl UserService {
             },
         }
 
-        // Use the registration key.
-        if self.use_key {
-            if let Some(key) = key {
+        // We want to validate password before making the user.
+        let method_value = match auth_method.0 {
+            AuthMethod::Password => new_password(&auth_method.1)?,
+            _ => auth_method.1,
+        };
+
+        let registered = if self.invite_only() {
+            if let Some(key) = registration_key {
                 // This will validate and use the key. Will return proper error.
                 self.registration_key_service.use_key(&key).await?;
+                true
             } else {
-                return Err(ServiceError::InvalidData(
-                    "Registration key required".into(),
-                ));
+                // Registration key is required for password version of this method.
+                // This is not required immidiately otherwise.
+                if auth_method.0 == AuthMethod::Password {
+                    return Err(ServiceError::InvalidData(
+                        "Registration key required".into(),
+                    ));
+                }
+                false
             }
-        }
+        } else {
+            // Register user by default if invite_only is false.
+            true
+        };
 
         let user = users::ActiveModel {
             username: Set(username.to_owned()),
             email: Set(email.to_owned()),
-            password: Set(new_password(&password)?),
+            registered: Set(registered),
+            verified: Set(!self.smtp_enabled()),
             ..Default::default()
         }
         .insert(self.database.as_ref())
         .await
         .map_err(|e| ServiceError::DbErr(e))?;
 
-        // This only sends an email if SMTP is enabled.
-        self.create_verification(&user).await?;
+        // Create the default auth method
+        auth_methods::ActiveModel {
+            user_id: Set(user.id.clone()),
+            auth_method: Set(auth_method.0.clone()),
+            value: Set(method_value),
+            ..Default::default()
+        }
+        .insert(self.database.as_ref())
+        .await
+        .map_err(|e| ServiceError::DbErr(e))?;
+
+        // All other methods validate email ownership.
+        if AuthMethod::Password == auth_method.0 {
+            // This only sends an email if SMTP is enabled.
+            self.create_verification(&user).await?;
+        }
 
         Ok(user)
+    }
+
+    /// Register an unregistered user with a registration key.
+    pub async fn register_user(
+        &self,
+        user: &users::Model,
+        registration_key: &str,
+    ) -> ServiceResult<users::Model> {
+        if !self.invite_only() {
+            return Err(ServiceError::InvalidData(
+                "Registration keys are not enabled on this service.".into(),
+            ));
+        }
+
+        self.registration_key_service
+            .use_key(registration_key)
+            .await?;
+
+        let mut active_user = user.clone().into_active_model();
+        active_user.registered = Set(true);
+        active_user
+            .update(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))
     }
 
     /// Update and validate user settings.
@@ -176,7 +234,7 @@ impl UserService {
     /// * `email` - New email.
     /// * `username` - New username.
     /// * `new_password` - New password.
-    /// * `current_password` - Current password is required to change settings.
+    /// * `current_password` - Current password is required to change settings (if current password existed).
     ///
     /// # Returns
     ///
@@ -187,16 +245,11 @@ impl UserService {
         email: Option<String>,
         username: Option<String>,
         password: Option<String>,
-        current_password: String,
+        current_password: Option<String>,
     ) -> ServiceResult<users::Model> {
-        validate_password(&user.password, &current_password)?;
+        self.verify_password_action(user, current_password).await?;
 
         let mut active_user = user.clone().into_active_model();
-
-        // Validate and generate password.
-        if let Some(password) = &password {
-            active_user.password = Set(new_password(&password)?);
-        }
 
         // Validate username.
         if let Some(username) = &username {
@@ -240,10 +293,20 @@ impl UserService {
             active_user.email = Set(email.to_owned());
         }
 
-        active_user
-            .update(self.database.as_ref())
-            .await
-            .map_err(|e| ServiceError::DbErr(e))?;
+        // Validate and generate password.
+        // This is done last since it is a seperate operation and occurs last.
+        if let Some(password) = &password {
+            self.auth_method_service
+                .create_or_set_method(&user.id, AuthMethod::Password, password)
+                .await?;
+        }
+
+        if active_user.is_changed() {
+            active_user
+                .update(self.database.as_ref())
+                .await
+                .map_err(|e| ServiceError::DbErr(e))?;
+        }
 
         // Unverify a user and send a verification email if email was changed (and SMTP enabled).
         if let Some(_) = email {
@@ -327,16 +390,46 @@ impl UserService {
         }
     }
 
+    /// Verify a password required action.
+    /// If no password method exists on the user, validate.
+    /// This returns [`ServiceError::InvalidData`] if failed.
+    async fn verify_password_action(
+        &self,
+        user: &users::Model,
+        password: Option<String>,
+    ) -> ServiceResult<()> {
+        match self
+            .auth_method_service
+            .get_auth_method(&user.id, AuthMethod::Password)
+            .await
+        {
+            Ok(v) => {
+                if let Some(password) = password {
+                    validate_password(&v.value, &password)?
+                } else {
+                    return Err(ServiceError::InvalidData(
+                        "Password is required since you have a password.".into(),
+                    ));
+                }
+            }
+            Err(e) => match e {
+                // If not found then method is not enabled, this is fine.
+                ServiceError::NotFound(_) => {}
+                _ => return Err(e),
+            },
+        }
+
+        Ok(())
+    }
+
     /// Delete a user.
     ///
     /// # Arguments
     ///
     /// * `user` - User to delete.
     /// * `password` - If provided, will make sure that the correct password is provided.
-    pub async fn delete(&self, user: &users::Model, password: Option<&str>) -> ServiceResult<()> {
-        if let Some(password) = password {
-            validate_password(&user.password, password)?;
-        }
+    pub async fn delete(&self, user: &users::Model, password: Option<String>) -> ServiceResult<()> {
+        self.verify_password_action(user, password).await?;
 
         let mut files: Vec<String> = user
             .find_related(files::Entity)

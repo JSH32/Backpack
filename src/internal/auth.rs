@@ -55,6 +55,7 @@ macro_rules! define_option {
 
 define_option!(VerifiedOpt, AllowUnverified, DenyUnverified);
 define_option!(ApplicationOpt, AllowApplication, DenyApplication);
+define_option!(RegisteredOpt, AllowUnregistered, DenyUnregistered);
 
 /// Actix parameter based middleware for authentication with options.
 ///
@@ -73,17 +74,24 @@ define_option!(ApplicationOpt, AllowApplication, DenyApplication);
 ///     "This will permit the user to be unverified and for the token to be an application token."
 /// }
 /// ```
-pub struct Auth<R: Role, VOpt: VerifiedOpt = DenyUnverified, AOpt: ApplicationOpt = DenyApplication>
-{
+pub struct Auth<
+    R: Role,
+    VOpt: VerifiedOpt = DenyUnverified,
+    AOpt: ApplicationOpt = DenyApplication,
+    ROpt: RegisteredOpt = DenyUnregistered,
+> {
     pub user: users::Model,
     _markers: (
         std::marker::PhantomData<R>,
         std::marker::PhantomData<VOpt>,
         std::marker::PhantomData<AOpt>,
+        std::marker::PhantomData<ROpt>,
     ),
 }
 
-impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> Deref for Auth<R, VOpt, AOpt> {
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> Deref
+    for Auth<R, VOpt, AOpt, ROpt>
+{
     type Target = users::Model;
 
     fn deref(&self) -> &users::Model {
@@ -91,10 +99,12 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> Deref for Auth<R, VOpt, A
     }
 }
 
-impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> FromRequest for Auth<R, VOpt, AOpt> {
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> FromRequest
+    for Auth<R, VOpt, AOpt, ROpt>
+{
     type Error = Error;
     type Future =
-        std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, VOpt, AOpt>, Error>>>>;
+        std::pin::Pin<Box<dyn futures::Future<Output = Result<Auth<R, VOpt, AOpt, ROpt>, Error>>>>;
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
         let req = req.clone();
@@ -116,6 +126,7 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> FromRequest for Auth<R, V
 
             if (application.is_some() && !AOpt::ALLOW)
                 || (UserRole::from(user.role.clone()) < R::LEVEL)
+                || !user.registered && !(ROpt::ALLOW as bool)
             {
                 return Err(Error::from(ServiceError::unauthorized()));
             }
@@ -123,6 +134,7 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt> FromRequest for Auth<R, V
             Ok(Auth {
                 user,
                 _markers: (
+                    std::marker::PhantomData,
                     std::marker::PhantomData,
                     std::marker::PhantomData,
                     std::marker::PhantomData,

@@ -1,0 +1,144 @@
+use crate::{
+    database::entity::{auth_methods, sea_orm_active_enums::AuthMethod, users},
+    models::AuthMethods,
+    services::{
+        prelude::{data_service, DataService},
+        ServiceError, ServiceResult,
+    },
+};
+use chrono::Utc;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
+    ModelTrait, QueryFilter, Set,
+};
+use std::sync::Arc;
+
+use super::new_password;
+
+pub struct AuthMethodService {
+    database: Arc<DatabaseConnection>,
+}
+
+data_service!(AuthMethodService, auth_methods);
+
+impl AuthMethodService {
+    pub fn new(database: Arc<DatabaseConnection>) -> Self {
+        Self { database }
+    }
+
+    /// Get authentication method for a user.
+    pub async fn get_auth_method(
+        &self,
+        user_id: &str,
+        method: AuthMethod,
+    ) -> ServiceResult<auth_methods::Model> {
+        self.by_condition(
+            Condition::all()
+                .add(auth_methods::Column::AuthMethod.eq(method))
+                .add(auth_methods::Column::UserId.eq(user_id.to_owned())),
+        )
+        .await
+    }
+
+    /// Get all methods enabled for a user.
+    pub async fn get_enabled_methods(&self, user_id: &str) -> ServiceResult<AuthMethods> {
+        let found_methods = auth_methods::Entity::find()
+            .filter(auth_methods::Column::UserId.eq(user_id))
+            .all(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        let mut methods = AuthMethods::default();
+
+        for method in found_methods {
+            match method.auth_method {
+                AuthMethod::Discord => methods.discord = true,
+                AuthMethod::Github => methods.github = true,
+                AuthMethod::Google => methods.google = true,
+                AuthMethod::Password => methods.password = true,
+            };
+        }
+
+        Ok(methods)
+    }
+
+    /// Get a user by authentication method and value.
+    pub async fn get_user_by_value(
+        &self,
+        method: AuthMethod,
+        value: &str,
+    ) -> ServiceResult<Option<users::Model>> {
+        match self
+            .by_condition(
+                Condition::all()
+                    .add(auth_methods::Column::AuthMethod.eq(method))
+                    .add(auth_methods::Column::Value.eq(value.to_owned())),
+            )
+            .await
+        {
+            Ok(v) => v
+                .find_related(users::Entity)
+                .one(self.database.as_ref())
+                .await
+                .map_err(|e| ServiceError::DbErr(e)),
+            Err(e) => match e {
+                ServiceError::NotFound(_) => Ok(None),
+                _ => Err(e),
+            },
+        }
+    }
+
+    /// Creates or sets the value of an auth method on a user.
+    pub async fn create_or_set_method(
+        &self,
+        user_id: &str,
+        method: AuthMethod,
+        value: &str,
+    ) -> ServiceResult<auth_methods::Model> {
+        match auth_methods::Entity::find()
+            .filter(auth_methods::Column::AuthMethod.eq(method.clone()))
+            .filter(auth_methods::Column::UserId.eq(user_id.to_owned()))
+            .one(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?
+        {
+            Some(v) => {
+                let mut active_method = v.clone().into_active_model();
+                active_method.value = Set(match v.auth_method {
+                    AuthMethod::Password => new_password(&value)?,
+                    _ => value.to_owned(),
+                });
+
+                active_method.last_accessed = Set(Utc::now());
+                active_method
+                    .update(self.database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))
+            }
+            None => self.create_auth_method(user_id, method, value).await,
+        }
+    }
+
+    /// Create and validate auth methods.
+    pub async fn create_auth_method(
+        &self,
+        user_id: &str,
+        method: AuthMethod,
+        value: &str,
+    ) -> ServiceResult<auth_methods::Model> {
+        let value = match method {
+            AuthMethod::Password => new_password(&value)?,
+            _ => value.to_owned(),
+        };
+
+        auth_methods::ActiveModel {
+            user_id: Set(user_id.to_owned()),
+            auth_method: Set(method),
+            value: Set(value),
+            ..Default::default()
+        }
+        .insert(self.database.as_ref())
+        .await
+        .map_err(|e| ServiceError::DbErr(e))
+    }
+}

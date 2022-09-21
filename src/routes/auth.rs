@@ -1,7 +1,8 @@
 use crate::{
-    models::{auth::BasicAuthForm, AuthRequest, TokenResponse},
+    internal::auth::{auth_role, AllowUnregistered, AllowUnverified, Auth, DenyApplication},
+    models::{auth::BasicAuthForm, AuthMethods, AuthRequest, TokenResponse},
     services::{
-        auth::{oauth::OAuthProvider, AuthService},
+        auth::{auth_method::AuthMethodService, oauth::OAuthProvider, AuthService},
         ServiceError, ToResponse,
     },
 };
@@ -12,6 +13,7 @@ use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder, Scope
 pub fn get_routes() -> Scope {
     web::scope("/auth")
         .service(basic)
+        .service(enabled_methods)
         .service(google::google_login)
         .service(google::google_callback)
         .service(github::github_login)
@@ -36,6 +38,23 @@ async fn basic(service: web::Data<AuthService>, form: web::Json<BasicAuthForm>) 
         .password_auth(&form.auth, &form.password)
         .await
         .to_response::<TokenResponse>(StatusCode::OK)
+}
+
+/// Get all enabled auth methods for this user.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    responses((status = 200, body = AuthMethods)),
+)]
+#[get("/methods")]
+async fn enabled_methods(
+    service: web::Data<AuthMethodService>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
+) -> impl Responder {
+    service
+        .get_enabled_methods(&user.id)
+        .await
+        .to_response::<AuthMethods>(StatusCode::OK)
 }
 
 // INFO: Should we actually be documenting these routes in OpenAPI?

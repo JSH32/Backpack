@@ -9,21 +9,26 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     config::OAuthConfig,
-    database::entity::{applications, users},
+    database::entity::{applications, sea_orm_active_enums::AuthMethod, users},
     models::{AuthRequest, TokenResponse},
 };
 
-use self::oauth::{OAuthClient, OAuthProvider};
+use self::{
+    auth_method::AuthMethodService,
+    oauth::{OAuthClient, OAuthProvider},
+};
 
 use super::{
     application::ApplicationService, prelude::DataService, user::UserService, ServiceError,
     ServiceResult,
 };
 
+pub mod auth_method;
 pub mod oauth;
 
 /// Handles authentication and validation.
 pub struct AuthService {
+    auth_method_service: Arc<AuthMethodService>,
     user_service: Arc<UserService>,
     // TODO: Figure out how to avoid this circular dependency.
     application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
@@ -39,6 +44,7 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(
+        auth_method_service: Arc<AuthMethodService>,
         user_service: Arc<UserService>,
         application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
         api_url: &str,
@@ -49,6 +55,7 @@ impl AuthService {
         discord_oauth: Option<OAuthConfig>,
     ) -> Self {
         Self {
+            auth_method_service,
             user_service,
             application_service,
             api_url: api_url.parse::<Uri>().unwrap(),
@@ -86,8 +93,12 @@ impl AuthService {
     /// Returns JWT token response.
     pub async fn password_auth(&self, auth: &str, password: &str) -> ServiceResult<TokenResponse> {
         let user = self.user_service.get_by_identifier(auth).await?;
+        let method = self
+            .auth_method_service
+            .get_auth_method(&user.id, AuthMethod::Password)
+            .await?;
 
-        validate_password(&user.password, password)?;
+        validate_password(&method.value, password)?;
 
         if self.user_service.smtp_enabled() {
             self.user_service.verify_user(&user).await?;
@@ -203,30 +214,56 @@ impl AuthService {
     }
 
     /// Use auth params provided by the provider to get a JWT token.
+    /// If a user dowes not exist with these parameters, create the user.
     /// Returns new JWT key.
     pub async fn oauth_authenticate(
         &self,
         provider_type: OAuthProvider,
         auth_request: &AuthRequest,
     ) -> ServiceResult<TokenResponse> {
-        let email = self
+        let oauth_data = self
             .get_oauth_client(provider_type)?
-            .get_email(auth_request)
+            .get_user_data(auth_request)
             .await?;
 
+        // Get a user based on auth method.
         let user = match self
-            .user_service
-            .by_condition(Condition::all().add(users::Column::Email.eq(email.clone())))
-            .await
+            .auth_method_service
+            .get_user_by_value(provider_type.clone().into(), &oauth_data.id)
+            .await?
         {
-            Ok(v) => v,
-            Err(e) => {
-                return match e {
-                    ServiceError::NotFound(_) => Err(ServiceError::NotFound(format!(
-                        "User with email ({})",
-                        email
-                    ))),
-                    _ => Err(e),
+            // User found.
+            Some(v) => v,
+            // Check if email already exists.
+            None => {
+                match self
+                    .user_service
+                    .by_condition(
+                        Condition::any().add(users::Column::Email.eq(oauth_data.email.clone())),
+                    )
+                    .await
+                {
+                    Ok(user) => {
+                        self.auth_method_service
+                            .create_auth_method(&user.id, provider_type.into(), &oauth_data.id)
+                            .await?;
+
+                        user
+                    }
+                    Err(e) => match e {
+                        // Make a new user.
+                        ServiceError::NotFound(_) => {
+                            self.user_service
+                                .create_user(
+                                    oauth_data.username,
+                                    oauth_data.email,
+                                    (provider_type.into(), oauth_data.id),
+                                    None,
+                                )
+                                .await?
+                        }
+                        _ => return Err(e),
+                    },
                 }
             }
         };
