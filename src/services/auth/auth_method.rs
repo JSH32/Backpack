@@ -11,7 +11,7 @@ use chrono::Utc;
 use sea_orm::{prelude::*, Condition, IntoActiveModel, Set};
 use std::sync::Arc;
 
-use super::new_password;
+use super::{new_password, validate_password};
 
 pub struct AuthMethodService {
     database: Arc<DatabaseConnection>,
@@ -59,6 +59,47 @@ impl AuthMethodService {
         }
 
         Ok(methods)
+    }
+
+    /// Unlink an auth method from a user.
+    pub async fn unlink_method(
+        &self,
+        user_id: &str,
+        method: AuthMethod,
+        password: Option<String>,
+    ) -> ServiceResult<AuthMethods> {
+        let method = self.get_auth_method(user_id, method).await?;
+
+        // Validate password if exists
+        match self.get_auth_method(user_id, AuthMethod::Password).await {
+            Ok(v) => {
+                if let Some(password) = password {
+                    validate_password(&v.value, &password)?;
+                } else {
+                    return Err(ServiceError::InvalidData(
+                        "Password is required to remove an auth method.".into(),
+                    ));
+                }
+            }
+            Err(e) => match e {
+                ServiceError::NotFound(_) => {}
+                _ => return Err(e),
+            },
+        };
+
+        let methods = self.get_enabled_methods(user_id).await?;
+        if methods.enabled_methods() <= 1 {
+            return Err(ServiceError::InvalidData(
+                "You need at least one active authentication method.".into(),
+            ));
+        }
+
+        method
+            .delete(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        self.get_enabled_methods(user_id).await
     }
 
     /// Get a user by authentication method and value.

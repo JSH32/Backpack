@@ -8,6 +8,7 @@ import React from "react"
 import { Page } from "layouts/Page"
 
 import UserIcon from "assets/icons/user.svg"
+import LinkIcon from "assets/icons/link.svg"
 import LockIcon from "assets/icons/lock.svg"
 import { Authenticated } from "components/Authenticated"
 
@@ -29,9 +30,16 @@ export const PasswordTab = {
     path: "/user/settings/password"
 }
 
+export const ConnectionsTab = {
+    name: "Connections",
+    icon: LinkIcon,
+    path: "/user/settings/connections"
+}
+
 export const Tabs = [
     ProfileTab,
-    PasswordTab
+    PasswordTab,
+    ConnectionsTab
 ]
 
 export const SettingsLayout: React.FC<{
@@ -92,7 +100,7 @@ export const SettingsLayout: React.FC<{
                                         onClick={() => router.push(tabData.path)}
                                         variant={tabData.name === tab.name ? "solid" : "ghost"}
                                         justifyContent="flex-start"
-                                        leftIcon={<Icon color="primary.300" as={tabData.icon} />}>
+                                        leftIcon={<Icon color="primary.300" as={tabData.icon} mt="2px" />}>
                                         {tabData.name}
                                     </Button>)}
                                 </VStack>

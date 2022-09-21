@@ -9,6 +9,7 @@ use crate::models::*;
 
 use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
+use crate::services::auth::oauth::OAuthProvider;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
@@ -39,6 +40,7 @@ use crate::routes;
         routes::admin::registration_key::delete,
         routes::auth::basic,
         routes::auth::enabled_methods,
+        routes::auth::unlink_method,
         // All oauth provider routes
         routes::auth::google::google_login,
         routes::auth::google::google_callback,
@@ -72,7 +74,9 @@ use crate::routes;
             BatchDeleteResponse,
             BatchFileError,
             OAuthProviders,
-            AuthMethods
+            AuthMethods,
+            UnlinkAuthMethod,
+            OAuthProvider
         )
     ),
     tags(

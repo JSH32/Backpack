@@ -8,6 +8,7 @@ use oauth2::{
 };
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 use crate::config::OAuthConfig;
 use crate::database::entity::sea_orm_active_enums::AuthMethod;
@@ -15,7 +16,8 @@ use crate::models::OAuthRequest;
 use crate::services::{ServiceError, ServiceResult};
 
 /// All OAuth providers.
-#[derive(Debug, Display, Clone, Copy)]
+#[derive(Debug, Display, Clone, Copy, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub enum OAuthProvider {
     Google,
     Github,

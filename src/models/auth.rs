@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::services::auth::oauth::OAuthProvider;
+
 #[derive(Deserialize, ToSchema)]
 pub struct BasicAuthForm {
     pub auth: String,
@@ -25,4 +27,22 @@ pub struct AuthMethods {
     pub github: Option<String>,
     /// Cached discord tag.
     pub discord: Option<String>,
+}
+
+impl AuthMethods {
+    /// Get the amount of enabled auth methods.
+    pub fn enabled_methods(&self) -> u8 {
+        return (self.password as u8)
+            + (self.google.is_some() as u8)
+            + (self.github.is_some() as u8)
+            + (self.discord.is_some() as u8);
+    }
+}
+
+/// Unlink an OAuth method.
+#[derive(Deserialize, ToSchema)]
+pub struct UnlinkAuthMethod {
+    pub method: OAuthProvider,
+    /// Password required if present.
+    pub password: Option<String>,
 }

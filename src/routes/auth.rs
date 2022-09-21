@@ -1,6 +1,6 @@
 use crate::{
     internal::auth::{auth_role, AllowUnregistered, AllowUnverified, Auth, DenyApplication},
-    models::{auth::BasicAuthForm, AuthMethods, OAuthRequest, TokenResponse},
+    models::{auth::BasicAuthForm, AuthMethods, OAuthRequest, TokenResponse, UnlinkAuthMethod},
     services::{
         auth::{auth_method::AuthMethodService, oauth::OAuthProvider, AuthService},
         ServiceError, ToResponse,
@@ -14,6 +14,7 @@ pub fn get_routes() -> Scope {
     web::scope("/auth")
         .service(basic)
         .service(enabled_methods)
+        .service(unlink_method)
         .service(google::google_login)
         .service(google::google_callback)
         .service(github::github_login)
@@ -53,6 +54,28 @@ async fn enabled_methods(
 ) -> impl Responder {
     service
         .get_enabled_methods(&user.id)
+        .await
+        .to_response::<AuthMethods>(StatusCode::OK)
+}
+
+/// Unlink an OAuth method from a user.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    responses(
+        (status = 200, body = AuthMethods),
+        (status = 400, body = MessageResponse, description = "Need at least one auth provider.")
+    ),
+    request_body(content = UnlinkAuthMethod)
+)]
+#[post("/unlink")]
+async fn unlink_method(
+    service: web::Data<AuthMethodService>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
+    body: web::Json<UnlinkAuthMethod>,
+) -> impl Responder {
+    service
+        .unlink_method(&user.id, body.method.into(), body.password.clone())
         .await
         .to_response::<AuthMethods>(StatusCode::OK)
 }

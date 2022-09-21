@@ -4,6 +4,7 @@ import type { AuthMethods } from '../models/AuthMethods';
 import type { BasicAuthForm } from '../models/BasicAuthForm';
 import type { OAuthRequest } from '../models/OAuthRequest';
 import type { TokenResponse } from '../models/TokenResponse';
+import type { UnlinkAuthMethod } from '../models/UnlinkAuthMethod';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -142,6 +143,27 @@ export class AuthenticationService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/auth/methods',
+        });
+    }
+
+    /**
+     * Unlink an OAuth method from a user.
+     *
+     * @param requestBody
+     * @returns AuthMethods
+     * @throws ApiError
+     */
+    public unlinkMethod(
+        requestBody: UnlinkAuthMethod,
+    ): CancelablePromise<AuthMethods> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/auth/unlink',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Need at least one auth provider.`,
+            },
         });
     }
 
