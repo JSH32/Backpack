@@ -5,11 +5,20 @@
  * Enabled authorization methods.
  */
 export type AuthMethods = {
-    discord: boolean;
-    github: boolean;
-    google: boolean;
     /**
-     * Password authentication.
+     * Cached discord tag.
+     */
+    discord?: string;
+    /**
+     * Cached github username.
+     */
+    github?: string;
+    /**
+     * Google username (email before the @).
+     */
+    google?: string;
+    /**
+     * Is password authentication enabled.
      */
     password: boolean;
 };

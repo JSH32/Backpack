@@ -49,10 +49,11 @@ impl AuthMethodService {
         let mut methods = AuthMethods::default();
 
         for method in found_methods {
+            // These should all be true except for password.
             match method.auth_method {
-                AuthMethod::Discord => methods.discord = true,
-                AuthMethod::Github => methods.github = true,
-                AuthMethod::Google => methods.google = true,
+                AuthMethod::Discord => methods.discord = method.cached_username,
+                AuthMethod::Github => methods.github = method.cached_username,
+                AuthMethod::Google => methods.google = method.cached_username,
                 AuthMethod::Password => methods.password = true,
             };
         }
@@ -66,6 +67,7 @@ impl AuthMethodService {
         &self,
         method: AuthMethod,
         value: &str,
+        new_cached_username: Option<String>,
     ) -> ServiceResult<Option<users::Model>> {
         match self
             .by_condition(
@@ -85,6 +87,8 @@ impl AuthMethodService {
                 // Update `last_accessed`.
                 let mut active_method = v.into_active_model();
                 active_method.last_accessed = Set(Utc::now());
+                active_method.cached_username = Set(new_cached_username);
+
                 active_method
                     .update(self.database.as_ref())
                     .await
@@ -104,6 +108,7 @@ impl AuthMethodService {
         &self,
         user_id: &str,
         method: AuthMethod,
+        cached_username: Option<String>,
         value: &str,
     ) -> ServiceResult<auth_methods::Model> {
         match auth_methods::Entity::find()
@@ -126,7 +131,10 @@ impl AuthMethodService {
                     .await
                     .map_err(|e| ServiceError::DbErr(e))
             }
-            None => self.create_auth_method(user_id, method, value).await,
+            None => {
+                self.create_auth_method(user_id, method, cached_username, value)
+                    .await
+            }
         }
     }
 
@@ -135,6 +143,7 @@ impl AuthMethodService {
         &self,
         user_id: &str,
         method: AuthMethod,
+        cached_username: Option<String>,
         value: &str,
     ) -> ServiceResult<auth_methods::Model> {
         let value = match method {
@@ -145,6 +154,7 @@ impl AuthMethodService {
         auth_methods::ActiveModel {
             user_id: Set(user_id.to_owned()),
             auth_method: Set(method),
+            cached_username: Set(cached_username),
             value: Set(value),
             ..Default::default()
         }

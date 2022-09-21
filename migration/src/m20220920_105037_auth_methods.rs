@@ -44,6 +44,7 @@ impl MigrationTrait for Migration {
                             .enumeration("auth_method", ["password", "google", "github", "discord"])
                             .not_null(),
                     )
+                    .col(ColumnDef::new(AuthMethods::CachedUsername).text())
                     .col(ColumnDef::new(AuthMethods::Value).text().not_null())
                     .col(
                         ColumnDef::new(AuthMethods::LastAccessed)
@@ -106,15 +107,17 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(Table::drop().table(AuthMethods::Table).to_owned())
+            .await?;
+
         if manager.get_database_backend() == DbBackend::Postgres {
             manager
                 .drop_type(Type::drop().name(AuthMethod::Type).to_owned())
                 .await?;
         }
 
-        manager
-            .drop_table(Table::drop().table(AuthMethods::Table).to_owned())
-            .await
+        Ok(())
     }
 }
 
@@ -131,6 +134,7 @@ enum AuthMethods {
     Table,
     Id,
     UserId,
+    CachedUsername,
     AuthMethod,
     Value,
     LastAccessed,

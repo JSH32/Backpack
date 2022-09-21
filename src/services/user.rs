@@ -101,13 +101,13 @@ impl UserService {
     ///
     /// * `username` - Users username
     /// * `email` - User email
-    /// * `auth_method` - Authentication method
+    /// * `auth_method` - (method, identifier, optional username)
     /// * `registration_key` - Registration key. This can always be validated later.
     pub async fn create_user(
         &self,
         username: String,
         email: String,
-        auth_method: (AuthMethod, String),
+        auth_method: (AuthMethod, String, Option<String>),
         registration_key: Option<String>,
     ) -> ServiceResult<users::Model> {
         validate_username(&username)?;
@@ -187,6 +187,7 @@ impl UserService {
         auth_methods::ActiveModel {
             user_id: Set(user.id.clone()),
             auth_method: Set(auth_method.0.clone()),
+            cached_username: Set(auth_method.2),
             value: Set(method_value),
             ..Default::default()
         }
@@ -297,7 +298,7 @@ impl UserService {
         // This is done last since it is a seperate operation and occurs last.
         if let Some(password) = &password {
             self.auth_method_service
-                .create_or_set_method(&user.id, AuthMethod::Password, password)
+                .create_or_set_method(&user.id, AuthMethod::Password, None, password)
                 .await?;
         }
 

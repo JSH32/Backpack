@@ -12,6 +12,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
     pub user_id: String,
+    pub cached_username: Option<String>,
     pub auth_method: AuthMethod,
     #[sea_orm(column_type = "Text")]
     pub value: String,

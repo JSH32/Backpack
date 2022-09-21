@@ -120,7 +120,7 @@ async fn create(
         .create_user(
             form.0.username,
             form.0.email,
-            (AuthMethod::Password, form.0.password),
+            (AuthMethod::Password, form.0.password, None),
             form.0.registration_key,
         )
         .await

@@ -17,9 +17,12 @@ pub struct AuthRequest {
 /// Enabled authorization methods.
 #[derive(Serialize, ToSchema, Default)]
 pub struct AuthMethods {
-    /// Password authentication.
+    /// Is password authentication enabled.
     pub password: bool,
-    pub google: bool,
-    pub github: bool,
-    pub discord: bool,
+    /// Google username (email before the @).
+    pub google: Option<String>,
+    /// Cached github username.
+    pub github: Option<String>,
+    /// Cached discord tag.
+    pub discord: Option<String>,
 }

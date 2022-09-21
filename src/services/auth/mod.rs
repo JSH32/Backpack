@@ -229,7 +229,11 @@ impl AuthService {
         // Get a user based on auth method.
         let user = match self
             .auth_method_service
-            .get_user_by_value(provider_type.clone().into(), &oauth_data.id)
+            .get_user_by_value(
+                provider_type.clone().into(),
+                &oauth_data.id,
+                Some(oauth_data.username.clone()),
+            )
             .await?
         {
             // User found.
@@ -252,7 +256,12 @@ impl AuthService {
                 {
                     Ok(user) => {
                         self.auth_method_service
-                            .create_auth_method(&user.id, provider_type.into(), &oauth_data.id)
+                            .create_auth_method(
+                                &user.id,
+                                provider_type.into(),
+                                Some(oauth_data.username),
+                                &oauth_data.id,
+                            )
                             .await?;
 
                         user
@@ -264,7 +273,11 @@ impl AuthService {
                                 .create_user(
                                     self.new_unique_username(&oauth_data.username).await?,
                                     oauth_data.email,
-                                    (provider_type.into(), oauth_data.id),
+                                    (
+                                        provider_type.into(),
+                                        oauth_data.id,
+                                        Some(oauth_data.username),
+                                    ),
                                     None,
                                 )
                                 .await?
