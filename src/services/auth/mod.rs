@@ -236,6 +236,13 @@ impl AuthService {
             Some(v) => v,
             // Check if email already exists.
             None => {
+                // No linking or creating an account with an unverified email.
+                if !oauth_data.verified {
+                    return Err(ServiceError::InvalidData(
+                        "Email was not verified on the account used.".into(),
+                    ));
+                }
+
                 match self
                     .user_service
                     .by_condition(

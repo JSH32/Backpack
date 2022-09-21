@@ -72,6 +72,8 @@ impl OAuthProvider {
                                 id: v.id,
                                 username: v.email[..v.email.find('@')?].to_owned(),
                                 email: v.email,
+                                // Google accounts are always verified since they are the source of the email.
+                                verified: true,
                             }),
                             Err(_) => None,
                         }
@@ -107,6 +109,7 @@ impl OAuthProvider {
                         struct EmailResponse {
                             primary: bool,
                             email: String,
+                            verified: bool,
                         }
 
                         // Find the users email.
@@ -121,6 +124,7 @@ impl OAuthProvider {
                                 Some(v) => Some(OAuthUserData {
                                     id: user.id.to_string(),
                                     username: user.login,
+                                    verified: v.verified,
                                     email: v.email.clone(),
                                 }),
                                 None => None,
@@ -193,6 +197,7 @@ pub struct OAuthUserData {
     pub id: String,
     pub email: String,
     pub username: String,
+    pub verified: bool,
 }
 
 pub struct OAuthClient {
