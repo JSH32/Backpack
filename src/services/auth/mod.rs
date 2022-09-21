@@ -2,7 +2,7 @@ use actix_http::Uri;
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use rand::rngs::OsRng;
+use rand::{rngs::OsRng, Rng};
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
@@ -262,7 +262,7 @@ impl AuthService {
                         ServiceError::NotFound(_) => {
                             self.user_service
                                 .create_user(
-                                    oauth_data.username,
+                                    self.new_unique_username(&oauth_data.username).await?,
                                     oauth_data.email,
                                     (provider_type.into(), oauth_data.id),
                                     None,
@@ -276,6 +276,33 @@ impl AuthService {
         };
 
         self.new_jwt(&user.id, None)
+    }
+
+    /// Validate or attempt to create a valid username based on an existing username.
+    /// This can, by a really small chance, create a non-unique username.
+    async fn new_unique_username(&self, username: &str) -> ServiceResult<String> {
+        let mut username = username.to_owned();
+
+        // Try adding a 4 random digits.
+        if username.len() < 5 {
+            username.push_str(&random_digit_str(4).to_string());
+        }
+
+        match self.user_service.get_by_identifier(&username).await {
+            Ok(_) => {
+                // Found, try adding 4 digits.
+                username.push_str(&random_digit_str(4).to_string());
+            }
+            Err(e) => {
+                match e {
+                    // Not found is intended.
+                    ServiceError::NotFound(_) => {}
+                    _ => return Err(e),
+                }
+            }
+        };
+
+        Ok(username)
     }
 
     fn get_oauth_client(&self, provider_type: OAuthProvider) -> ServiceResult<&OAuthClient> {
@@ -354,4 +381,9 @@ pub fn new_password(password: &str) -> ServiceResult<String> {
             .map_err(|e| ServiceError::ServerError(e.into()))?
             .to_string())
     }
+}
+
+fn random_digit_str(digits: u32) -> i32 {
+    let p = 10i32.pow(digits - 1);
+    rand::thread_rng().gen_range(p..10 * p)
 }

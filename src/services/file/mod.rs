@@ -1,6 +1,7 @@
 mod providers;
 
 use image::{io::Reader, ImageError};
+use migration::Alias;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
     IntoActiveModel, ModelTrait, QueryFilter, QuerySelect, QueryTrait, Set,
@@ -256,7 +257,10 @@ impl FileService {
         let expr = files::Entity::find()
             .select_only()
             .filter(files::Column::Uploader.eq(user_id.clone()))
-            .column_as(files::Column::Size.sum(), "sum")
+            .column_as(
+                files::Column::Size.sum().cast_as(Alias::new("BIGINT")),
+                "sum",
+            )
             .build(self.database.get_database_backend())
             .to_owned();
 
