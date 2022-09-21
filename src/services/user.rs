@@ -390,38 +390,6 @@ impl UserService {
         }
     }
 
-    /// Verify a password required action.
-    /// If no password method exists on the user, validate.
-    /// This returns [`ServiceError::InvalidData`] if failed.
-    async fn verify_password_action(
-        &self,
-        user: &users::Model,
-        password: Option<String>,
-    ) -> ServiceResult<()> {
-        match self
-            .auth_method_service
-            .get_auth_method(&user.id, AuthMethod::Password)
-            .await
-        {
-            Ok(v) => {
-                if let Some(password) = password {
-                    validate_password(&v.value, &password)?
-                } else {
-                    return Err(ServiceError::InvalidData(
-                        "Password is required since you have a password.".into(),
-                    ));
-                }
-            }
-            Err(e) => match e {
-                // If not found then method is not enabled, this is fine.
-                ServiceError::NotFound(_) => {}
-                _ => return Err(e),
-            },
-        }
-
-        Ok(())
-    }
-
     /// Delete a user.
     ///
     /// # Arguments
@@ -510,6 +478,38 @@ impl UserService {
         } else {
             false
         })
+    }
+
+    /// Verify a password required action.
+    /// If password method exists on the user, validate.
+    /// This returns [`ServiceError::InvalidData`] if failed.
+    async fn verify_password_action(
+        &self,
+        user: &users::Model,
+        password: Option<String>,
+    ) -> ServiceResult<()> {
+        match self
+            .auth_method_service
+            .get_auth_method(&user.id, AuthMethod::Password)
+            .await
+        {
+            Ok(v) => {
+                if let Some(password) = password {
+                    validate_password(&v.value, &password)?
+                } else {
+                    return Err(ServiceError::InvalidData(
+                        "Password is required since you have a password.".into(),
+                    ));
+                }
+            }
+            Err(e) => match e {
+                // If not found then method is not enabled, this is fine.
+                ServiceError::NotFound(_) => {}
+                _ => return Err(e),
+            },
+        }
+
+        Ok(())
     }
 }
 
