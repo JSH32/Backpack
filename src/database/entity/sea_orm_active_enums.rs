@@ -27,6 +27,20 @@ pub enum ThemeColor {
     #[sea_orm(string_value = "yellow")]
     Yellow,
 }
+
+#[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "auth_method")]
+pub enum AuthMethod {
+    #[sea_orm(string_value = "discord")]
+    Discord,
+    #[sea_orm(string_value = "github")]
+    Github,
+    #[sea_orm(string_value = "google")]
+    Google,
+    #[sea_orm(string_value = "password")]
+    Password,
+}
+
 #[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "role")]
 pub enum Role {

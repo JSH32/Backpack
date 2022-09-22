@@ -4,7 +4,7 @@
 /**
  * OAuth redirect request parameters.
  */
-export type AuthRequest = {
+export type OAuthRequest = {
     code: string;
     state: string;
 };

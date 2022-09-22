@@ -55,12 +55,21 @@ impl RegistrationKeyService {
 
     /// Use a key once by its code.
     pub async fn use_key(&self, code: &str) -> ServiceResult<()> {
-        let mut code = self.get_by_code(code).await?.into_active_model();
-        if let Set(Some(uses_left)) = code.uses_left {
-            code.uses_left = Set(Some(uses_left - 1));
-            code.update(self.database.as_ref())
-                .await
-                .map_err(|e| ServiceError::DbErr(e))?;
+        let code = self.get_by_code(code).await?;
+        if let Some(uses_left) = code.uses_left {
+            if uses_left - 1 <= 0 {
+                // Uses left has hit zero so we delete the code.
+                code.delete(self.database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))?;
+            } else {
+                let mut active_code = code.into_active_model();
+                active_code.uses_left = Set(Some(uses_left - 1));
+                active_code
+                    .update(self.database.as_ref())
+                    .await
+                    .map_err(|e| ServiceError::DbErr(e))?;
+            }
         }
 
         Ok(())

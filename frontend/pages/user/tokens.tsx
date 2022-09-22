@@ -101,10 +101,10 @@ const Tokens: NextPage = () => {
           isClosable: true
         })
       })
-      .catch(err => {
+      .catch(error => {
         toast({
           title: "Error",
-          description: err.body.message,
+          description: error.body.message,
           status: "error",
           duration: 5000,
           isClosable: true

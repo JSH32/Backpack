@@ -3,8 +3,14 @@ use actix_web::{
 };
 
 use crate::{
-    internal::auth::{auth_role, AllowApplication, AllowUnverified, Auth, DenyApplication},
-    models::{MessageResponse, UpdateUserSettings, UserCreateForm, UserData, UserDeleteForm},
+    database::entity::sea_orm_active_enums::AuthMethod,
+    internal::auth::{
+        auth_role, AllowApplication, AllowUnregistered, AllowUnverified, Auth, DenyApplication,
+    },
+    models::{
+        MessageResponse, RegistrationParams, UpdateUserSettings, UserCreateForm, UserData,
+        UserDeleteForm,
+    },
     services::{user::UserService, ToResponse},
 };
 
@@ -16,6 +22,7 @@ pub fn get_routes() -> Scope {
         .service(info)
         .service(resend_verify)
         .service(verify)
+        .service(register_key)
 }
 
 /// Get current user information
@@ -31,7 +38,9 @@ pub fn get_routes() -> Scope {
     security(("apiKey" = []))
 )]
 #[get("")]
-async fn info(user: Auth<auth_role::User, AllowUnverified, AllowApplication>) -> impl Responder {
+async fn info(
+    user: Auth<auth_role::User, AllowUnverified, AllowApplication, AllowUnregistered>,
+) -> impl Responder {
     HttpResponse::Ok().json(UserData::from(user.user))
 }
 
@@ -54,7 +63,7 @@ async fn info(user: Auth<auth_role::User, AllowUnverified, AllowApplication>) ->
 async fn settings(
     service: web::Data<UserService>,
     form: web::Json<UpdateUserSettings>,
-    user: Auth<auth_role::User, AllowUnverified>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
 ) -> impl Responder {
     service
         .update_settings(
@@ -64,6 +73,29 @@ async fn settings(
             form.0.new_password,
             form.0.current_password,
         )
+        .await
+        .to_response::<UserData>(StatusCode::OK)
+}
+
+/// Register account using a registration key.
+/// This is only required on services with `invite_only` enabled.
+#[utoipa::path(
+    context_path = "/api/user",
+    tag = "user",
+    responses(
+        (status = 200, body = UserData),
+        (status = 400, body = MessageResponse),
+    ),
+    params(RegistrationParams)
+)]
+#[get("/register")]
+async fn register_key(
+    service: web::Data<UserService>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
+    params: web::Query<RegistrationParams>,
+) -> impl Responder {
+    service
+        .register_user(&user, &params.key)
         .await
         .to_response::<UserData>(StatusCode::OK)
 }
@@ -88,7 +120,7 @@ async fn create(
         .create_user(
             form.0.username,
             form.0.email,
-            form.0.password,
+            (AuthMethod::Password, form.0.password, None),
             form.0.registration_key,
         )
         .await
@@ -118,7 +150,7 @@ async fn create(
 #[patch("/verify/resend")]
 async fn resend_verify(
     service: web::Data<UserService>,
-    user: Auth<auth_role::User, AllowUnverified>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
 ) -> impl Responder {
     match service.resend_verification(&user).await {
         Ok(v) => MessageResponse::new(
@@ -170,10 +202,10 @@ async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> imp
 #[delete("")]
 async fn delete(
     service: web::Data<UserService>,
-    user: Auth<auth_role::User, AllowUnverified, DenyApplication>,
+    user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
     form: web::Json<UserDeleteForm>,
 ) -> impl Responder {
-    match service.delete(&user, Some(&form.password)).await {
+    match service.delete(&user, form.password.clone()).await {
         Ok(_) => MessageResponse::new(StatusCode::OK, "User has been deleted").http_response(),
         Err(e) => e.to_response(),
     }

@@ -5,7 +5,7 @@ export type UserCreateForm = {
     email: string;
     password: string;
     /**
-     * Only needed when service is invite_only.
+     * Required when creating a user with password.
      */
     registrationKey?: string;
     username: string;

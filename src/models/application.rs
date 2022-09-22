@@ -40,7 +40,7 @@ impl From<applications::Model> for ApplicationData {
 }
 
 /// Token data response
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct TokenResponse {
     pub token: String,
 }

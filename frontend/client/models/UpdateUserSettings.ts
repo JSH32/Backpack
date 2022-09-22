@@ -3,9 +3,9 @@
 
 export type UpdateUserSettings = {
     /**
-     * Always require old password to change options.
+     * This is required if a password has been set prior.
      */
-    currentPassword: string;
+    currentPassword?: string;
     email?: string;
     newPassword?: string;
     username?: string;

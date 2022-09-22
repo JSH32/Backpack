@@ -1,33 +1,41 @@
-use actix_http::Uri;
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use rand::rngs::OsRng;
+use rand::{rngs::OsRng, Rng};
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+use url::Url;
 
 use crate::{
     config::OAuthConfig,
-    database::entity::{applications, users},
-    models::{AuthRequest, TokenResponse},
+    database::entity::{applications, auth_methods, sea_orm_active_enums::AuthMethod, users},
+    models::{OAuthRequest, TokenResponse},
 };
 
-use self::oauth::{OAuthClient, OAuthProvider};
+use self::{
+    auth_method::AuthMethodService,
+    oauth::{OAuthClient, OAuthProvider},
+};
 
 use super::{
     application::ApplicationService, prelude::DataService, user::UserService, ServiceError,
     ServiceResult,
 };
 
+pub mod auth_method;
 pub mod oauth;
 
 /// Handles authentication and validation.
 pub struct AuthService {
+    auth_method_service: Arc<AuthMethodService>,
     user_service: Arc<UserService>,
     // TODO: Figure out how to avoid this circular dependency.
     application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
-    api_url: Uri,
+    api_url: actix_http::Uri,
     jwt_key: String,
     /// Root URL of client.
     pub client_url: String,
@@ -39,6 +47,7 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(
+        auth_method_service: Arc<AuthMethodService>,
         user_service: Arc<UserService>,
         application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
         api_url: &str,
@@ -49,9 +58,10 @@ impl AuthService {
         discord_oauth: Option<OAuthConfig>,
     ) -> Self {
         Self {
+            auth_method_service,
             user_service,
             application_service,
-            api_url: api_url.parse::<Uri>().unwrap(),
+            api_url: api_url.parse::<actix_http::Uri>().unwrap(),
             jwt_key: jwt_key.into(),
             client_url: client_url.into(),
             google_oauth_client: match google_oauth {
@@ -86,8 +96,12 @@ impl AuthService {
     /// Returns JWT token response.
     pub async fn password_auth(&self, auth: &str, password: &str) -> ServiceResult<TokenResponse> {
         let user = self.user_service.get_by_identifier(auth).await?;
+        let method = self
+            .auth_method_service
+            .get_auth_method(&user.id, AuthMethod::Password)
+            .await?;
 
-        validate_password(&user.password, password)?;
+        validate_password(&method.value, password)?;
 
         if self.user_service.smtp_enabled() {
             self.user_service.verify_user(&user).await?;
@@ -198,40 +212,194 @@ impl AuthService {
 
     /// Initiate an oauth login.
     /// Start the login session by redirecting the user to the provider URL.
-    pub fn oauth_login(&self, provider_type: OAuthProvider) -> ServiceResult<oauth2::url::Url> {
-        self.get_oauth_client(provider_type)?.login()
+    pub async fn oauth_login(
+        &self,
+        provider_type: OAuthProvider,
+        user_id: Option<String>,
+        redirect: Option<String>,
+        include_redirect: bool,
+    ) -> ServiceResult<oauth2::url::Url> {
+        self.get_oauth_client(provider_type)?
+            .login(user_id, redirect, include_redirect)
+            .await
     }
 
     /// Use auth params provided by the provider to get a JWT token.
+    /// If a user dowes not exist with these parameters, create the user.
     /// Returns new JWT key.
     pub async fn oauth_authenticate(
         &self,
         provider_type: OAuthProvider,
-        auth_request: &AuthRequest,
-    ) -> ServiceResult<TokenResponse> {
-        let email = self
+        auth_request: &OAuthRequest,
+    ) -> ServiceResult<(TokenResponse, Option<String>)> {
+        let (oauth_data, oauth_state) = self
             .get_oauth_client(provider_type)?
-            .get_email(auth_request)
+            .get_user_data(auth_request)
             .await?;
 
+        // let full_redirect = Uri::from(oauth_state.redirect)
+
+        // Get a user based on auth method.
         let user = match self
-            .user_service
-            .by_condition(Condition::all().add(users::Column::Email.eq(email.clone())))
-            .await
+            .auth_method_service
+            .get_user_by_value(
+                provider_type.clone().into(),
+                &oauth_data.id,
+                Some(oauth_data.username.clone()),
+            )
+            .await?
         {
-            Ok(v) => v,
-            Err(e) => {
-                return match e {
-                    ServiceError::NotFound(_) => Err(ServiceError::NotFound(format!(
-                        "User with email ({})",
-                        email
-                    ))),
-                    _ => Err(e),
+            // User found.
+            Some(user) => {
+                // User was already linked.
+                if let Some(_) = oauth_state.user_id {
+                    return Err(ServiceError::InvalidData(
+                        "That account was already linked.".into(),
+                    ));
+                }
+
+                user
+            }
+            // Check if email already exists.
+            None => {
+                // We don't care about verified email if we are linking to specific account.
+                if let Some(user_id) = oauth_state.user_id {
+                    match self.user_service.by_id(user_id).await {
+                        Ok(user) => {
+                            self.auth_method_service
+                                .create_auth_method(
+                                    &user.id,
+                                    provider_type.into(),
+                                    Some(oauth_data.username),
+                                    &oauth_data.id,
+                                )
+                                .await?;
+
+                            let token = self.new_jwt(&user.id, None)?;
+                            return Ok((
+                                token.clone(),
+                                make_redirect_url(
+                                    oauth_state.redirect,
+                                    &token.token,
+                                    oauth_state.include_redirect,
+                                ),
+                            ));
+                        }
+                        Err(e) => match e {
+                            // Skip over if not found.
+                            // This will create a new user.
+                            ServiceError::NotFound(_) => {}
+                            _ => return Err(e),
+                        },
+                    }
+                }
+
+                // No linking or creating an account with an unverified email.
+                if !oauth_data.verified {
+                    return Err(ServiceError::InvalidData(
+                        "Email was not verified on the account used.".into(),
+                    ));
+                }
+
+                match self
+                    .user_service
+                    .by_condition(
+                        Condition::any().add(users::Column::Email.eq(oauth_data.email.clone())),
+                    )
+                    .await
+                {
+                    Ok(user) => {
+                        let auth_method: AuthMethod = provider_type.into();
+                        // Make sure an existing account with the same email and auth method doesn't exist.
+                        match self
+                            .auth_method_service
+                            .by_condition(
+                                Condition::all()
+                                    .add(auth_methods::Column::UserId.eq(user.id.clone()))
+                                    .add(auth_methods::Column::AuthMethod.eq(auth_method.clone())),
+                            )
+                            .await
+                        {
+                            Ok(_) => {
+                                return Err(ServiceError::InvalidData(
+                                    "Existing account already has that email and method.".into(),
+                                ))
+                            }
+                            Err(e) => match e {
+                                ServiceError::NotFound(_) => {}
+                                _ => return Err(e),
+                            },
+                        };
+
+                        self.auth_method_service
+                            .create_auth_method(
+                                &user.id,
+                                auth_method,
+                                Some(oauth_data.username),
+                                &oauth_data.id,
+                            )
+                            .await?;
+
+                        user
+                    }
+                    Err(e) => match e {
+                        // Make a new user.
+                        ServiceError::NotFound(_) => {
+                            self.user_service
+                                .create_user(
+                                    self.new_unique_username(&oauth_data.username).await?,
+                                    oauth_data.email,
+                                    (
+                                        provider_type.into(),
+                                        oauth_data.id,
+                                        Some(oauth_data.username),
+                                    ),
+                                    None,
+                                )
+                                .await?
+                        }
+                        _ => return Err(e),
+                    },
                 }
             }
         };
 
-        self.new_jwt(&user.id, None)
+        let token = self.new_jwt(&user.id, None)?;
+        Ok((
+            token.clone(),
+            make_redirect_url(
+                oauth_state.redirect,
+                &token.token,
+                oauth_state.include_redirect,
+            ),
+        ))
+    }
+
+    /// Validate or attempt to create a valid username based on an existing username.
+    /// This can, by a really small chance, create a non-unique username.
+    async fn new_unique_username(&self, username: &str) -> ServiceResult<String> {
+        let mut username = username.to_owned();
+
+        // Try adding a 4 random digits.
+        if username.len() < 5 {
+            username.push_str(&random_digit_str(4).to_string());
+        }
+
+        match self.user_service.get_by_identifier(&username).await {
+            Ok(_) => {
+                // Found, try adding 4 digits.
+                username.push_str(&random_digit_str(4).to_string());
+            }
+            Err(e) => {
+                match e {
+                    // Not found is intended.
+                    ServiceError::NotFound(_) => {}
+                    _ => return Err(e),
+                }
+            }
+        };
+
+        Ok(username)
     }
 
     fn get_oauth_client(&self, provider_type: OAuthProvider) -> ServiceResult<&OAuthClient> {
@@ -309,5 +477,33 @@ pub fn new_password(password: &str) -> ServiceResult<String> {
             .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
             .map_err(|e| ServiceError::ServerError(e.into()))?
             .to_string())
+    }
+}
+
+fn random_digit_str(digits: u32) -> i32 {
+    let p = 10i32.pow(digits - 1);
+    rand::thread_rng().gen_range(p..10 * p)
+}
+
+fn make_redirect_url(
+    redirect: Option<String>,
+    token: &str,
+    include_redirect: bool,
+) -> Option<String> {
+    match redirect {
+        Some(v) => {
+            match if include_redirect {
+                let mut map = HashMap::new();
+                map.insert("token", token.to_owned());
+
+                Url::parse_with_params(&v, map)
+            } else {
+                Url::parse(&v)
+            } {
+                Ok(v) => Some(v.to_string()),
+                Err(_) => None,
+            }
+        }
+        None => None,
     }
 }

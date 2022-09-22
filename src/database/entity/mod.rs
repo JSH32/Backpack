@@ -5,6 +5,7 @@ use crate::database::sonyflake::Sonyflake;
 pub mod prelude;
 
 pub mod applications;
+pub mod auth_methods;
 pub mod files;
 pub mod registration_keys;
 pub mod sea_orm_active_enums;

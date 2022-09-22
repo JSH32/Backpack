@@ -2,6 +2,9 @@
 /* tslint:disable */
 
 export type UserDeleteForm = {
-    password: string;
+    /**
+     * This is required if a password has been set prior.
+     */
+    password?: string;
 };
 

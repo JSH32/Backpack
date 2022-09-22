@@ -9,6 +9,7 @@ use crate::models::*;
 
 use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
+use crate::services::auth::oauth::OAuthProvider;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
@@ -21,6 +22,7 @@ use crate::routes;
         routes::user::verify,
         routes::user::resend_verify,
         routes::user::delete,
+        routes::user::register_key,
         routes::file::upload,
         routes::file::stats,
         routes::file::list,
@@ -37,14 +39,10 @@ use crate::routes;
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
         routes::auth::basic,
-        // All oauth provider routes
-        routes::auth::google::google_login,
-        routes::auth::google::google_callback,
-        routes::auth::github::github_login,
-        routes::auth::github::github_callback,
-        routes::auth::discord::discord_login,
-        routes::auth::discord::discord_callback,
-        // routes::admin::file::list
+        routes::auth::oauth_login,
+        routes::auth::oauth_callback,
+        routes::auth::enabled_methods,
+        routes::auth::unlink_method,
     ),
     components(
         schemas(
@@ -64,12 +62,16 @@ use crate::routes;
             TokenResponse,
             ApplicationCreate,
             BasicAuthForm,
-            AuthRequest,
+            OAuthRequest,
             RegistrationKeyData,
             BatchDeleteRequest,
             BatchDeleteResponse,
             BatchFileError,
-            OAuthProviders
+            OAuthProviders,
+            AuthMethods,
+            UnlinkAuthMethod,
+            OAuthProvider,
+            LoginRedirectUrl
         )
     ),
     tags(

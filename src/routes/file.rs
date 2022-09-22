@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 

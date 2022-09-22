@@ -72,6 +72,26 @@ export class UserService {
     }
 
     /**
+     * Register account using a registration key.
+     * This is only required on services with `invite_only` enabled.
+     *
+     * @param key
+     * @returns UserData
+     * @throws ApiError
+     */
+    public registerKey(
+        key: string,
+    ): CancelablePromise<UserData> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/user/register',
+            query: {
+                'key': key,
+            },
+        });
+    }
+
+    /**
      * Change user settings
      * - Minimum required role: `user`
      * - Allow unverified users: `true`

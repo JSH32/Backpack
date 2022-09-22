@@ -1,22 +1,48 @@
+use std::pin::Pin;
+
 use derive_more::Display;
-use oauth2::basic::BasicClient;
-use oauth2::reqwest::async_http_client;
+use futures::Future;
+use moka::future::Cache;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
+    ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 use crate::config::OAuthConfig;
-use crate::models::AuthRequest;
+use crate::database::entity::sea_orm_active_enums::AuthMethod;
+use crate::models::OAuthRequest;
 use crate::services::{ServiceError, ServiceResult};
 
 /// All OAuth providers.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Clone, Copy, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub enum OAuthProvider {
     Google,
     Github,
     Discord,
+}
+
+impl Into<AuthMethod> for OAuthProvider {
+    fn into(self) -> AuthMethod {
+        match self {
+            Self::Google => AuthMethod::Google,
+            Self::Github => AuthMethod::Github,
+            Self::Discord => AuthMethod::Discord,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct OAuthState {
+    /// User ID to attach account to.
+    pub user_id: Option<String>,
+    /// Optional redirect, will redirect to this URL after request.
+    pub redirect: Option<String>,
+    /// Should the redirect be included in params with the redirect URL.
+    pub include_redirect: bool,
 }
 
 impl OAuthProvider {
@@ -33,15 +59,38 @@ impl OAuthProvider {
                 "https://accounts.google.com/o/oauth2/v2/auth",
                 "https://www.googleapis.com/oauth2/v3/token",
                 callback_url,
-                &[&"https://www.googleapis.com/auth/userinfo.email"],
-                EmailRequest {
-                    request_endpoint: RequestEndpoint::FormatUrl(|token| {
-                        format!(
-                            "https://www.googleapis.com/oauth2/v1/userinfo?access_token={}",
-                            token
-                        )
-                    }),
-                    email_retrieve: |obj| root_json_str_parse(obj, "email"),
+                &[
+                    &"https://www.googleapis.com/auth/userinfo.email",
+                    "https://www.googleapis.com/auth/userinfo.profile",
+                ],
+                |ctx| {
+                    Box::pin(async move {
+                        #[derive(Deserialize)]
+                        struct Response {
+                            id: String,
+                            email: String,
+                        }
+
+                        match ctx
+                            .make_request::<Response>(
+                                &format!(
+                                    "https://www.googleapis.com/oauth2/v1/userinfo?access_token={}",
+                                    ctx.token
+                                ),
+                                None,
+                            )
+                            .await
+                        {
+                            Ok(v) => Some(OAuthUserData {
+                                id: v.id,
+                                username: v.email[..v.email.find('@')?].to_owned(),
+                                email: v.email,
+                                // Google accounts are always verified since they are the source of the email.
+                                verified: true,
+                            }),
+                            Err(_) => None,
+                        }
+                    })
                 },
             ),
             OAuthProvider::Github => OAuthClient::new(
@@ -50,27 +99,52 @@ impl OAuthProvider {
                 "https://github.com/login/oauth/access_token",
                 callback_url,
                 &[&"user"],
-                EmailRequest {
-                    request_endpoint: RequestEndpoint::Bearer(
-                        "https://api.github.com/user/emails".into(),
-                    ),
-                    email_retrieve: |res| {
+                |ctx| {
+                    Box::pin(async move {
+                        #[derive(Deserialize)]
+                        struct UserResponse {
+                            id: usize,
+                            login: String,
+                        }
+
+                        let user = match ctx
+                            .make_request::<UserResponse>(
+                                "https://api.github.com/user",
+                                Some(&ctx.token),
+                            )
+                            .await
+                        {
+                            Ok(v) => v,
+                            Err(_) => return None,
+                        };
+
                         #[derive(Deserialize)]
                         struct EmailResponse {
                             primary: bool,
                             email: String,
+                            verified: bool,
                         }
 
-                        if let Ok(emails) = serde_json::from_value::<Vec<EmailResponse>>(res) {
-                            for email in emails {
-                                if email.primary {
-                                    return Some(email.email);
-                                }
-                            }
+                        // Find the users email.
+                        match ctx
+                            .make_request::<Vec<EmailResponse>>(
+                                "https://api.github.com/user/emails",
+                                Some(&ctx.token),
+                            )
+                            .await
+                        {
+                            Ok(emails) => match emails.iter().find(|e| e.primary) {
+                                Some(v) => Some(OAuthUserData {
+                                    id: user.id.to_string(),
+                                    username: user.login,
+                                    verified: v.verified,
+                                    email: v.email.clone(),
+                                }),
+                                None => None,
+                            },
+                            Err(_) => None,
                         }
-
-                        None
-                    },
+                    })
                 },
             ),
             OAuthProvider::Discord => OAuthClient::new(
@@ -79,36 +153,72 @@ impl OAuthProvider {
                 "https://discord.com/api/oauth2/token",
                 callback_url,
                 &[&"identify", "email"],
-                EmailRequest {
-                    request_endpoint: RequestEndpoint::Bearer(
-                        "https://discord.com/api/v10/users/@me".into(),
-                    ),
-                    email_retrieve: |obj| root_json_str_parse(obj, "email"),
+                |ctx| {
+                    Box::pin(async move {
+                        match ctx
+                            .make_request::<OAuthUserData>(
+                                "https://discord.com/api/v10/users/@me",
+                                Some(&ctx.token),
+                            )
+                            .await
+                        {
+                            Ok(v) => Some(v),
+                            Err(_) => None,
+                        }
+                    })
                 },
             ),
         }
     }
 }
 
-struct EmailRequest {
-    request_endpoint: RequestEndpoint,
-    /// Email retriever using result data.
-    email_retrieve: fn(serde_json::Value) -> Option<String>,
+/// OAuth request context.
+struct RequestContext {
+    client: reqwest::Client,
+    pub token: String,
 }
 
-/// User request endpoint configuration for getting email.
-enum RequestEndpoint {
-    /// Format URL with token as argument.
-    FormatUrl(fn(&str) -> String),
-    /// Automatically use token in `Authorization` header.
-    Bearer(String),
+impl RequestContext {
+    /// Make a simple request and return as a [`ServiceResult`].
+    pub async fn make_request<T: DeserializeOwned>(
+        &self,
+        url: &str,
+        bearer: Option<&str>,
+    ) -> ServiceResult<T> {
+        let mut req_builder = self.client.get(url);
+
+        if let Some(bearer) = bearer {
+            req_builder = req_builder.bearer_auth(bearer)
+        }
+
+        Ok(req_builder
+            .send()
+            .await
+            .map_err(|e| ServiceError::ServerError(e.into()))?
+            .json::<T>()
+            .await
+            .map_err(|e| ServiceError::ServerError(e.into()))?)
+    }
+}
+
+/// Should return (unique_identifier, email).
+/// If [`None`] then failed.
+type DataRequest = fn(RequestContext) -> Pin<Box<dyn Future<Output = Option<OAuthUserData>>>>;
+
+#[derive(Deserialize)]
+pub struct OAuthUserData {
+    pub id: String,
+    pub email: String,
+    pub username: String,
+    pub verified: bool,
 }
 
 pub struct OAuthClient {
     http_client: reqwest::Client,
     client: BasicClient,
     scopes: Vec<Scope>,
-    email_request: EmailRequest,
+    data_request: DataRequest,
+    state_cache: Cache<String, OAuthState>,
 }
 
 impl OAuthClient {
@@ -118,7 +228,7 @@ impl OAuthClient {
         token_url: &str,
         redirect_url: &str,
         scopes: &[&str],
-        email_request: EmailRequest,
+        data_request: DataRequest,
     ) -> Self {
         let auth_url = AuthUrl::new(auth_url.to_string()).unwrap();
         let token_url = TokenUrl::new(token_url.to_string()).unwrap();
@@ -140,28 +250,60 @@ impl OAuthClient {
                 .iter()
                 .map(|f| Scope::new(f.to_string()))
                 .collect(),
-            email_request,
+            data_request,
+            // 10 minute expiry time.
+            state_cache: Cache::builder()
+                .time_to_live(std::time::Duration::from_secs_f32((60 * 10) as f32))
+                .build(),
         }
     }
 
     /// Initiate an oauth login with provided scopes.
     /// Start the login session by redirecting the user to the provider URL.
-    pub fn login(&self) -> ServiceResult<oauth2::url::Url> {
+    pub async fn login(
+        &self,
+        user_id: Option<String>,
+        redirect: Option<String>,
+        include_redirect: bool,
+    ) -> ServiceResult<oauth2::url::Url> {
         // TODO: PKCE verification.
 
         // Generate the authorization URL to which we'll redirect the user.
-        let (authorize_url, _csrf_state) = self
+        let (authorize_url, csrf_state) = self
             .client
             .authorize_url(CsrfToken::new_random)
             .add_scopes(self.scopes.clone())
             .url();
 
+        self.state_cache
+            .insert(
+                csrf_state.secret().to_string(),
+                OAuthState {
+                    user_id,
+                    redirect,
+                    include_redirect,
+                },
+            )
+            .await;
+
         Ok(authorize_url)
     }
 
-    /// Use auth params provided by the provider to get the email.
-    pub async fn get_email(&self, oauth_request: &AuthRequest) -> ServiceResult<String> {
+    /// Use auth params provided by the provider to get the user data.
+    pub async fn get_user_data(
+        &self,
+        oauth_request: &OAuthRequest,
+    ) -> ServiceResult<(OAuthUserData, OAuthState)> {
         let code = AuthorizationCode::new(oauth_request.code.clone());
+        let state = CsrfToken::new(oauth_request.state.clone());
+
+        let oauth_state = match self.state_cache.get(state.secret()) {
+            Some(oauth_state) => {
+                self.state_cache.invalidate(state.secret()).await;
+                oauth_state
+            }
+            None => return Err(ServiceError::Unauthorized("Invalid Csrf token.".into())),
+        };
 
         // Exchange the code with a token.
         let token = match self
@@ -174,41 +316,16 @@ impl OAuthClient {
             Err(e) => return Err(ServiceError::ServerError(e.into())),
         };
 
-        let response = match &self.email_request.request_endpoint {
-            RequestEndpoint::FormatUrl(formatter) => self
-                .http_client
-                .get(formatter(token.access_token().secret())),
-            RequestEndpoint::Bearer(url) => self
-                .http_client
-                .get(url)
-                .bearer_auth(token.access_token().secret()),
-        }
-        .send()
+        match (self.data_request)(RequestContext {
+            client: self.http_client.clone(),
+            token: token.access_token().secret().to_string(),
+        })
         .await
-        .map_err(|e| ServiceError::ServerError(e.into()))?
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| ServiceError::ServerError(e.into()))?;
-
-        match (self.email_request.email_retrieve)(response) {
-            Some(v) => Ok(v),
+        {
+            Some(v) => Ok((v, oauth_state)),
             None => Err(ServiceError::ServerError(anyhow::anyhow!(
                 "OAuth provider was misconfigured."
             ))),
         }
     }
-}
-
-/// Extract any string field from the root of a [`serde_json::Value`].
-/// This returns [`None`] if this fails.
-fn root_json_str_parse(object: serde_json::Value, field: &str) -> Option<String> {
-    let object = serde_json::from_value::<serde_json::Value>(object);
-
-    if let Ok(serde_json::Value::Object(object)) = object {
-        if let Some(serde_json::Value::String(str)) = object.get(field) {
-            return Some(str.to_owned());
-        }
-    }
-
-    None
 }

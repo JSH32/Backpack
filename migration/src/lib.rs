@@ -3,6 +3,7 @@ pub use sea_orm_migration::prelude::*;
 mod extensions;
 mod m20220101_000001_initial_structure;
 mod m20220810_114915_settings_table;
+mod m20220920_105037_auth_methods;
 
 pub struct Migrator;
 
@@ -12,6 +13,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220101_000001_initial_structure::Migration),
             Box::new(m20220810_114915_settings_table::Migration),
+            Box::new(m20220920_105037_auth_methods::Migration),
         ]
     }
 }

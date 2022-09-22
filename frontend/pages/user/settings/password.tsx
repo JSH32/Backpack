@@ -25,6 +25,8 @@ import {
     ViewOffIcon 
 } from "@chakra-ui/icons"
 import api from "helpers/api"
+import { useStore } from "helpers/store"
+import { observer } from "mobx-react-lite"
 
 const ViewButton: React.FC<{
     active: boolean,
@@ -37,10 +39,12 @@ const ViewButton: React.FC<{
     </Button>
 }
 
-const Password: NextPage = () => {
+const Password: NextPage = observer(() => {
     const { register, handleSubmit, reset } = useForm()
     const [loading, setLoading] = React.useState(false)
     const toast = useToast()
+
+    const store = useStore()
 
     const [viewStatus, setViewStatus] = React.useState<any>({
         current: false,
@@ -67,48 +71,53 @@ const Password: NextPage = () => {
         setLoading(true)
         api.user.settings({ 
             newPassword: form.newPassword, 
-            currentPassword: form.currentPassword 
+            currentPassword: form?.currentPassword 
         })
-            .then(() => {
-                toast({
-                    title: "Success",
-                    description: "Password changed successfully",
-                    status: "success",
-                    duration: 5000,
-                    isClosable: true
-                })
+        .then(() => {
+            toast({
+                title: "Success",
+                description: "Password changed successfully",
+                status: "success",
+                duration: 5000,
+                isClosable: true
+            })
 
-                reset()
+            api.authentication.enabledMethods()
+                .then(methods => store?.setMethods(methods))
+
+            reset()
+        })
+        .catch(error => {
+            toast({
+                title: "Error",
+                description: error.body.message,
+                status: "error",
+                duration: 5000,
+                isClosable: true
             })
-            .catch(error => {
-                toast({
-                    title: "Error",
-                    description: error.body.message,
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true
-                })
-            })
-            .finally(() => setLoading(false))
-    }, [loading])
+        })
+        .finally(() => setLoading(false))
+    }, [loading, store])
 
     return <SettingsLayout tab={PasswordTab}>
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack spacing={4}>
-                <FormControl isRequired>
-                    <FormLabel>Current Password</FormLabel>
-                    <InputGroup>
-                        <Input
-                            {...register("currentPassword", { required: "Current Password is required" })}
-                            id="currentPassword"
-                            type={viewStatus.current ? "text" : "password"} />
-                        <InputRightElement h="full">
-                            <ViewButton
-                                active={viewStatus.current}
-                                onToggle={active => setViewButtonValue("current", active)} />
-                        </InputRightElement>
-                    </InputGroup>
-                </FormControl>
+                { store?.authMethods?.password &&
+                    <FormControl isRequired>
+                        <FormLabel>Current Password</FormLabel>
+                        <InputGroup>
+                            <Input
+                                {...register("currentPassword", { required: "Current Password is required" })}
+                                id="currentPassword"
+                                type={viewStatus.current ? "text" : "password"} />
+                            <InputRightElement h="full">
+                                <ViewButton
+                                    active={viewStatus.current}
+                                    onToggle={active => setViewButtonValue("current", active)} />
+                            </InputRightElement>
+                        </InputGroup>
+                    </FormControl>
+                }
                 <FormControl isRequired>
                     <FormLabel>New Password</FormLabel>
                     <InputGroup>
@@ -143,6 +152,6 @@ const Password: NextPage = () => {
             </Stack>
         </form>
     </SettingsLayout>
-}
+})
 
 export default Password

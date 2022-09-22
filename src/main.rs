@@ -3,8 +3,11 @@ use crate::{
     docs::ApiDoc,
     internal::GIT_VERSION,
     services::{
-        application::ApplicationService, auth::AuthService, file::FileService,
-        registration_key::RegistrationKeyService, user::UserService,
+        application::ApplicationService,
+        auth::{auth_method::AuthMethodService, AuthService},
+        file::FileService,
+        registration_key::RegistrationKeyService,
+        user::UserService,
     },
 };
 use actix_multipart_extract::MultipartConfig;
@@ -110,11 +113,14 @@ async fn main() -> std::io::Result<()> {
         .await,
     );
 
+    let auth_method_service = Data::new(AuthMethodService::new(database.clone().into_inner()));
+
     // User service.
     let user_service = Data::new(UserService::new(
         database.clone().into_inner(),
         registration_key_service.clone().into_inner(),
         file_service.clone().into_inner(),
+        auth_method_service.clone().into_inner(),
         config.smtp_config,
         &config.client_url,
         config.invite_only,
@@ -124,6 +130,7 @@ async fn main() -> std::io::Result<()> {
 
     // Auth service.
     let auth_service = Data::new(AuthService::new(
+        auth_method_service.clone().into_inner(),
         user_service.clone().into_inner(),
         application_service_container.clone(),
         &config.api_url,
@@ -177,6 +184,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(file_service.clone())
             .app_data(auth_service.clone())
             .app_data(application_service.clone())
+            .app_data(auth_method_service.clone())
             .route(
                 "/api/docs/openapi.json",
                 web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
