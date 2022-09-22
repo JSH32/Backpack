@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development dotenv -- next dev",
-    "build": "NODE_ENV=production next build",
-    "start": "NODE_ENV=production next start",
+    "build": "NODE_ENV=production dotenv -- next build",
+    "start": "NODE_ENV=production dotenv -- next start",
     "lint": "next lint",
     "generateClient": "find ./client ! -name 'README.md' -type f -exec rm -f {} + && openapi --input http://localhost:3000/api/docs/openapi.json --output ./client --client axios --name BackpackClient"
   },

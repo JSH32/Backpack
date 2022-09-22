@@ -37,6 +37,7 @@ use actix_web::{
     App, HttpRequest, HttpResponse, HttpServer,
 };
 
+use actix_cors::Cors;
 use actix_files::NamedFile;
 
 #[macro_use]
@@ -169,6 +170,8 @@ async fn main() -> std::io::Result<()> {
         _ => None,
     };
 
+    let client_url = config.client_url.clone();
+
     log::info!(
         "Starting webserver on port {}",
         config.port.to_string().yellow()
@@ -178,6 +181,13 @@ async fn main() -> std::io::Result<()> {
         let base_storage_path = storage_path.clone();
         App::new()
             .wrap(Logger::default())
+            .wrap(
+                Cors::default()
+                    .allowed_origin(&client_url)
+                    .allow_any_header()
+                    .allow_any_method()
+                    .max_age(None),
+            )
             .app_data(database.clone())
             .app_data(registration_key_service.clone())
             .app_data(user_service.clone())
