@@ -62,5 +62,5 @@ num_cpus = "1.0"
 heck = "0.4.0"
 oauth2 = "4.2.3"
 reqwest = { version = "0.11.11", features = [ "json" ] }
-with_builtin_macros = "0.0.3"
-paste = "1.0.9"
+moka = { version = "0.9.4", features = ["future"] }
+url = "2.3.1"

@@ -1,26 +1,27 @@
 use crate::{
-    internal::auth::{auth_role, AllowUnregistered, AllowUnverified, Auth, DenyApplication},
-    models::{auth::BasicAuthForm, AuthMethods, OAuthRequest, TokenResponse, UnlinkAuthMethod},
+    internal::auth::{
+        auth_role, get_token, AllowUnregistered, AllowUnverified, Auth, DenyApplication,
+    },
+    models::{
+        auth::BasicAuthForm, AuthMethods, LoginRedirectUrl, OAuthLoginQuery, OAuthRequest,
+        TokenResponse, UnlinkAuthMethod,
+    },
     services::{
         auth::{auth_method::AuthMethodService, oauth::OAuthProvider, AuthService},
-        ServiceError, ToResponse,
+        ToResponse,
     },
 };
 
 use actix_http::header;
-use actix_web::{get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use actix_web::{get, http::StatusCode, post, web, HttpRequest, HttpResponse, Responder, Scope};
 
 pub fn get_routes() -> Scope {
     web::scope("/auth")
         .service(basic)
         .service(enabled_methods)
         .service(unlink_method)
-        .service(google::google_login)
-        .service(google::google_callback)
-        .service(github::github_login)
-        .service(github::github_callback)
-        .service(discord::discord_login)
-        .service(discord::discord_callback)
+        .service(oauth_login)
+        .service(oauth_callback)
 }
 
 /// Login with email and password.
@@ -80,79 +81,66 @@ async fn unlink_method(
         .to_response::<AuthMethods>(StatusCode::OK)
 }
 
-// INFO: Should we actually be documenting these routes in OpenAPI?
-// It will generate a bunch of API routes on the client and most of the time this is not directly accessed.
-// This is especially true for the oauth callback.
-macro_rules! define_oauth_route {(
-    $provider_name:ident,
-    $provider:expr $(,)?
-) => (
-    pub mod $provider_name {
-        use super::*;
-        use paste::paste;
-        use with_builtin_macros::with_builtin;
+/// Get URL for OAuth2 authentication.
+/// If token is provided, this will link to the existing account.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    security(("apiKey" = [])),
+    responses((status = 200, body = LoginRedirectUrl)),
+    params(OAuthLoginQuery)
+)]
+#[get("/oauth")]
+pub async fn oauth_login(
+    req: HttpRequest,
+    service: web::Data<AuthService>,
+    query: web::Query<OAuthLoginQuery>,
+) -> impl Responder {
+    let token = match get_token(&req) {
+        Some(v) => match service.validate_jwt(true, &v).await {
+            Ok(v) => Some(v.0.id),
+            Err(_) => None,
+        },
+        None => None,
+    };
 
-        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/login") in {
-            paste! {
-                #[doc = [<$provider_name:camel>] " OAuth2 authentication."]
-                #[doc = "Redirects to " [<$provider_name:camel>] " to authenticate the user."]
-                #[utoipa::path(
-                    context_path = "/api/auth",
-                    tag = "authentication",
-                )]
-                #[get($path)]
-                pub async fn [<$provider_name _login>](service: web::Data<AuthService>) -> impl Responder {
-                    match service.oauth_login($provider) {
-                        Ok(v) => HttpResponse::Found()
-                            .append_header((header::LOCATION, v.to_string()))
-                            .finish(),
-                        Err(e) => e.to_response(),
-                    }
-                }
-            }
-        });
-
-        with_builtin!(let $path = concat!("/", stringify!($provider_name), "/callback") in {
-            paste! {
-                #[doc = "Callback for " [<$provider_name:camel>] " OAuth provider."]
-                #[doc = "This redirects to frontend with token if a valid user was found with the parameters."]
-                #[utoipa::path(
-                    context_path = "/api/auth",
-                    tag = "authentication",
-                    request_body(content = OAuthRequest)
-                )]
-                #[get($path)]
-                pub async fn [<$provider_name _callback>](
-                    service: web::Data<AuthService>,
-                    params: web::Query<OAuthRequest>,
-                ) -> impl Responder {
-                    HttpResponse::Found()
-                        .append_header((
-                            header::LOCATION,
-                            match service
-                                .oauth_authenticate($provider, &params)
-                                .await
-                            {
-                                // TODO: Allow frontend to be disabled and instead just return the raw token response.
-                                // Frontend should get this parameter on load and put the token into headers.
-                                Ok(v) => format!("{}/user/login?token={}", service.client_url, v.token),
-                                Err(e) => format!(
-                                    "{}/user/login?fail={}",
-                                    service.client_url,
-                                    match e {
-                                        ServiceError::ServerError(_) | ServiceError::DbErr(_) =>
-                                            return e.to_response(),
-                                        _ => e.to_string(),
-                                    }
-                                ),
-                            }
-                        )).finish()
-                }
-            }
-        });
+    match service
+        .oauth_login(
+            query.provider,
+            token,
+            query.redirect.clone(),
+            query.include_token,
+        )
+        .await
+    {
+        Ok(v) => HttpResponse::Ok().json(LoginRedirectUrl { url: v.to_string() }),
+        Err(e) => e.to_response(),
     }
-)}
+}
 
-define_oauth_route!(google, OAuthProvider::Google);
-define_oauth_route!(github, OAuthProvider::Github);
-define_oauth_route!(discord, OAuthProvider::Discord);
+/// Callback for OAuth providers.
+/// This redirects to the redirect provided in the oauth initialization route.
+#[utoipa::path(
+    context_path = "/api/auth",
+    tag = "authentication",
+    request_body(content = OAuthRequest),
+    params(
+        ("provider" = str, Path, description = "Provider to callback to.")
+    )
+)]
+#[get("/{provider}/callback")]
+pub async fn oauth_callback(
+    service: web::Data<AuthService>,
+    params: web::Query<OAuthRequest>,
+    provider: web::Path<OAuthProvider>,
+) -> impl Responder {
+    match service.oauth_authenticate(*provider, &params).await {
+        Ok((token, redirect)) => match redirect {
+            Some(redirect) => HttpResponse::Found()
+                .append_header((header::LOCATION, redirect))
+                .finish(),
+            None => HttpResponse::Ok().json(token),
+        },
+        Err(e) => e.to_response(),
+    }
+}

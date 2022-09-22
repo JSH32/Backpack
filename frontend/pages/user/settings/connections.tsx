@@ -1,4 +1,4 @@
-import { Button, ModalOverlay, Text, HStack, Icon, Stack, Box, useColorModeValue, VStack, Flex, Spacer, useDisclosure, Modal, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter, Input, FormControl, FormLabel, useToast } from "@chakra-ui/react"
+import { Button, ModalOverlay, Text, HStack, Icon, Stack, Box, useColorModeValue, VStack, Spacer, useDisclosure, Modal, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter, Input, FormControl, FormLabel, useToast } from "@chakra-ui/react"
 import { useStore } from "helpers/store"
 import { SettingsLayout, ConnectionsTab } from "layouts/SettingsLayout"
 import { observer } from "mobx-react-lite"
@@ -18,48 +18,62 @@ const SocialItem: React.FC<{
 	icon: React.FC,
 	username?: string,
 	color?: string,
-	enabled?: boolean
+	enabled?: boolean,
 }> = ({ provider, username, color, icon, enabled }) => {
 	const passwordForm = useForm()
 	const { isOpen, onOpen, onClose } = useDisclosure()
 	const store = useStore()
 	const toast = useToast()
 
+	const oauthLink = React.useCallback((provider: OAuthProvider) => {
+		api.authentication.oauthLogin(provider, false, `${window.location.origin}/user/settings/connections`)
+			.then(res => window.location.replace(res.url))
+			.catch(error => {
+				toast({
+					title: "Error",
+					description: error.body.message,
+					status: "error",
+					duration: 5000,
+					isClosable: true
+				})
+			})
+	}, [])
+
 	const disconnect = React.useCallback((password?: string) => {
 		api.authentication.unlinkMethod({
 			method: provider,
 			password: password
 		})
-		.then(authMethods => store?.setMethods(authMethods))
-		.catch(error => {
-			toast({
-				title: "Error",
-				description: error.body.message,
-				status: "error",
-				duration: 5000,
-				isClosable: true
+			.then(authMethods => store?.setMethods(authMethods))
+			.catch(error => {
+				toast({
+					title: "Error",
+					description: error.body.message,
+					status: "error",
+					duration: 5000,
+					isClosable: true
+				})
 			})
-		})
-		.finally(() => closeForm())
+			.finally(() => closeForm())
 	}, [])
 
 	const closeForm = React.useCallback(() => {
-        passwordForm.reset({
+		passwordForm.reset({
 			password: ""
 		})
-        onClose()
-    }, [passwordForm])
+		onClose()
+	}, [passwordForm])
 
 	const Inner = () => {
 		return <>
 			<Modal isOpen={isOpen} onClose={closeForm}>
-				<ModalOverlay/>
+				<ModalOverlay />
 				<ModalContent>
 					<form onSubmit={passwordForm.handleSubmit(form => {
 						disconnect(form?.password)
 					})}>
 						<ModalHeader>Password required</ModalHeader>
-                        <ModalCloseButton />
+						<ModalCloseButton />
 						<ModalBody>
 							<FormControl isRequired>
 								<FormLabel>Password</FormLabel>
@@ -67,26 +81,26 @@ const SocialItem: React.FC<{
 							</FormControl>
 						</ModalBody>
 						<ModalFooter>
-                            <Button variant="ghost" mr={3} onClick={closeForm}>Close</Button>
-                            <Button colorScheme="primary" type="submit">Disconnect</Button>
-                        </ModalFooter>
+							<Button variant="ghost" mr={3} onClick={closeForm}>Close</Button>
+							<Button colorScheme="primary" type="submit">Disconnect</Button>
+						</ModalFooter>
 					</form>
 				</ModalContent>
 			</Modal>
 			<HStack spacing={5}>
-				<Icon fontSize="3xl" as={icon} color={color}/>
-				{ enabled ? <>
+				<Icon fontSize="3xl" as={icon} color={color} />
+				{enabled ? <>
 					<VStack spacing={0} align="left">
 						<Text fontSize="xl" fontWeight="bold">{username}</Text>
 						<Text as="sub" fontSize="md" pb={5}>{provider[0].toUpperCase() + provider.substring(1)}</Text>
 					</VStack>
 				</> : <>
 					<Text fontSize="xl" fontWeight="bold">{provider[0].toUpperCase() + provider.substring(1)}</Text>
-				</> }
+				</>}
 			</HStack>
 			<Spacer />
 			<Box width={{ base: "full", md: "120px" }}>
-				{ enabled ? <>
+				{enabled ? <>
 					<Button colorScheme="primary" w="full" onClick={() => {
 						if (store?.authMethods?.password)
 							onOpen()
@@ -94,8 +108,8 @@ const SocialItem: React.FC<{
 							disconnect()
 					}}>Disconnect</Button>
 				</> : <>
-					<Button colorScheme="primary" w="full">Connect</Button>
-				</> }
+					<Button colorScheme="primary" w="full" onClick={() => oauthLink(provider)}>Connect</Button>
+				</>}
 			</Box>
 		</>
 	}
@@ -107,10 +121,10 @@ const SocialItem: React.FC<{
 			bg={useColorModeValue("gray.200", "gray.800")}
 		>
 			<HStack ml={2} mr={2} display={{ base: "none", md: "flex" }}>
-				<Inner/>
+				<Inner />
 			</HStack>
 			<VStack m={2} spacing={3} display={{ base: "row", md: "none" }}>
-				<Inner/>
+				<Inner />
 			</VStack>
 		</Box>
 	</>
@@ -119,25 +133,28 @@ const SocialItem: React.FC<{
 const Connections: NextPage = observer(() => {
 	const store = useStore()
 	const appInfo = useAppInfo()
-	
+
 	return <SettingsLayout tab={ConnectionsTab}>
 		<Stack spacing={2}>
-			{ appInfo?.oauthProviders.google && <SocialItem provider={OAuthProvider.GOOGLE} 
+			{appInfo?.oauthProviders.google && <SocialItem
+				provider={OAuthProvider.GOOGLE}
 				username={store?.authMethods?.google}
-				icon={GoogleSVG} 
+				icon={GoogleSVG}
 				enabled={store?.authMethods?.google !== null}
-			/> }
-			{ appInfo?.oauthProviders.google && <SocialItem provider={OAuthProvider.GITHUB} 
+			/>}
+			{appInfo?.oauthProviders.google && <SocialItem
+				provider={OAuthProvider.GITHUB}
 				username={store?.authMethods?.github}
-				icon={GithubSVG} 
+				icon={GithubSVG}
 				enabled={store?.authMethods?.github !== null}
-			/> }
-			{ appInfo?.oauthProviders.google && <SocialItem provider={OAuthProvider.DISCORD} 
+			/>}
+			{appInfo?.oauthProviders.discord && <SocialItem
+				provider={OAuthProvider.DISCORD}
 				username={store?.authMethods?.discord}
 				icon={DiscordSVG}
 				color="#404EED"
 				enabled={store?.authMethods?.discord !== null}
-			/> }
+			/>}
 		</Stack>
 	</SettingsLayout>
 })

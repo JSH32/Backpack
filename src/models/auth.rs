@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::services::auth::oauth::OAuthProvider;
 
@@ -37,6 +37,18 @@ impl AuthMethods {
             + (self.github.is_some() as u8)
             + (self.discord.is_some() as u8);
     }
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct OAuthLoginQuery {
+    pub provider: OAuthProvider,
+    pub redirect: Option<String>,
+    pub include_token: bool,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct LoginRedirectUrl {
+    pub url: String,
 }
 
 /// Unlink an OAuth method.

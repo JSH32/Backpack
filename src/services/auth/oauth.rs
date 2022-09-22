@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 use derive_more::Display;
 use futures::Future;
+use moka::future::Cache;
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
     ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
@@ -32,6 +33,16 @@ impl Into<AuthMethod> for OAuthProvider {
             Self::Discord => AuthMethod::Discord,
         }
     }
+}
+
+#[derive(Clone)]
+pub struct OAuthState {
+    /// User ID to attach account to.
+    pub user_id: Option<String>,
+    /// Optional redirect, will redirect to this URL after request.
+    pub redirect: Option<String>,
+    /// Should the redirect be included in params with the redirect URL.
+    pub include_redirect: bool,
 }
 
 impl OAuthProvider {
@@ -207,6 +218,7 @@ pub struct OAuthClient {
     client: BasicClient,
     scopes: Vec<Scope>,
     data_request: DataRequest,
+    state_cache: Cache<String, OAuthState>,
 }
 
 impl OAuthClient {
@@ -239,20 +251,40 @@ impl OAuthClient {
                 .map(|f| Scope::new(f.to_string()))
                 .collect(),
             data_request,
+            // 10 minute expiry time.
+            state_cache: Cache::builder()
+                .time_to_live(std::time::Duration::from_secs_f32((60 * 10) as f32))
+                .build(),
         }
     }
 
     /// Initiate an oauth login with provided scopes.
     /// Start the login session by redirecting the user to the provider URL.
-    pub fn login(&self) -> ServiceResult<oauth2::url::Url> {
+    pub async fn login(
+        &self,
+        user_id: Option<String>,
+        redirect: Option<String>,
+        include_redirect: bool,
+    ) -> ServiceResult<oauth2::url::Url> {
         // TODO: PKCE verification.
 
         // Generate the authorization URL to which we'll redirect the user.
-        let (authorize_url, _csrf_state) = self
+        let (authorize_url, csrf_state) = self
             .client
             .authorize_url(CsrfToken::new_random)
             .add_scopes(self.scopes.clone())
             .url();
+
+        self.state_cache
+            .insert(
+                csrf_state.secret().to_string(),
+                OAuthState {
+                    user_id,
+                    redirect,
+                    include_redirect,
+                },
+            )
+            .await;
 
         Ok(authorize_url)
     }
@@ -261,8 +293,17 @@ impl OAuthClient {
     pub async fn get_user_data(
         &self,
         oauth_request: &OAuthRequest,
-    ) -> ServiceResult<OAuthUserData> {
+    ) -> ServiceResult<(OAuthUserData, OAuthState)> {
         let code = AuthorizationCode::new(oauth_request.code.clone());
+        let state = CsrfToken::new(oauth_request.state.clone());
+
+        let oauth_state = match self.state_cache.get(state.secret()) {
+            Some(oauth_state) => {
+                self.state_cache.invalidate(state.secret()).await;
+                oauth_state
+            }
+            None => return Err(ServiceError::Unauthorized("Invalid Csrf token.".into())),
+        };
 
         // Exchange the code with a token.
         let token = match self
@@ -281,7 +322,7 @@ impl OAuthClient {
         })
         .await
         {
-            Some(v) => Ok(v),
+            Some(v) => Ok((v, oauth_state)),
             None => Err(ServiceError::ServerError(anyhow::anyhow!(
                 "OAuth provider was misconfigured."
             ))),

@@ -32,22 +32,22 @@ import GithubSVG from "assets/icons/github.svg"
 import DiscordSVG from "assets/icons/discord.svg"
 
 import styles from "styles/login.module.scss"
-import { BasicAuthForm } from "@/client"
+import { BasicAuthForm, OAuthProvider } from "@/client"
 import api from "helpers/api"
-import getConfig from "next/config"
 import { useAppInfo } from "helpers/info"
 import { useStore } from "helpers/store"
+import { observer } from "mobx-react-lite"
 
-const Login: NextPage = () => {
+const Login: NextPage = observer(() => {
     const [postLoginUnverifiedEmail, setPostLoginUnverifiedEmail] = React.useState<string | null>(null)
     const router = useRouter()
     const appInfo = useAppInfo()
-    const { publicRuntimeConfig } = getConfig()
 
     const { token, fail } = router.query
 
     const { register, handleSubmit } = useForm()
     const toast = useToast()
+
     const store = useStore()
 
     React.useEffect(() => {
@@ -61,10 +61,12 @@ const Login: NextPage = () => {
             })
         } else if (token != null) {
             tokenLogin(token as string)
-        } else if (store?.userData != null) {
+        }
+        
+        if (store?.userData != null) {
             router.replace("/user/uploads")
         }
-    }, [])
+    }, [store?.userData])
 
     const tokenLogin = React.useCallback((token: string) => {
         localStorage.setItem("token", token)
@@ -101,8 +103,18 @@ const Login: NextPage = () => {
             })
     }
 
-    const oauthSignIn = React.useCallback((provider: string) => {
-        window.location.replace(`${publicRuntimeConfig.apiRoot}/api/auth/${provider}/login`)
+    const oauthSignIn = React.useCallback((provider: OAuthProvider) => {
+        api.authentication.oauthLogin(provider, true, `${window.location.origin}/user/login`)
+            .then(res => window.location.replace(res.url))
+            .catch(error => {
+                toast({
+                    title: "Error",
+                    description: error.body.message,
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true
+                })
+            })
     }, [])
 
     if (postLoginUnverifiedEmail != null)
@@ -132,7 +144,7 @@ const Login: NextPage = () => {
                                 w="full" 
                                 variant="outline" 
                                 leftIcon={<Icon as={GoogleSVG} mt="2px"/>}
-                                onClick={() => oauthSignIn("google")}
+                                onClick={() => oauthSignIn(OAuthProvider.GOOGLE)}
                             >
                                 <Center>
                                     <Text>Sign in with Google</Text>
@@ -147,7 +159,7 @@ const Login: NextPage = () => {
                                 bg="black" 
                                 variant="solid" 
                                 leftIcon={<Icon as={GithubSVG} mt="2px"/>} 
-                                onClick={() => oauthSignIn("github")}
+                                onClick={() => oauthSignIn(OAuthProvider.GITHUB)}
                             >
                                 <Center>
                                     <Text>Sign in with Github</Text>
@@ -161,7 +173,7 @@ const Login: NextPage = () => {
                                 color="white" 
                                 bg="#404EED" 
                                 leftIcon={<Icon as={DiscordSVG} mt="3px" fontSize="xl"/>} 
-                                onClick={() => oauthSignIn("discord")}
+                                onClick={() => oauthSignIn(OAuthProvider.DISCORD)}
                                 _hover={{ bg: "#5865F2" }}
                             >
                                 <Center>
@@ -207,6 +219,6 @@ const Login: NextPage = () => {
             </Stack>
         </Flex>
     </Page>
-}
+})
 
 export default Login

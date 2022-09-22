@@ -20,6 +20,7 @@ export type { BatchFileError } from './models/BatchFileError';
 export type { FileData } from './models/FileData';
 export type { FilePage } from './models/FilePage';
 export type { FileStats } from './models/FileStats';
+export type { LoginRedirectUrl } from './models/LoginRedirectUrl';
 export type { MessageResponse } from './models/MessageResponse';
 export { OAuthProvider } from './models/OAuthProvider';
 export type { OAuthProviders } from './models/OAuthProviders';

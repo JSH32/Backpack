@@ -144,7 +144,7 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> From
     }
 }
 
-fn get_token(req: &HttpRequest) -> Option<String> {
+pub fn get_token(req: &HttpRequest) -> Option<String> {
     match req.headers().get("Authorization") {
         Some(header) => match header.to_str() {
             Ok(value) => {

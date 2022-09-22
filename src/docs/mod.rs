@@ -39,16 +39,10 @@ use crate::services::auth::oauth::OAuthProvider;
         routes::admin::registration_key::get_one,
         routes::admin::registration_key::delete,
         routes::auth::basic,
+        routes::auth::oauth_login,
+        routes::auth::oauth_callback,
         routes::auth::enabled_methods,
         routes::auth::unlink_method,
-        // All oauth provider routes
-        routes::auth::google::google_login,
-        routes::auth::google::google_callback,
-        routes::auth::github::github_login,
-        routes::auth::github::github_callback,
-        routes::auth::discord::discord_login,
-        routes::auth::discord::discord_callback,
-        // routes::admin::file::list
     ),
     components(
         schemas(
@@ -76,7 +70,8 @@ use crate::services::auth::oauth::OAuthProvider;
             OAuthProviders,
             AuthMethods,
             UnlinkAuthMethod,
-            OAuthProvider
+            OAuthProvider,
+            LoginRedirectUrl
         )
     ),
     tags(
