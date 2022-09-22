@@ -8,7 +8,6 @@ import axios from "axios"
 import getConfig from "next/config"
 import { AppInfo } from "@/client"
 import api from "helpers/api"
-import { Provider } from "mobx-react"
 import { Store, StoreContext } from "helpers/store"
 
 const { serverRuntimeConfig } = getConfig()

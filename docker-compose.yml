@@ -24,4 +24,4 @@ services:
     env_file: .env
     depends_on:
       - backpack_api
-      - backpack_client
+      - backpack_frontend

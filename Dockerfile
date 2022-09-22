@@ -4,19 +4,23 @@ FROM rust:1.60 as build
 RUN USER=root cargo new --bin backpack
 WORKDIR /backpack
 
-# copy over your manifests
-COPY Cargo.toml Cargo.lock ./
+# # copy over your manifests
+# COPY Cargo.toml Cargo.lock ./
+# COPY migration/Cargo.toml ./migration/Cargo.toml
 
-# Cache dependencies
-RUN cargo build --release
-RUN rm src/*.rs
+# # Cache dependencies
+# RUN cargo build --release
+# RUN rm src/*.rs
 
-# Copy source
+# # Copy source
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./Cargo.lock ./Cargo.lock
 COPY ./src ./src
+COPY ./migration ./migration
 COPY ./.git ./.git
 
 # Build for release
-RUN rm ./target/release/deps/backpack*
+# RUN rm ./target/release/deps/backpack*
 RUN cargo build --release
 
 # Running stage
@@ -24,8 +28,5 @@ FROM rust:1.60
 
 # Copy the build artifact from the build stage
 COPY --from=build /backpack/target/release/backpack .
-
-# Migrations needed at runtime
-COPY ./migrations ./migrations
 
 CMD ["./backpack"]

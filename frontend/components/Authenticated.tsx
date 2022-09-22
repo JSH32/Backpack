@@ -5,9 +5,8 @@ import { VerificationMessage } from "./VerificationMessage"
 import { useAppInfo } from "helpers/info"
 import { UserData } from "@/client"
 import api from "helpers/api"
-import { Store, useStore } from "helpers/store"
+import { useStore } from "helpers/store"
 import { RegisterPrompt } from "./RegisterPrompt"
-import { observer } from "mobx-react-lite"
 import { observe } from "mobx"
 
 export const Authenticated: React.FC<{
