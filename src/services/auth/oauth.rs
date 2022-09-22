@@ -218,6 +218,8 @@ pub struct OAuthClient {
     client: BasicClient,
     scopes: Vec<Scope>,
     data_request: DataRequest,
+    /// Cache stores CSRF token secrets to OAuth state.
+    /// Values should be removed on usage and automatically after a timeout period.
     state_cache: Cache<String, OAuthState>,
 }
 

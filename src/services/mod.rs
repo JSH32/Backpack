@@ -40,6 +40,23 @@ impl ToMessageResponse for ServiceResult<String> {
     }
 }
 
+/// Convert a result to an option. [`None`] will be returned if variant is [`ServiceError::NotFound`].
+pub trait ToOption<T> {
+    fn to_option(self) -> ServiceResult<Option<T>>;
+}
+
+impl<T> ToOption<T> for ServiceResult<T> {
+    fn to_option(self) -> ServiceResult<Option<T>> {
+        match self {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => match e {
+                ServiceError::NotFound(_) => Ok(None),
+                _ => Err(e),
+            },
+        }
+    }
+}
+
 /// Converts a [`ServiceResult`] to an HTTP response.
 pub trait ToResponse<T> {
     /// Converts a [`ServiceResult`] to an HTTP response of type [`R`]

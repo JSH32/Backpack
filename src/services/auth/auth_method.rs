@@ -3,7 +3,7 @@ use crate::{
     models::AuthMethods,
     services::{
         prelude::{data_service, DataService},
-        ServiceError, ServiceResult,
+        ServiceError, ServiceResult, ToOption,
     },
 };
 
@@ -71,21 +71,19 @@ impl AuthMethodService {
         let method = self.get_auth_method(user_id, method).await?;
 
         // Validate password if exists
-        match self.get_auth_method(user_id, AuthMethod::Password).await {
-            Ok(v) => {
-                if let Some(password) = password {
-                    validate_password(&v.value, &password)?;
-                } else {
-                    return Err(ServiceError::InvalidData(
-                        "Password is required to remove an auth method.".into(),
-                    ));
-                }
+        if let Some(password_method) = self
+            .get_auth_method(user_id, AuthMethod::Password)
+            .await
+            .to_option()?
+        {
+            if let Some(password) = password {
+                validate_password(&password_method.value, &password)?;
+            } else {
+                return Err(ServiceError::InvalidData(
+                    "Password is required to remove an auth method.".into(),
+                ));
             }
-            Err(e) => match e {
-                ServiceError::NotFound(_) => {}
-                _ => return Err(e),
-            },
-        };
+        }
 
         let methods = self.get_enabled_methods(user_id).await?;
         if methods.enabled_methods() <= 1 {
@@ -110,37 +108,34 @@ impl AuthMethodService {
         value: &str,
         new_cached_username: Option<String>,
     ) -> ServiceResult<Option<users::Model>> {
-        match self
+        if let Some(v) = self
             .by_condition(
                 Condition::all()
                     .add(auth_methods::Column::AuthMethod.eq(method))
                     .add(auth_methods::Column::Value.eq(value.to_owned())),
             )
             .await
+            .to_option()?
         {
-            Ok(v) => {
-                let user = v
-                    .find_related(users::Entity)
-                    .one(self.database.as_ref())
-                    .await
-                    .map_err(|e| ServiceError::DbErr(e))?;
+            let user = v
+                .find_related(users::Entity)
+                .one(self.database.as_ref())
+                .await
+                .map_err(|e| ServiceError::DbErr(e))?;
 
-                // Update `last_accessed`.
-                let mut active_method = v.into_active_model();
-                active_method.last_accessed = Set(Utc::now());
-                active_method.cached_username = Set(new_cached_username);
+            // Update `last_accessed`.
+            let mut active_method = v.into_active_model();
+            active_method.last_accessed = Set(Utc::now());
+            active_method.cached_username = Set(new_cached_username);
 
-                active_method
-                    .update(self.database.as_ref())
-                    .await
-                    .map_err(|e| ServiceError::DbErr(e))?;
+            active_method
+                .update(self.database.as_ref())
+                .await
+                .map_err(|e| ServiceError::DbErr(e))?;
 
-                Ok(user)
-            }
-            Err(e) => match e {
-                ServiceError::NotFound(_) => Ok(None),
-                _ => Err(e),
-            },
+            Ok(user)
+        } else {
+            Ok(None)
         }
     }
 

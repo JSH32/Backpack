@@ -14,6 +14,7 @@ use super::{
     file::FileService,
     prelude::*,
     registration_key::RegistrationKeyService,
+    ToOption,
 };
 use crate::{
     config::SMTPConfig,
@@ -118,32 +119,25 @@ impl UserService {
         }
 
         // Check for duplicate users.
-        match self
+        if let Some(v) = self
             .by_condition(
                 Condition::any()
                     .add(users::Column::Username.eq(username.to_owned()))
                     .add(users::Column::Email.eq(email.to_owned())),
             )
             .await
+            .to_option()?
         {
-            Ok(v) => {
-                // User was found, report proper error based on field.
-                return Err(ServiceError::Conflict(format!(
-                    "An account with that {} already exists!",
-                    if username == v.username {
-                        "username"
-                    // The only other intended fail reason would be email.
-                    } else {
-                        "email"
-                    }
-                )));
-            }
-            Err(e) => match e {
-                // Only error if there was an actual error.
-                // Not finding a result is intended.
-                ServiceError::NotFound(_) => {}
-                _ => return Err(e),
-            },
+            // User was found, report proper error based on field.
+            return Err(ServiceError::Conflict(format!(
+                "An account with that {} already exists!",
+                if username == v.username {
+                    "username"
+                // The only other intended fail reason would be email.
+                } else {
+                    "email"
+                }
+            )));
         }
 
         // We want to validate password before making the user.
@@ -489,25 +483,19 @@ impl UserService {
         user: &users::Model,
         password: Option<String>,
     ) -> ServiceResult<()> {
-        match self
+        if let Some(v) = self
             .auth_method_service
             .get_auth_method(&user.id, AuthMethod::Password)
             .await
+            .to_option()?
         {
-            Ok(v) => {
-                if let Some(password) = password {
-                    validate_password(&v.value, &password)?
-                } else {
-                    return Err(ServiceError::InvalidData(
-                        "Password is required since you have a password.".into(),
-                    ));
-                }
+            if let Some(password) = password {
+                validate_password(&v.value, &password)?
+            } else {
+                return Err(ServiceError::InvalidData(
+                    "Password is required since you have a password.".into(),
+                ));
             }
-            Err(e) => match e {
-                // If not found then method is not enabled, this is fine.
-                ServiceError::NotFound(_) => {}
-                _ => return Err(e),
-            },
         }
 
         Ok(())

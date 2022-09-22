@@ -23,7 +23,7 @@ use self::{
 
 use super::{
     application::ApplicationService, prelude::DataService, user::UserService, ServiceError,
-    ServiceResult,
+    ServiceResult, ToOption,
 };
 
 pub mod auth_method;
@@ -264,33 +264,25 @@ impl AuthService {
             None => {
                 // We don't care about verified email if we are linking to specific account.
                 if let Some(user_id) = oauth_state.user_id {
-                    match self.user_service.by_id(user_id).await {
-                        Ok(user) => {
-                            self.auth_method_service
-                                .create_auth_method(
-                                    &user.id,
-                                    provider_type.into(),
-                                    Some(oauth_data.username),
-                                    &oauth_data.id,
-                                )
-                                .await?;
+                    if let Some(user) = self.user_service.by_id(user_id).await.to_option()? {
+                        self.auth_method_service
+                            .create_auth_method(
+                                &user.id,
+                                provider_type.into(),
+                                Some(oauth_data.username),
+                                &oauth_data.id,
+                            )
+                            .await?;
 
-                            let token = self.new_jwt(&user.id, None)?;
-                            return Ok((
-                                token.clone(),
-                                make_redirect_url(
-                                    oauth_state.redirect,
-                                    &token.token,
-                                    oauth_state.include_redirect,
-                                ),
-                            ));
-                        }
-                        Err(e) => match e {
-                            // Skip over if not found.
-                            // This will create a new user.
-                            ServiceError::NotFound(_) => {}
-                            _ => return Err(e),
-                        },
+                        let token = self.new_jwt(&user.id, None)?;
+                        return Ok((
+                            token.clone(),
+                            make_redirect_url(
+                                oauth_state.redirect,
+                                &token.token,
+                                oauth_state.include_redirect,
+                            ),
+                        ));
                     }
                 }
 
@@ -311,7 +303,7 @@ impl AuthService {
                     Ok(user) => {
                         let auth_method: AuthMethod = provider_type.into();
                         // Make sure an existing account with the same email and auth method doesn't exist.
-                        match self
+                        if let Some(_) = self
                             .auth_method_service
                             .by_condition(
                                 Condition::all()
@@ -319,16 +311,11 @@ impl AuthService {
                                     .add(auth_methods::Column::AuthMethod.eq(auth_method.clone())),
                             )
                             .await
+                            .to_option()?
                         {
-                            Ok(_) => {
-                                return Err(ServiceError::InvalidData(
-                                    "Existing account already has that email and method.".into(),
-                                ))
-                            }
-                            Err(e) => match e {
-                                ServiceError::NotFound(_) => {}
-                                _ => return Err(e),
-                            },
+                            return Err(ServiceError::InvalidData(
+                                "Existing account already has that email and method.".into(),
+                            ));
                         };
 
                         self.auth_method_service
@@ -385,18 +372,14 @@ impl AuthService {
             username.push_str(&random_digit_str(4).to_string());
         }
 
-        match self.user_service.get_by_identifier(&username).await {
-            Ok(_) => {
-                // Found, try adding 4 digits.
-                username.push_str(&random_digit_str(4).to_string());
-            }
-            Err(e) => {
-                match e {
-                    // Not found is intended.
-                    ServiceError::NotFound(_) => {}
-                    _ => return Err(e),
-                }
-            }
+        if let Some(_) = self
+            .user_service
+            .get_by_identifier(&username)
+            .await
+            .to_option()?
+        {
+            // Found, try adding 4 digits.
+            username.push_str(&random_digit_str(4).to_string());
         };
 
         Ok(username)
