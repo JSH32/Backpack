@@ -18,6 +18,12 @@ impl MigrationTrait for Migration {
                             .primary_key()
                             .not_null(),
                     )
+                    .col(
+                        ColumnDef::new(Albums::Created)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                    )
                     .col(ColumnDef::new(Albums::UserId).sonyflake().not_null())
                     .col(ColumnDef::new(Albums::Name).string_len(16).not_null())
                     .col(ColumnDef::new(Albums::Description).string())
@@ -50,20 +56,6 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // manager
-        //     .alter_table(
-        //         Table::alter()
-        //             .table(Files::Table)
-        //             .add_column(ColumnDef::new(Files::AlbumId).sonyflake())
-        //             .add_column(
-        //                 ColumnDef::new(Alias::new("public"))
-        //                     .boolean()
-        //                     .not_null()
-        //                     .default(false),
-        //             )
-        //             .to_owned(),
-        //     )
-        //     .await
         // Add new columns to user.
         if manager.get_database_backend() == DbBackend::Sqlite {
             // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
@@ -145,6 +137,7 @@ enum Files {
 enum Albums {
     Table,
     Id,
+    Created,
     Name,
     Description,
     UserId,

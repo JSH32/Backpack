@@ -4,6 +4,7 @@ use crate::database::sonyflake::Sonyflake;
 
 pub mod prelude;
 
+pub mod albums;
 pub mod applications;
 pub mod auth_methods;
 pub mod files;
