@@ -1,0 +1,30 @@
+:3000 {
+	@proxy_files_on vars {env.PROXY_FILES} "on"
+	@proxy_files_off expression `{env.PROXY_FILES} != "on"`
+
+	# This is kind of jank but works for our needs.
+    handle /* {
+		reverse_proxy @proxy_files_on backpack_frontend:3000 {
+			# We assume that this is looking for a file on the backend at "/".
+			@not_found status 404
+			handle_response @not_found {
+				handle @proxy_files_on {
+					reverse_proxy backpack_api:3000 {
+						# Backend gave a 404 (no file was found) so we go back to frontend to display 404.
+						@not_found status 404
+						handle_response @not_found {
+							reverse_proxy backpack_frontend:3000
+						}
+					}
+				}
+			}
+		}
+
+		# Proxying files is off.
+		reverse_proxy @proxy_files_off backpack_frontend:3000
+    }
+
+    handle /api/* {
+        reverse_proxy backpack_api:3000
+    }
+}

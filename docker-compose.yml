@@ -18,10 +18,12 @@ services:
       PORT: 3000
       INTERNAL_API_URL: "http://backpack_api:3000"
   proxy:
-    build: ./nginx
-    ports:
-      - ${PORT}:80
+    build: ./proxy
     env_file: .env
+    ports:
+      - ${PORT}:3000
+    volumes:
+      - $PWD/proxy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - backpack_api
       - backpack_frontend

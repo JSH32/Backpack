@@ -186,6 +186,7 @@ async fn main() -> std::io::Result<()> {
                     .allowed_origin(&client_url)
                     .allow_any_header()
                     .allow_any_method()
+                    .supports_credentials()
                     .max_age(None),
             )
             .app_data(database.clone())

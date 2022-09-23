@@ -24,7 +24,7 @@ COPY ./.git ./.git
 RUN cargo build --release
 
 # Running stage
-FROM rust:1.60
+FROM gcr.io/distroless/cc
 
 # Copy the build artifact from the build stage
 COPY --from=build /backpack/target/release/backpack .
