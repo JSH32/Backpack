@@ -1,10 +1,6 @@
-use sea_orm_migration::{
-    prelude::*,
-    sea_orm::{ConnectionTrait, DbBackend, Statement},
-    sea_query::extension::postgres::Type,
-};
+use sea_orm_migration::{prelude::*, sea_orm::DbBackend, sea_query::extension::postgres::Type};
 
-use crate::extensions::ColumnExtension;
+use crate::extensions::{ColumnExtension, ManagerExtension};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -79,20 +75,16 @@ impl MigrationTrait for Migration {
         if manager.get_database_backend() == DbBackend::Sqlite {
             // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
             // TODO: Remove this when SeaORM supports it.
-
-            let sql = r#"
-            ALTER TABLE users DROP COLUMN password;
-            ALTER TABLE users ADD COLUMN registered BOOLEAN NOT NULL;
-            "#;
+            // https://github.com/SeaQL/sea-orm/issues/1065
 
             manager
-                .get_connection()
-                .execute(Statement::from_string(
-                    manager.get_database_backend(),
-                    sql.to_owned(),
-                ))
+                .exec_sql(
+                    r#"
+            ALTER TABLE users DROP COLUMN password;
+            ALTER TABLE users ADD COLUMN registered BOOLEAN NOT NULL;
+            "#,
+                )
                 .await
-                .map(|_| ())
         } else {
             manager
                 .alter_table(
@@ -117,7 +109,31 @@ impl MigrationTrait for Migration {
                 .await?;
         }
 
-        Ok(())
+        // Add password column back and remove registered.
+        if manager.get_database_backend() == DbBackend::Sqlite {
+            // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
+            // TODO: Remove this when SeaORM supports it.
+            // https://github.com/SeaQL/sea-orm/issues/1065
+
+            manager
+                .exec_sql(
+                    r#"
+                ALTER TABLE users ADD COLUMN password VARCHAR(128) NOT NULL;
+                ALTER TABLE users DROP COLUMN registered;
+                "#,
+                )
+                .await
+        } else {
+            manager
+                .alter_table(
+                    Table::alter()
+                        .table(Users::Table)
+                        .add_column(ColumnDef::new(Users::Password).string_len(128).not_null())
+                        .drop_column(Users::Registered)
+                        .to_owned(),
+                )
+                .await
+        }
     }
 }
 
