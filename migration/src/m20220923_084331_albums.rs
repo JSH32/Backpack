@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*, sea_orm::DbBackend};
+use sea_orm_migration::prelude::*;
 
 use crate::extensions::{ColumnExtension, ManagerExtension};
 
@@ -35,6 +35,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
+                            .name("files_album_id_fkey")
                             .from(Albums::Table, Albums::UserId)
                             .to(Users::Table, Users::Id)
                             .on_delete(ForeignKeyAction::Cascade),
@@ -56,67 +57,53 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Add new columns to user.
-        if manager.get_database_backend() == DbBackend::Sqlite {
-            // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
-            // TODO: Remove this when SeaORM supports it.
-            // https://github.com/SeaQL/sea-orm/issues/1065
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Files::Table)
+                    .add_column(ColumnDef::new(Files::AlbumId).sonyflake())
+                    .to_owned(),
+            )
+            .await?;
 
-            manager
-                .exec_sql(
-                    r#"
-            ALTER TABLE files ADD COLUMN album_id VARCHAR(20);
-            ALTER TABLE files ADD COLUMN public boolean NOT NULL DEFAULT false;
-            "#,
-                )
-                .await
-        } else {
-            manager
-                .alter_table(
-                    Table::alter()
-                        .table(Files::Table)
-                        .add_column(ColumnDef::new(Files::AlbumId).sonyflake())
-                        .add_column(
-                            ColumnDef::new(Files::Public)
-                                .boolean()
-                                .not_null()
-                                .default(false),
-                        )
-                        .to_owned(),
-                )
-                .await
-        }
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Files::Table)
+                    .add_column(
+                        ColumnDef::new(Files::Public)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_fkey(
+                Files::Table,
+                ForeignKey::create()
+                    .name("files_album_id_fkey")
+                    .from(Files::Table, Files::AlbumId)
+                    .to(Albums::Table, Albums::Id)
+                    .on_delete(ForeignKeyAction::SetNull)
+                    .to_owned(),
+            )
+            .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Albums::Table).to_owned())
+            .drop_fkey(Files::Table, Files::AlbumId, "files_album_id_fkey")
             .await?;
 
-        if manager.get_database_backend() == DbBackend::Sqlite {
-            // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
-            // TODO: Remove this when SeaORM supports it.
-            // https://github.com/SeaQL/sea-orm/issues/1065
+        manager.drop_column(Files::Table, Files::AlbumId).await?;
+        manager.drop_column(Files::Table, Files::Public).await?;
 
-            manager
-                .exec_sql(
-                    r#"
-            ALTER TABLE files DROP COLUMN album_id;
-            ALTER TABLE files DROP COLUMN public;
-            "#,
-                )
-                .await
-        } else {
-            manager
-                .alter_table(
-                    Table::alter()
-                        .table(Files::Table)
-                        .drop_column(Files::AlbumId)
-                        .drop_column(Files::Public)
-                        .to_owned(),
-                )
-                .await
-        }
+        manager
+            .drop_table(Table::drop().table(Albums::Table).to_owned())
+            .await
     }
 }
 
