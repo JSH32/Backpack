@@ -17,10 +17,20 @@ pub struct Model {
     pub uploaded: DateTimeWithTimeZone,
     pub size: i64,
     pub has_thumbnail: bool,
+    pub album_id: Option<String>,
+    pub public: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::albums::Entity",
+        from = "Column::AlbumId",
+        to = "super::albums::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    Albums,
     #[sea_orm(
         belongs_to = "super::users::Entity",
         from = "Column::Uploader",
@@ -29,6 +39,12 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Users,
+}
+
+impl Related<super::albums::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Albums.def()
+    }
 }
 
 impl Related<super::users::Entity> for Entity {

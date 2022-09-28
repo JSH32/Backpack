@@ -21,6 +21,8 @@ pub struct FileData {
     pub thumbnail_url: Option<String>,
     pub hash: String,
     pub size: i64,
+    pub album_id: Option<String>,
+    pub public: bool,
     #[schema(value_type = f64)]
     pub uploaded: DateTime<Utc>,
 }
@@ -35,6 +37,8 @@ impl From<files::Model> for FileData {
             hash: file.hash,
             uploaded: file.uploaded.into(),
             size: file.size,
+            album_id: file.album_id,
+            public: file.public,
             // These fields are not stored in database
             // They are filled in by the route returning it
             url: None,
@@ -109,7 +113,22 @@ pub struct UploadFile {
     pub upload_file: File,
 }
 
+const fn _default_user_id() -> String {
+    "@me".into()
+}
+
 #[derive(Deserialize, IntoParams)]
 pub struct FileQuery {
+    /// User to get files from.
+    /// Set this to `@me` to get your own files.\
+    /// This defaults to `@me` and will error if not logged in.
+    #[serde(default = "_default_user_id")]
+    pub user_id: String,
+    /// Query by name of file.
     pub query: Option<String>,
+    /// For non admins, this must be a public album
+    /// or a private album owned by you.
+    pub album_id: Option<String>,
+    /// If accessing another user as a non admin, this must be `true`
+    pub public: Option<bool>,
 }
