@@ -5,11 +5,11 @@ use sea_orm::{
 
 use super::{
     auth::AuthService,
-    prelude::{data_service, DataService},
+    prelude::{data_service_owned, DataService, UserOwnedService},
     ServiceError, ServiceResult,
 };
 use crate::{
-    database::entity::applications,
+    database::entity::{applications, users},
     models::{ApplicationData, TokenResponse},
 };
 use std::sync::Arc;
@@ -19,7 +19,7 @@ pub struct ApplicationService {
     auth_service: Arc<AuthService>,
 }
 
-data_service!(ApplicationService, applications);
+data_service_owned!(ApplicationService, applications);
 
 impl ApplicationService {
     pub fn new(database: Arc<DatabaseConnection>, auth_service: Arc<AuthService>) -> Self {
@@ -37,15 +37,9 @@ impl ApplicationService {
     pub async fn generate_token(
         &self,
         id: &str,
-        user_id: Option<&str>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<TokenResponse> {
-        let mut condition = Condition::all().add(applications::Column::Id.eq(id.to_owned()));
-
-        if let Some(user_id) = user_id {
-            condition = condition.add(applications::Column::UserId.eq(user_id));
-        }
-
-        let application = self.by_condition(condition).await?;
+        let application = self.by_id_authorized(id.into(), accessing_user).await?;
 
         self.auth_service
             .new_jwt(&application.user_id, Some(application.id))

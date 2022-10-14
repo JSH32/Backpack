@@ -114,7 +114,7 @@ async fn delete(
     _user: Auth<auth_role::Admin>,
 ) -> impl Responder {
     service
-        .delete(registration_id.to_string(), true, None)
+        .delete(registration_id.to_string(), None)
         .await
         .to_message_response(StatusCode::OK)
 }

@@ -1,5 +1,7 @@
 //! Data service is a service with an associated table and attached operations.
 
+use crate::database::entity::{sea_orm_active_enums::Role, users};
+
 use super::{ServiceError, ServicePage, ServiceResult};
 use heck::AsTitleCase;
 use sea_orm::{prelude::*, Condition, FromQueryResult, IntoActiveModel};
@@ -26,7 +28,130 @@ macro_rules! data_service {
     };
 }
 
+/// Same as [`data_service`] but with functions dealing with resources that can be owned by [`users::Model`].
+macro_rules! data_service_owned {
+    ($service:ty, $entity_module:ident) => {
+        crate::services::data_service::data_service!($service, $entity_module);
+        impl
+            crate::services::data_service::UserOwnedService<
+                $entity_module::Entity,
+                $entity_module::Model,
+                $entity_module::ActiveModel,
+            > for $service
+        {
+        }
+    };
+}
+
 pub(crate) use data_service;
+pub(crate) use data_service_owned;
+
+#[async_trait::async_trait]
+pub trait UserOwnedService<
+    E: EntityTrait<Model = M>,
+    M: ModelTrait + FromQueryResult + Sync + IntoActiveModel<AM>,
+    AM: ActiveModelTrait + ActiveModelBehavior + Send,
+>: DataService<E, M, AM> where
+    M::Entity: EntityTrait<Model = M> + Related<users::Entity>,
+{
+    /// Return the record if access granted. Otherwise [`ServiceError`]
+    async fn validate_access(&self, record: &M, user: Option<&users::Model>) -> ServiceResult<M> {
+        if let Some(user) = user {
+            if user.role == Role::Admin {
+                return Ok(record.clone());
+            }
+
+            let (db, _) = self.get_data_source();
+
+            // Get the related user or resource owner
+            match record
+                .find_related(users::Entity)
+                .one(db.as_ref())
+                .await
+                .map_err(|e| ServiceError::DbErr(e))?
+            {
+                // At this point we have verified that a user owns a resource and we can return it.
+                Some(found_user) => {
+                    // Check if user associated with resource is the same as the original user provided.
+                    if user.id == found_user.id {
+                        Ok(record.clone())
+                    } else {
+                        Err(ServiceError::Forbidden {
+                            id: None,
+                            resource: self.resource_name(),
+                        })
+                    }
+                }
+                None => Err(ServiceError::Forbidden {
+                    id: None,
+                    resource: self.resource_name(),
+                }),
+            }
+        } else {
+            Ok(record.clone())
+        }
+    }
+
+    /// Just like [`delete`] but this will error if the user isn't allowed to **fully** access this resource.
+    /// The check will be overridden if the provided user was an admin.
+    /// If [`None`] is provided this will return the resource.
+    async fn delete_authorized(
+        &self,
+        id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
+        condition: Option<Condition>,
+        user: Option<&users::Model>,
+    ) -> ServiceResult<String> {
+        // We need to do this workaround to use both IDs and a condition in one.
+        let mut select = E::find_by_id(id);
+
+        if let Some(condition) = condition {
+            select = select.filter(condition);
+        }
+
+        let (db, _) = self.get_data_source();
+
+        let model = match select
+            .one(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?
+        {
+            Some(v) => v,
+            None => return Err(ServiceError::NotFound(self.resource_name())),
+        };
+
+        self.validate_access(&model, user)
+            .await?
+            .into_active_model()
+            .delete(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        Ok(format!("{} was deleted", self.resource_name()))
+    }
+
+    /// Just like [`by_id`] but this will error if the user isn't allowed to **fully** access this resource.
+    /// The check will be overridden if the provided user was an admin.
+    /// If [`None`] is provided this will return the resource.
+    async fn by_id_authorized(
+        &self,
+        id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
+        user: Option<&users::Model>,
+    ) -> ServiceResult<M> {
+        self.validate_access(&self.by_id(id).await?, user).await
+    }
+
+    /// Just like [`by_condition`] but this will error if the user isn't allowed to **fully** access this resource.
+    /// The check will be overridden if the provided user was an admin.
+    /// If [`None`] is provided this will return the resource.
+    async fn by_condition_authorized(
+        &self,
+        condition: Condition,
+        user: Option<&users::Model>,
+    ) -> ServiceResult<M> {
+        self.validate_access(&self.by_condition(condition).await?, user)
+            .await
+    }
+}
 
 /// Provides standard operations for services which are associated with a db table.
 #[async_trait::async_trait]
@@ -80,17 +205,12 @@ pub trait DataService<
     /// # Arguments
     ///
     /// * `id` - Id of the record
-    /// * `response_has_id` - Should the returned [`ServiceResult`] string contain the Id of the deleted record.
-    /// * `condition` - Additional conditions for finding record to delete.
+    /// * `condition` - Additional conditions for finding record to delete.    
     async fn delete(
         &self,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
-        response_has_id: bool,
         condition: Option<Condition>,
     ) -> ServiceResult<String> {
-        let id_str = remove_first_and_last(format!("{:?}", id));
-        let (db, _) = self.get_data_source();
-
         // We need to do this workaround to use both IDs and a condition in one.
         let mut select = E::find_by_id(id);
 
@@ -98,7 +218,9 @@ pub trait DataService<
             select = select.filter(condition);
         }
 
-        let result = match select
+        let (db, _) = self.get_data_source();
+
+        let model = match select
             .one(db.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?
@@ -107,21 +229,13 @@ pub trait DataService<
             None => return Err(ServiceError::NotFound(self.resource_name())),
         };
 
-        result
+        model
             .into_active_model()
             .delete(db.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
-        Ok(format!(
-            "{}{} was deleted",
-            self.resource_name(),
-            if response_has_id {
-                format!(" ({})", id_str)
-            } else {
-                "".into()
-            }
-        ))
+        Ok(format!("{} was deleted", self.resource_name()))
     }
 
     /// Get a [`ServicePage`] of [`M`].

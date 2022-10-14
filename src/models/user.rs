@@ -7,11 +7,14 @@ use crate::database::entity::{sea_orm_active_enums::Role, users};
 pub struct UserData {
     pub id: String,
     pub username: String,
-    pub email: String,
-    pub verified: bool,
+    /// This will not be present if accessed by another user.
+    pub email: Option<String>,
+    /// This will not be present if accessed by another user.
+    pub verified: Option<bool>,
     /// Has the user already verified with a registration key?
     /// This will be true always if service is in `invite_only` mode.
-    pub registered: bool,
+    /// This will not be present if accessed by another user.
+    pub registered: Option<bool>,
     pub role: UserRole,
 }
 
@@ -20,9 +23,9 @@ impl From<users::Model> for UserData {
         Self {
             id: user.id,
             username: user.username,
-            email: user.email,
-            verified: user.verified,
-            registered: user.registered,
+            email: Some(user.email),
+            verified: Some(user.verified),
+            registered: Some(user.registered),
             role: UserRole::from(user.role),
         }
     }
@@ -59,7 +62,8 @@ pub struct UserCreateForm {
 #[derive(Deserialize, IntoParams)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrationParams {
-    pub key: String,
+    /// This doesn't have to be provided if an admin is calling this route.
+    pub key: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -81,5 +85,6 @@ pub struct UpdateUserSettings {
     pub new_password: Option<String>,
 
     /// This is required if a password has been set prior.
+    /// This is optional if the requesting user is an admin modifying another user.
     pub current_password: Option<String>,
 }

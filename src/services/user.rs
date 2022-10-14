@@ -19,7 +19,9 @@ use super::{
 use crate::{
     config::SMTPConfig,
     database::entity::{
-        auth_methods, files, sea_orm_active_enums::AuthMethod, users, verifications,
+        auth_methods, files,
+        sea_orm_active_enums::{AuthMethod, Role},
+        users, verifications,
     },
     internal::random_string,
 };
@@ -199,10 +201,12 @@ impl UserService {
     }
 
     /// Register an unregistered user with a registration key.
+    /// Key is optional if accessing_user is [`None`] or [`Role::Admin`]
     pub async fn register_user(
         &self,
-        user: &users::Model,
-        registration_key: &str,
+        user_id: &str,
+        registration_key: Option<String>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<users::Model> {
         if !self.invite_only() {
             return Err(ServiceError::InvalidData(
@@ -210,9 +214,21 @@ impl UserService {
             ));
         }
 
-        self.registration_key_service
-            .use_key(registration_key)
-            .await?;
+        let user = self.by_id_authorized(user_id, accessing_user).await?;
+
+        match registration_key {
+            Some(v) => self.registration_key_service.use_key(&v).await?,
+            None => {
+                // Registration key can be skipped if `accessing_user` is `None` or `Role::Admin`
+                if let Some(accessing_user) = accessing_user {
+                    if accessing_user.role != Role::Admin {
+                        return Err(ServiceError::InvalidData(
+                            "Missing `registration_key`.".into(),
+                        ));
+                    }
+                }
+            }
+        };
 
         let mut active_user = user.clone().into_active_model();
         active_user.registered = Set(true);
@@ -220,6 +236,29 @@ impl UserService {
             .update(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))
+    }
+
+    /// User specific version of `by_id_authorized`.
+    pub async fn by_id_authorized(
+        &self,
+        user_id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<users::Model> {
+        if let Some(accessing_user) = accessing_user {
+            if accessing_user.id == user_id || accessing_user.role == Role::Admin {
+                Ok(self.by_id(user_id.into()).await?)
+            } else {
+                Err(ServiceError::Forbidden {
+                    id: None,
+                    resource: self.resource_name(),
+                })
+            }
+        } else {
+            Err(ServiceError::Forbidden {
+                id: None,
+                resource: self.resource_name(),
+            })
+        }
     }
 
     /// Update and validate user settings.
@@ -236,13 +275,17 @@ impl UserService {
     /// The updated user model.
     pub async fn update_settings(
         &self,
-        user: &users::Model,
+        user_id: &str,
         email: Option<String>,
         username: Option<String>,
         password: Option<String>,
         current_password: Option<String>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<users::Model> {
-        self.verify_password_action(user, current_password).await?;
+        let user = self.by_id_authorized(user_id, accessing_user).await?;
+
+        self.verify_password_action(&user, current_password, accessing_user)
+            .await?;
 
         let mut active_user = user.clone().into_active_model();
 
@@ -305,7 +348,7 @@ impl UserService {
 
         // Unverify a user and send a verification email if email was changed (and SMTP enabled).
         if let Some(_) = email {
-            self.create_verification(user).await?;
+            self.create_verification(&user).await?;
         }
 
         Ok(self.by_id(user.id.to_owned()).await?)
@@ -315,14 +358,20 @@ impl UserService {
     /// This should be triggered only if the user is not verified.
     ///
     /// Returns [`String`] the email the verification was sent to.
-    pub async fn resend_verification(&self, user: &users::Model) -> ServiceResult<String> {
+    pub async fn resend_verification(
+        &self,
+        user_id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<String> {
+        let user = self.by_id_authorized(user_id, accessing_user).await?;
+
         if let None = self.smtp {
             return Err(ServiceError::Conflict("SMTP is disabled".into()));
         } else if user.verified {
             return Err(ServiceError::Conflict("User is already verified".into()));
         }
 
-        self.create_verification(user).await?;
+        self.create_verification(&user).await?;
         Ok(user.email.to_owned())
     }
 
@@ -391,8 +440,15 @@ impl UserService {
     ///
     /// * `user` - User to delete.
     /// * `password` - If provided, will make sure that the correct password is provided.
-    pub async fn delete(&self, user: &users::Model, password: Option<String>) -> ServiceResult<()> {
-        self.verify_password_action(user, password).await?;
+    pub async fn delete(
+        &self,
+        user_id: &str,
+        password: Option<String>,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<()> {
+        let user = self.by_id_authorized(user_id, accessing_user).await?;
+        self.verify_password_action(&user, password, accessing_user)
+            .await?;
 
         let mut files: Vec<String> = user
             .find_related(files::Entity)
@@ -478,23 +534,32 @@ impl UserService {
     /// Verify a password required action.
     /// If password method exists on the user, validate.
     /// This returns [`ServiceError::InvalidData`] if failed.
+    ///
+    /// This will always succeed if `accessing_user` is an admin trying to access a user other than themselves.
     async fn verify_password_action(
         &self,
         user: &users::Model,
         password: Option<String>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<()> {
-        if let Some(v) = self
-            .auth_method_service
-            .get_auth_method(&user.id, AuthMethod::Password)
-            .await
-            .to_option()?
-        {
-            if let Some(password) = password {
-                validate_password(&v.value, &password)?
-            } else {
-                return Err(ServiceError::InvalidData(
-                    "Password is required since you have a password.".into(),
-                ));
+        if let Some(accessing_user) = accessing_user {
+            if accessing_user.role == Role::Admin && user.id == accessing_user.id {
+                return Ok(());
+            }
+
+            if let Some(v) = self
+                .auth_method_service
+                .get_auth_method(&user.id, AuthMethod::Password)
+                .await
+                .to_option()?
+            {
+                if let Some(password) = password {
+                    validate_password(&v.value, &password)?
+                } else {
+                    return Err(ServiceError::InvalidData(
+                        "Password is required since you have a password.".into(),
+                    ));
+                }
             }
         }
 

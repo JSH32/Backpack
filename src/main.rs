@@ -3,6 +3,7 @@ use crate::{
     docs::ApiDoc,
     internal::GIT_VERSION,
     services::{
+        album::AlbumService,
         application::ApplicationService,
         auth::{auth_method::AuthMethodService, AuthService},
         file::FileService,
@@ -103,10 +104,14 @@ async fn main() -> std::io::Result<()> {
     let registration_key_service =
         Data::new(RegistrationKeyService::new(database.clone().into_inner()));
 
+    // Registration key service.
+    let album_service = Data::new(AlbumService::new(database.clone().into_inner()));
+
     // File service.
     let file_service = Data::new(
         FileService::new(
             database.clone().into_inner(),
+            album_service.clone().into_inner(),
             config.storage_provider.clone(),
             &config.storage_url,
             config.file_size_limit,
@@ -192,6 +197,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(database.clone())
             .app_data(registration_key_service.clone())
             .app_data(user_service.clone())
+            .app_data(album_service.clone())
             .app_data(file_service.clone())
             .app_data(auth_service.clone())
             .app_data(application_service.clone())
