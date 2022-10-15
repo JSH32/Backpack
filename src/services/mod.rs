@@ -1,6 +1,7 @@
 use crate::models::{MessageResponse, Page};
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use sea_orm::EntityTrait;
 use serde::Serialize;
 use thiserror::Error;
 

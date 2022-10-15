@@ -1,11 +1,9 @@
 use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 
 use super::{
     auth::AuthService,
-    prelude::{data_service_owned, DataService, UserOwnedService},
+    prelude::{data_service_owned, UserOwnedService},
     ServiceError, ServiceResult,
 };
 use crate::{
@@ -39,7 +37,9 @@ impl ApplicationService {
         id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<TokenResponse> {
-        let application = self.by_id_authorized(id.into(), accessing_user).await?;
+        let application = self
+            .by_id_authorized(id.into(), accessing_user, false)
+            .await?;
 
         self.auth_service
             .new_jwt(&application.user_id, Some(application.id))

@@ -67,7 +67,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Setup actix log
-    std::env::set_var("RUST_LOG", "actix_web=info,backpack=info,sqlx=error");
+    std::env::set_var("RUST_LOG", "actix_web=debug,backpack=info,sqlx=error");
     env_logger::init();
 
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();

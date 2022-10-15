@@ -55,7 +55,12 @@ pub trait UserOwnedService<
     M::Entity: EntityTrait<Model = M> + Related<users::Entity>,
 {
     /// Return the record if access granted. Otherwise [`ServiceError`]
-    async fn validate_access(&self, record: &M, user: Option<&users::Model>) -> ServiceResult<M> {
+    async fn validate_access(
+        &self,
+        record: &M,
+        user: Option<&users::Model>,
+        require_user: bool,
+    ) -> ServiceResult<M> {
         if let Some(user) = user {
             if user.role == Role::Admin {
                 return Ok(record.clone());
@@ -87,6 +92,11 @@ pub trait UserOwnedService<
                     resource: self.resource_name(),
                 }),
             }
+        } else if require_user && user.is_none() {
+            return Err(ServiceError::Forbidden {
+                id: None,
+                resource: self.resource_name(),
+            });
         } else {
             Ok(record.clone())
         }
@@ -119,7 +129,7 @@ pub trait UserOwnedService<
             None => return Err(ServiceError::NotFound(self.resource_name())),
         };
 
-        self.validate_access(&model, user)
+        self.validate_access(&model, user, false)
             .await?
             .into_active_model()
             .delete(db.as_ref())
@@ -136,8 +146,10 @@ pub trait UserOwnedService<
         &self,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
         user: Option<&users::Model>,
+        require_user: bool,
     ) -> ServiceResult<M> {
-        self.validate_access(&self.by_id(id).await?, user).await
+        self.validate_access(&self.by_id(id).await?, user, require_user)
+            .await
     }
 
     /// Just like [`by_condition`] but this will error if the user isn't allowed to **fully** access this resource.
@@ -147,8 +159,9 @@ pub trait UserOwnedService<
         &self,
         condition: Condition,
         user: Option<&users::Model>,
+        require_user: bool,
     ) -> ServiceResult<M> {
-        self.validate_access(&self.by_condition(condition).await?, user)
+        self.validate_access(&self.by_condition(condition).await?, user, require_user)
             .await
     }
 }
@@ -236,6 +249,26 @@ pub trait DataService<
             .map_err(|e| ServiceError::DbErr(e))?;
 
         Ok(format!("{} was deleted", self.resource_name()))
+    }
+
+    /// This is just a simple wrapper around [`get_page`] that ensures `user_id` and `accessing_user`'s ID are equal (or admin).
+    /// This doesn't have special relation logic like `by_id_authenticated`
+    async fn get_page_authorized(
+        &self,
+        page: usize,
+        page_size: usize,
+        condition: Option<Condition>,
+        user_id: &str,
+        accessing_user: &users::Model,
+    ) -> ServiceResult<ServicePage<M>> {
+        if accessing_user.id != user_id && accessing_user.role != Role::Admin {
+            Err(ServiceError::Forbidden {
+                id: None,
+                resource: format!("{} page", self.resource_name()),
+            })
+        } else {
+            self.get_page(page, page_size, condition).await
+        }
     }
 
     /// Get a [`ServicePage`] of [`M`].

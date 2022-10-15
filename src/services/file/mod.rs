@@ -21,7 +21,6 @@ use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
     database::entity::{files, sea_orm_active_enums::Role, users},
-    internal,
     models::{BatchDeleteResponse, BatchFileError, FileData, FileStats},
 };
 
@@ -71,17 +70,29 @@ impl FileService {
     /// # Arguments
     ///
     /// * `id` - File ID.
-    /// * `user_id` - User who owns this file. This will validate ownership.
-    pub async fn get_file(&self, id: &str, user_id: Option<&str>) -> ServiceResult<FileData> {
+    /// * `accessing_user` - User who is accessing this file.
+    pub async fn get_file(
+        &self,
+        id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<FileData> {
         let file = self.by_id(id.into()).await?;
 
-        if let Some(user_id) = user_id {
-            if file.uploader != user_id {
+        if let Some(accessing_user) = accessing_user {
+            if file.uploader != accessing_user.id
+                && accessing_user.role != Role::Admin
+                && !file.public
+            {
                 return Err(ServiceError::Forbidden {
                     id: Some(id.into()),
                     resource: self.resource_name(),
                 });
             }
+        } else {
+            return Err(ServiceError::Forbidden {
+                id: Some(id.into()),
+                resource: self.resource_name(),
+            });
         }
 
         Ok(self.to_file_data(file))
@@ -98,7 +109,9 @@ impl FileService {
         id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<String> {
-        let file = self.by_id_authorized(id.into(), accessing_user).await?;
+        let file = self
+            .by_id_authorized(id.into(), accessing_user, false)
+            .await?;
 
         file.clone()
             .delete(self.database.as_ref())
@@ -320,12 +333,7 @@ impl FileService {
         let mut conditions = Condition::all();
 
         if let Some(user_id) = user_id.to_owned() {
-            if let Some(accessing_user) = accessing_user {
-                conditions = conditions
-                    .add(files::Column::Uploader.eq(internal::user_id(&user_id, accessing_user)));
-            } else {
-                return Err(ServiceError::InvalidData("Invalid user provided.".into()));
-            }
+            conditions = conditions.add(files::Column::Uploader.eq(user_id));
         }
 
         if let Some(query) = query {
@@ -337,17 +345,16 @@ impl FileService {
 
             // Non admin can't access a private album owned by another user.
             if !album.public {
-                let _ = self
-                    .album_service
-                    .validate_access(&album, accessing_user)
-                    .await?;
-
                 if let Some(accessing_user) = accessing_user {
                     if accessing_user.role != Role::Admin && album.user_id != accessing_user.id {
-                        return Err(ServiceError::unauthorized());
+                        return Err(ServiceError::InvalidData(
+                            "Cannot access private album owned by another user.".into(),
+                        ));
                     }
                 } else {
-                    return Err(ServiceError::unauthorized());
+                    return Err(ServiceError::InvalidData(
+                        "Cannot access private album owned by another user.".into(),
+                    ));
                 }
             }
 
@@ -358,11 +365,17 @@ impl FileService {
             // Non admin can't access someone elses private files.
             if let (Some(user_id), false) = (user_id, public) {
                 if let Some(accessing_user) = accessing_user {
+                    // Not owned by the proper user or admin.
                     if accessing_user.role != Role::Admin && user_id != accessing_user.id {
-                        return Err(ServiceError::unauthorized());
+                        return Err(ServiceError::InvalidData(
+                            "Cannot access user's private files".into(),
+                        ));
                     }
                 } else {
-                    return Err(ServiceError::unauthorized());
+                    // No user provided.
+                    return Err(ServiceError::InvalidData(
+                        "Cannot access user's private files".into(),
+                    ));
                 }
             }
 

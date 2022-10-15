@@ -2,11 +2,8 @@ use actix_web::{delete, get, http::StatusCode, patch, post, put, web, Responder,
 
 use crate::{
     database::entity::sea_orm_active_enums::AuthMethod,
-    internal::{
-        self,
-        auth::{
-            auth_role, AllowApplication, AllowUnregistered, AllowUnverified, Auth, DenyApplication,
-        },
+    internal::auth::{
+        auth_role, AllowApplication, AllowUnregistered, AllowUnverified, Auth, DenyApplication,
     },
     models::{
         MessageResponse, RegistrationParams, UpdateUserSettings, UserCreateForm, UserData,
@@ -15,8 +12,8 @@ use crate::{
     services::{user::UserService, ToResponse},
 };
 
-mod application;
-mod file;
+pub mod application;
+pub mod file;
 
 pub fn get_routes() -> Scope {
     web::scope("/user")
@@ -52,7 +49,7 @@ async fn info(
     user: Auth<auth_role::User, AllowUnverified, AllowApplication, AllowUnregistered>,
 ) -> impl Responder {
     service
-        .by_id_authorized(&internal::user_id(&user_id, &user), Some(&user))
+        .by_id_authorized(&user_id, Some(&user))
         .await
         .to_response::<UserData>(StatusCode::OK)
 }
@@ -80,7 +77,7 @@ async fn settings(
 ) -> impl Responder {
     service
         .update_settings(
-            &internal::user_id(&user_id, &user),
+            &user_id,
             form.0.email,
             form.0.username,
             form.0.new_password,
@@ -111,11 +108,7 @@ async fn register_key(
     params: web::Query<RegistrationParams>,
 ) -> impl Responder {
     service
-        .register_user(
-            &internal::user_id(&user_id, &user),
-            params.key.clone(),
-            Some(&user),
-        )
+        .register_user(&user_id, params.key.clone(), Some(&user))
         .await
         .to_response::<UserData>(StatusCode::OK)
 }
@@ -172,10 +165,7 @@ async fn resend_verify(
     user_id: web::Path<String>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
 ) -> impl Responder {
-    match service
-        .resend_verification(&internal::user_id(&user_id, &user), Some(&user))
-        .await
-    {
+    match service.resend_verification(&user_id, Some(&user)).await {
         Ok(v) => MessageResponse::new(
             StatusCode::OK,
             &format!("Verification email resent to {}", v),
@@ -229,11 +219,7 @@ async fn delete(
     form: web::Json<UserDeleteForm>,
 ) -> impl Responder {
     match service
-        .delete(
-            &internal::user_id(&user_id, &user),
-            form.password.clone(),
-            Some(&user),
-        )
+        .delete(&user_id, form.password.clone(), Some(&user))
         .await
     {
         Ok(_) => MessageResponse::new(StatusCode::OK, "User has been deleted").http_response(),

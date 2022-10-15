@@ -16,27 +16,28 @@ pub fn get_routes() -> Scope {
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
-        context_path = "/api/application",
-        tag = "application",
-        responses((status = 200, body = ApplicationPage)),
-        params(
-            ("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
-        ),
-        security(("apiKey" = [])),
-    )]
+	context_path = "/api/user/{user_id}/application",
+	tag = "application",
+	responses((status = 200, body = ApplicationPage)),
+	params(
+		("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
+	),
+	security(("apiKey" = [])),
+)]
 #[get("/{page_number}")]
 async fn list(
     service: web::Data<ApplicationService>,
     page_number: web::Path<usize>,
-    user: Auth<auth_role::User>,
     user_id: web::Path<String>,
+    user: Auth<auth_role::User>,
 ) -> impl Responder {
-    // TODO: Authorized `get_page`
     service
-        .get_page(
+        .get_page_authorized(
             *page_number,
             5,
-            Some(Condition::any().add(applications::Column::UserId.eq(user.id.to_owned()))),
+            Some(Condition::any().add(applications::Column::UserId.eq(user_id.as_str()))),
+            &user_id,
+            &user,
         )
         .await
         .to_page_response::<ApplicationData>(StatusCode::OK)

@@ -1,14 +1,9 @@
 use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 
-use crate::internal;
-use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
-    models::{
-        BatchDeleteRequest, BatchDeleteResponse, FileData, FileQuery, FileStats, UploadConflict,
-        UploadFile,
-    },
+    models::{BatchDeleteRequest, BatchDeleteResponse, FileData, UploadConflict, UploadFile},
     services::{
         file::{FileService, UploadResult},
         ToMessageResponse, ToResponse,
@@ -102,7 +97,7 @@ async fn info(
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
     service
-        .get_file(&file_id, Some(&user.id))
+        .get_file(&file_id, Some(&user))
         .await
         .to_response::<FileData>(StatusCode::OK)
 }

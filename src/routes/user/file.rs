@@ -1,7 +1,7 @@
 use actix_http::StatusCode;
 use actix_web::{get, web, Responder, Scope};
 
-use crate::internal;
+use crate::internal::auth::AuthOptional;
 use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
@@ -36,18 +36,18 @@ async fn list(
     service: web::Data<FileService>,
     page_number: web::Path<usize>,
     user_id: web::Path<String>,
-    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+    user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
     query: web::Query<FileQuery>,
 ) -> impl Responder {
     service
         .get_file_page(
             *page_number,
             25,
-            Some(internal::user_id(&user_id, &user)),
+            Some(user_id.to_string()),
             query.query.to_owned(),
             query.album_id.to_owned(),
             query.public.to_owned(),
-            Some(&user),
+            user.user.as_ref(),
         )
         .await
         .to_page_response::<FileData>(StatusCode::OK)
@@ -70,7 +70,7 @@ async fn stats(
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
     service
-        .user_stats(&internal::user_id(&user_id, &user), Some(&user))
+        .user_stats(user_id.as_str(), Some(&user))
         .await
         .to_response::<FileStats>(StatusCode::OK)
 }

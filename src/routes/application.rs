@@ -6,9 +6,7 @@ use crate::{
     internal::auth::{auth_role, Auth},
     models::application::*,
     services::{
-        application::ApplicationService,
-        prelude::{DataService, UserOwnedService},
-        ToMessageResponse, ToPageResponse, ToResponse,
+        application::ApplicationService, prelude::UserOwnedService, ToMessageResponse, ToResponse,
     },
 };
 
@@ -18,44 +16,6 @@ pub fn get_routes() -> Scope {
         .service(create)
         .service(delete)
         .service(token)
-}
-
-mod user_routes {
-    use super::*;
-
-    pub fn get_scope() -> Scope {
-        web::scope("/applications").service(list)
-    }
-
-    /// Get all applications owned by a user.
-    /// - Allow unverified users: `false`
-    /// - Application token allowed: `false`
-    #[utoipa::path(
-        context_path = "/api/application",
-        tag = "application",
-        responses((status = 200, body = ApplicationPage)),
-        params(
-            ("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
-        ),
-        security(("apiKey" = [])),
-    )]
-    #[get("/list/{page_number}")]
-    async fn list(
-        service: web::Data<ApplicationService>,
-        page_number: web::Path<usize>,
-        user: Auth<auth_role::User>,
-        user_id: web::Path<String>,
-    ) -> impl Responder {
-        // TODO: Authorized get_page
-        service
-            .get_page(
-                *page_number,
-                5,
-                Some(Condition::any().add(applications::Column::UserId.eq(user.id.to_owned()))),
-            )
-            .await
-            .to_page_response::<ApplicationData>(StatusCode::OK)
-    }
 }
 
 /// Get token by application ID
@@ -109,6 +69,7 @@ async fn info(
         .by_condition_authorized(
             Condition::all().add(applications::Column::Id.eq(application_id.to_owned())),
             Some(&user),
+            true,
         )
         .await
         .to_response::<ApplicationData>(StatusCode::OK)
