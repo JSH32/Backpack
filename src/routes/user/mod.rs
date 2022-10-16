@@ -40,6 +40,7 @@ pub fn get_routes() -> Scope {
     responses(
         (status = 200, body = UserData)
     ),
+    params(("user_id" = str, Path)),
     security(("apiKey" = []))
 )]
 #[get("")]
@@ -66,6 +67,7 @@ async fn info(
         (status = 409, body = MessageResponse)
     ),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path)),
     request_body = UpdateUserSettings
 )]
 #[put("/settings")]
@@ -98,7 +100,10 @@ async fn settings(
         (status = 200, body = UserData),
         (status = 400, body = MessageResponse),
     ),
-    params(RegistrationParams)
+    params(
+        RegistrationParams,
+        ("user_id" = str, Path)
+    ),
 )]
 #[get("/register")]
 async fn register_key(
@@ -122,7 +127,7 @@ async fn register_key(
         (status = 400, body = MessageResponse),
         (status = 409, body = MessageResponse)
     ),
-    request_body = UserCreateForm
+    request_body = UserCreateForm,
 )]
 #[post("")]
 async fn create(
@@ -158,6 +163,7 @@ async fn create(
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path))
 )]
 #[patch("/verify/resend")]
 async fn resend_verify(
@@ -175,8 +181,9 @@ async fn resend_verify(
     }
 }
 
-/// Verify using a verification code. This will very whatever user the code was created for.
+/// Verify using a verification code.
 ///
+/// This will verify whatever user the code was created for.
 /// This will be disabled if `smtp` is disabled in server settings
 #[utoipa::path(
     context_path = "/api/user",
@@ -210,6 +217,7 @@ async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> imp
     ),
     request_body(content = UserDeleteForm, description = "Verify your password"),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path))
 )]
 #[delete("")]
 async fn delete(

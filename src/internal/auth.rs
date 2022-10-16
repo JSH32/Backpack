@@ -144,7 +144,8 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> From
     }
 }
 
-/// Optional version of [`Auth`], `user` is an [`Option`]
+/// Optional version of [`Auth`], `user` is an [`Option`].
+/// TODO: Figure out a better way to do stuff like this.
 pub struct AuthOptional<
     R: Role,
     VOpt: VerifiedOpt = DenyUnverified,
@@ -218,7 +219,7 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> From
                                 AuthOptional::new(Some(user))
                             }
                         }
-                        Err(e) => AuthOptional::new(None),
+                        Err(_) => AuthOptional::new(None),
                     }
                 }
                 None => AuthOptional::new(None),

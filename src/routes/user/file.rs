@@ -27,6 +27,7 @@ pub fn get_routes() -> Scope {
 	),
 	params(
 		("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
+		("user_id" = str, Path),
 		FileQuery
 	),
 	security(("apiKey" = [])),
@@ -62,6 +63,7 @@ async fn list(
 	tag = "file",
 	responses((status = 200, body = FileStats)),
 	security(("apiKey" = [])),
+	params(("user_id" = str, Path))
 )]
 #[get("/stats")]
 async fn stats(

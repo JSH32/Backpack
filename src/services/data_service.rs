@@ -183,7 +183,9 @@ pub trait DataService<
         // Get a table name as a string representation.
         // This assumes that every single table name is plural and ends with "s"
         let (_, entity) = self.get_data_source();
-        AsTitleCase(entity.table_name().trim_end_matches("s")).to_string()
+        AsTitleCase(entity.table_name().trim_end_matches("s"))
+            .to_string()
+            .to_lowercase()
     }
 
     /// Get [`Self::M`] by ID.
@@ -311,12 +313,4 @@ pub trait DataService<
             })
         }
     }
-}
-
-/// Remove first and last character of a string.
-fn remove_first_and_last(value: String) -> String {
-    let mut chars = value.chars();
-    chars.next();
-    chars.next_back();
-    chars.collect()
 }

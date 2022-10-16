@@ -2,7 +2,7 @@ use actix_multipart_extract::Multipart;
 use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
 
 use crate::{
-    internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
+    internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
     models::{BatchDeleteRequest, BatchDeleteResponse, FileData, UploadConflict, UploadFile},
     services::{
         file::{FileService, UploadResult},
@@ -94,10 +94,10 @@ async fn delete_files(
 async fn info(
     service: web::Data<FileService>,
     file_id: web::Path<String>,
-    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+    user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
     service
-        .get_file(&file_id, Some(&user))
+        .get_file(&file_id, user.as_ref())
         .await
         .to_response::<FileData>(StatusCode::OK)
 }

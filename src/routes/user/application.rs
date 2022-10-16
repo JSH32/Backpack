@@ -21,6 +21,7 @@ pub fn get_routes() -> Scope {
 	responses((status = 200, body = ApplicationPage)),
 	params(
 		("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
+		("user_id" = str, Path)
 	),
 	security(("apiKey" = [])),
 )]

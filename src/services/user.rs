@@ -39,6 +39,27 @@ pub struct UserService {
 
 data_service!(UserService, users);
 
+/// TODO: Maybe try doing something like this?
+/// User handle for performing operations on a user account.
+/// This has permission validation built in
+// pub struct UserHandle {
+//     user_id: String,
+//     /// User accessing the user.
+//     /// If this is [`None`] then all permissions are granted.
+//     accessor: Option<users::Model>,
+//     database: Arc<DatabaseConnection>,
+
+//     /// Either admin or accessor is the user themselves
+//     full_permissions: bool,
+// }
+
+// impl UserHandle {
+
+//     // pub async fn register(&self) -> ServiceResult<()> {
+//     //     self.user.
+//     // }
+// }
+
 impl UserService {
     pub fn new(
         database: Arc<DatabaseConnection>,
@@ -244,9 +265,22 @@ impl UserService {
         user_id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<users::Model> {
+        println!("{:?}", accessing_user);
+        let user_id = if user_id == "@me" {
+            if let Some(accessing_user) = accessing_user {
+                accessing_user.id.to_string()
+            } else {
+                return Err(ServiceError::InvalidData(
+                    "Must be logged in to use '@me'".into(),
+                ));
+            }
+        } else {
+            user_id.into()
+        };
+
         if let Some(accessing_user) = accessing_user {
             if accessing_user.id == user_id || accessing_user.role == Role::Admin {
-                Ok(self.by_id(user_id.into()).await?)
+                Ok(self.by_id(user_id).await?)
             } else {
                 Err(ServiceError::Forbidden {
                     id: None,
@@ -534,6 +568,7 @@ impl UserService {
     /// Verify a password required action.
     /// If password method exists on the user, validate.
     /// This returns [`ServiceError::InvalidData`] if failed.
+    /// If [`None`] is provided, this always succeeds.
     ///
     /// This will always succeed if `accessing_user` is an admin trying to access a user other than themselves.
     async fn verify_password_action(
@@ -543,7 +578,8 @@ impl UserService {
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<()> {
         if let Some(accessing_user) = accessing_user {
-            if accessing_user.role == Role::Admin && user.id == accessing_user.id {
+            // Admins still need to verify unless accessing another user.
+            if accessing_user.role == Role::Admin && user.id != accessing_user.id {
                 return Ok(());
             }
 

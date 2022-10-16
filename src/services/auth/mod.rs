@@ -134,45 +134,50 @@ impl AuthService {
         .map_err(|_| ServiceError::Unauthorized("You are not authorized".into()))?
         .claims;
 
-        let mut user = self.user_service.by_id(claims.sub).await?;
-
-        if !user.verified {
-            if self.user_service.smtp_enabled() {
-                if !allow_unverified {
-                    return Err(ServiceError::Unauthorized(
-                        "You need to verify your email".into(),
-                    ));
-                }
-            } else {
-                self.user_service.verify_user(&user).await?;
-                user.verified = true;
-            }
-        }
-
-        let mut application = None;
-
-        if let Some(application_id) = claims.application_id {
-            let application_service = self.application_service.read().unwrap().clone().unwrap();
-            match application_service.by_id(application_id).await {
-                Ok(v) => {
-                    // Check if perm JWT token belongs to user
-                    if v.user_id != user.id {
-                        return Err(ServiceError::unauthorized());
+        match self.user_service.by_id(claims.sub).await.to_option()? {
+            Some(mut user) => {
+                if !user.verified {
+                    if self.user_service.smtp_enabled() {
+                        if !allow_unverified {
+                            return Err(ServiceError::Unauthorized(
+                                "You need to verify your email".into(),
+                            ));
+                        }
+                    } else {
+                        self.user_service.verify_user(&user).await?;
+                        user.verified = true;
                     }
-
-                    // Update last accessed
-                    application_service.update_accessed(&v.id).await?;
-                    application = Some(v);
                 }
-                Err(e) => match e {
-                    ServiceError::NotFound(_) => return Err(ServiceError::unauthorized()),
-                    // Any other error should actually be an error.
-                    e => return Err(e),
-                },
-            }
-        }
 
-        Ok((user, application))
+                let mut application = None;
+
+                if let Some(application_id) = claims.application_id {
+                    let application_service =
+                        self.application_service.read().unwrap().clone().unwrap();
+
+                    match application_service.by_id(application_id).await {
+                        Ok(v) => {
+                            // Check if perm JWT token belongs to user
+                            if v.user_id != user.id {
+                                return Err(ServiceError::unauthorized());
+                            }
+
+                            // Update last accessed
+                            application_service.update_accessed(&v.id).await?;
+                            application = Some(v);
+                        }
+                        Err(e) => match e {
+                            ServiceError::NotFound(_) => return Err(ServiceError::unauthorized()),
+                            // Any other error should actually be an error.
+                            e => return Err(e),
+                        },
+                    }
+                }
+
+                Ok((user, application))
+            }
+            None => Err(ServiceError::unauthorized()),
+        }
     }
 
     /// Create a new JWT for the user

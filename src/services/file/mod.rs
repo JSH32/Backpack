@@ -78,21 +78,20 @@ impl FileService {
     ) -> ServiceResult<FileData> {
         let file = self.by_id(id.into()).await?;
 
-        if let Some(accessing_user) = accessing_user {
-            if file.uploader != accessing_user.id
-                && accessing_user.role != Role::Admin
-                && !file.public
-            {
+        if !file.public {
+            if let Some(accessing_user) = accessing_user {
+                if file.uploader != accessing_user.id && accessing_user.role != Role::Admin {
+                    return Err(ServiceError::Forbidden {
+                        id: Some(id.into()),
+                        resource: self.resource_name(),
+                    });
+                }
+            } else {
                 return Err(ServiceError::Forbidden {
                     id: Some(id.into()),
                     resource: self.resource_name(),
                 });
             }
-        } else {
-            return Err(ServiceError::Forbidden {
-                id: Some(id.into()),
-                resource: self.resource_name(),
-            });
         }
 
         Ok(self.to_file_data(file))
@@ -147,11 +146,11 @@ impl FileService {
             .map_err(|e| ServiceError::DbErr(e))?;
 
         // All IDs found in the query.
-        let ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
+        let found_ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
 
         // Add errors for every ID in the request that was not found in the query.
-        for id in &ids {
-            if !ids.contains(id) {
+        for id in ids {
+            if !found_ids.contains(id) {
                 response.errors.push(BatchFileError {
                     id: id.to_string(),
                     error: "That file does not exist.".to_string(),
