@@ -72,9 +72,9 @@ async fn main() -> std::io::Result<()> {
 
     let fig_font = FIGfont::from_content(include_str!("./resources/small.flf")).unwrap();
     let figure = fig_font.convert("Backpack").unwrap();
-    println!("{}", figure.to_string().purple());
     println!(
-        "Running Backpack on version: {}",
+        "{}\nRunning Backpack on version: {}",
+        figure.to_string().purple(),
         GIT_VERSION.to_string().yellow()
     );
 

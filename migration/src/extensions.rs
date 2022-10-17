@@ -37,7 +37,6 @@ pub trait ManagerExtension {
     ) -> Result<(), DbErr>;
 
     /// Alternative [`SchemaManager::drop_foreign_key`] that supports SQlite.
-    /// This is more dangerous and can mess up your schema due to overwriting the master in SQlite.
     /// `fkey_name` will be used for all databases except SQlite which will use `column` since fkeys aren't named in SQlite.
     async fn drop_fkey<T: Iden + 'static, C: Iden + 'static>(
         &self,

@@ -33,7 +33,7 @@ pub mod oauth;
 pub struct AuthService {
     auth_method_service: Arc<AuthMethodService>,
     user_service: Arc<UserService>,
-    // TODO: Figure out how to avoid this circular dependency.
+    // TODO: Figure out how to cleanly avoid this circular dependency.
     application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
     api_url: actix_http::Uri,
     jwt_key: String,
