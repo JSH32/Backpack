@@ -14,7 +14,6 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get a paginated list of files
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -56,7 +55,6 @@ async fn list(
 }
 
 /// Get file stats for user
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(

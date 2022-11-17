@@ -19,7 +19,6 @@ pub fn get_routes() -> Scope {
 }
 
 /// Delete file data by ID.
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -49,7 +48,6 @@ async fn delete_file(
 
 /// Delete multiple files by ID.
 /// This will ignore any invalid IDs.
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -74,7 +72,6 @@ async fn delete_files(
 }
 
 /// Get file data by ID
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -104,7 +101,6 @@ async fn info(
 
 /// Upload a file.
 /// You can only upload a file for yourself regardless of admin status.
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(

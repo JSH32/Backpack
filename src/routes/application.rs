@@ -19,7 +19,6 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get token by application ID
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -47,7 +46,6 @@ async fn token(
 }
 
 /// Get token info
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -76,7 +74,6 @@ async fn info(
 }
 
 /// Create an application
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -102,7 +99,6 @@ async fn create(
 }
 
 /// Delete an application
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
