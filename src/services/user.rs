@@ -265,7 +265,6 @@ impl UserService {
         user_id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<users::Model> {
-        println!("{:?}", accessing_user);
         let user_id = if user_id == "@me" {
             if let Some(accessing_user) = accessing_user {
                 accessing_user.id.to_string()

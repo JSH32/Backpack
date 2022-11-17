@@ -35,14 +35,15 @@ pub fn get_routes() -> Scope {
 #[get("/list/{page_number}")]
 async fn list(
     service: web::Data<FileService>,
-    page_number: web::Path<usize>,
-    user_id: web::Path<String>,
+    params: web::Path<(String, usize)>,
     user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
     query: web::Query<FileQuery>,
 ) -> impl Responder {
+    let (user_id, page_number) = params.to_owned();
+
     service
         .get_file_page(
-            *page_number,
+            page_number,
             25,
             Some(user_id.to_string()),
             query.query.to_owned(),

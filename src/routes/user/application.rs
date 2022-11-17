@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/applications").service(list)
+    web::scope("/application").service(list)
 }
 
 /// Get all applications owned by a user.
@@ -28,13 +28,14 @@ pub fn get_routes() -> Scope {
 #[get("/{page_number}")]
 async fn list(
     service: web::Data<ApplicationService>,
-    page_number: web::Path<usize>,
-    user_id: web::Path<String>,
+    params: web::Path<(String, usize)>,
     user: Auth<auth_role::User>,
 ) -> impl Responder {
+    let (user_id, page_number) = params.to_owned();
+
     service
         .get_page_authorized(
-            *page_number,
+            page_number,
             5,
             Some(Condition::any().add(applications::Column::UserId.eq(user_id.as_str()))),
             &user_id,

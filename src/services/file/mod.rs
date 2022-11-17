@@ -332,7 +332,13 @@ impl FileService {
         let mut conditions = Condition::all();
 
         if let Some(user_id) = user_id.to_owned() {
-            conditions = conditions.add(files::Column::Uploader.eq(user_id));
+            conditions = conditions.add(files::Column::Uploader.eq(
+                if let (Some(accessing_user), "@me") = (accessing_user, user_id.as_ref()) {
+                    accessing_user.id.to_owned()
+                } else {
+                    user_id
+                },
+            ));
         }
 
         if let Some(query) = query {

@@ -263,7 +263,7 @@ pub trait DataService<
         user_id: &str,
         accessing_user: &users::Model,
     ) -> ServiceResult<ServicePage<M>> {
-        if accessing_user.id != user_id && accessing_user.role != Role::Admin {
+        if accessing_user.id != user_id && accessing_user.role != Role::Admin && user_id != "@me" {
             Err(ServiceError::Forbidden {
                 id: None,
                 resource: format!("{} page", self.resource_name()),
