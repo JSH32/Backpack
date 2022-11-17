@@ -39,7 +39,6 @@ async fn create(
 }
 
 /// Get registration keys
-/// - Minimum required role: `admin`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -64,7 +63,6 @@ async fn list(
 }
 
 /// Get a single registration key
-/// - Minimum required role: `admin`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -92,7 +90,6 @@ async fn get_one(
 }
 
 /// Delete a registration key
-/// - Minimum required role: `admin`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
