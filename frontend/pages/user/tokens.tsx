@@ -78,7 +78,7 @@ const Tokens: NextPage = () => {
   }
 
   const getApplicationPage = React.useCallback((page: number) => {
-    api.application.list(page)
+    api.application.list(page.toString(), "@me")
       .then(data => {
         setApplications(data)
         setLoadingTokens(false)
@@ -143,6 +143,7 @@ const Tokens: NextPage = () => {
 
   // Initial load page 1.
   React.useEffect(() => {
+    console.log("hi")
     getApplicationPage(1)
   }, [])
 

@@ -37,7 +37,13 @@ async fn list(
         .get_page_authorized(
             page_number,
             5,
-            Some(Condition::any().add(applications::Column::UserId.eq(user_id.as_str()))),
+            Some(
+                Condition::any().add(applications::Column::UserId.eq(if user_id == "@me" {
+                    user.id.to_owned()
+                } else {
+                    user_id.to_owned()
+                })),
+            ),
             &user_id,
             &user,
         )

@@ -21,7 +21,7 @@ export const Authenticated: React.FC<{
     React.useEffect(() => {
         // Since this might be loaded on initial page load MobX async constructor might not be done running
         // Make the HTTP request just in case this is the initial load
-        api.user.info()
+        api.user.info("@me")
             .then(data => {
                 setUserData(data)
             })
@@ -46,7 +46,7 @@ export const Authenticated: React.FC<{
             <RegisterPrompt/>
         : appInfo?.smtp && !allowUnverified && !userData.verified ? 
             // SMTP verification was enabled and the user was not verified
-            <VerificationMessage email={userData.email}/> 
+            <VerificationMessage email={userData.email!}/> 
         :
             // Everything is fine. Load page.
             <Page>{children}</Page>

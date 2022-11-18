@@ -136,6 +136,7 @@ const Connections: NextPage = observer(() => {
 
 	return <SettingsLayout tab={ConnectionsTab}>
 		<Stack spacing={2}>
+			{ Object.values(appInfo?.oauthProviders as object).every(v => !v) && <Text>No available connections.</Text> }
 			{appInfo?.oauthProviders.google && <SocialItem
 				provider={OAuthProvider.GOOGLE}
 				username={store?.authMethods?.google}

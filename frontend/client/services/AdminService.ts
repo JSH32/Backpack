@@ -38,7 +38,6 @@ export class AdminService {
 
     /**
      * Get registration keys
-     * - Minimum required role: `admin`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -60,7 +59,6 @@ export class AdminService {
 
     /**
      * Get a single registration key
-     * - Minimum required role: `admin`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -85,7 +83,6 @@ export class AdminService {
 
     /**
      * Delete a registration key
-     * - Minimum required role: `admin`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *

@@ -4,14 +4,20 @@
 import type { UserRole } from './UserRole';
 
 export type UserData = {
-    email: string;
+    /**
+     * This will not be present if accessed by another user.
+     */
+    email?: string;
     id: string;
     /**
      * Has the user already verified with a registration key?
      */
-    registered: boolean;
+    registered?: boolean;
     role: UserRole;
     username: string;
-    verified: boolean;
+    /**
+     * This will not be present if accessed by another user.
+     */
+    verified?: boolean;
 };
 

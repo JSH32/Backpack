@@ -56,6 +56,7 @@ mod models;
 mod routes;
 mod services;
 
+/// TODO: Move to admin panel
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {

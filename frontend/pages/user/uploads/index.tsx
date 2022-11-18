@@ -31,7 +31,7 @@ const UploadFiles: React.FC = () => {
     const toastIdRef = React.useRef<ToastId>()
     
     React.useEffect(() => {
-        api.file.stats()
+        api.file.stats("@me")
             .then(stats => setUsage(convertBytes(stats.usage)))
             .catch(() => setUsage("0 Bytes"))
     }, [searchReload])
@@ -86,7 +86,7 @@ const UploadFiles: React.FC = () => {
 
     const deleteCallback = React.useCallback((id: string) => {
         return api.file.deleteFile(id)
-            .then(api.file.stats)
+            .then(() => api.file.stats("@me"))
             .then(stats => setUsage(convertBytes(stats.usage)))
             .catch(() => setUsage("0 Bytes"))
     }, [])
@@ -124,7 +124,7 @@ const UploadFiles: React.FC = () => {
                         <Divider/>
                         <FileSearch
                             key={searchReload}
-                            onSearch={(page, query) => api.file.list(page, query)}
+                            onSearch={(page, query) => api.file.list(page.toString(), "@me", query)}
                             onDelete={deleteCallback}
                             onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
                     </Stack>

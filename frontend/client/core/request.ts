@@ -2,7 +2,7 @@
 /* tslint:disable */
 import axios from 'axios';
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import FormData from 'form-data';
+import * as FormData from 'form-data';
 
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';

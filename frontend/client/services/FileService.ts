@@ -16,8 +16,8 @@ export class FileService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Upload a file
-     * - Minimum required role: `user`
+     * Upload a file.
+     * You can only upload a file for yourself regardless of admin status.
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
      *
@@ -43,7 +43,6 @@ export class FileService {
     /**
      * Delete multiple files by ID.
      * This will ignore any invalid IDs.
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
      *
@@ -63,55 +62,7 @@ export class FileService {
     }
 
     /**
-     * Get a paginated list of files
-     * - Minimum required role: `user`
-     * - Allow unverified users: `false`
-     * - Application token allowed: `true`
-     *
-     * @param pageNumber Page to get files by (starts at 1)
-     * @param query
-     * @returns FilePage
-     * @throws ApiError
-     */
-    public list(
-        pageNumber: number,
-        query?: string,
-    ): CancelablePromise<FilePage> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/file/list/{page_number}',
-            path: {
-                'page_number': pageNumber,
-            },
-            query: {
-                'query': query,
-            },
-            errors: {
-                400: `Invalid page number`,
-                404: `Page not found`,
-            },
-        });
-    }
-
-    /**
-     * Get file stats for user
-     * - Minimum required role: `user`
-     * - Allow unverified users: `false`
-     * - Application token allowed: `true`
-     *
-     * @returns FileStats
-     * @throws ApiError
-     */
-    public stats(): CancelablePromise<FileStats> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/file/stats',
-        });
-    }
-
-    /**
      * Get file data by ID
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
      *
@@ -137,7 +88,6 @@ export class FileService {
 
     /**
      * Delete file data by ID.
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
      *
@@ -157,6 +107,66 @@ export class FileService {
             errors: {
                 403: `Access denied`,
                 404: `File not found`,
+            },
+        });
+    }
+
+    /**
+     * Get a paginated list of files
+     * - Allow unverified users: `false`
+     * - Application token allowed: `true`
+     *
+     * @param pageNumber Page to get files by (starts at 1)
+     * @param userId
+     * @param query Query by name of file.
+     * @param albumId For non admins, this must be a public album
+     * @param _public If accessing another user as a non admin, this must be `true`
+     * @returns FilePage
+     * @throws ApiError
+     */
+    public list(
+        pageNumber: string,
+        userId: string,
+        query?: string,
+        albumId?: string,
+        _public?: boolean,
+    ): CancelablePromise<FilePage> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/user/{user_id}/file/list/{page_number}',
+            path: {
+                'page_number': pageNumber,
+                'user_id': userId,
+            },
+            query: {
+                'query': query,
+                'album_id': albumId,
+                'public': _public,
+            },
+            errors: {
+                400: `Invalid page number`,
+                404: `Page not found`,
+            },
+        });
+    }
+
+    /**
+     * Get file stats for user
+     * - Allow unverified users: `false`
+     * - Application token allowed: `true`
+     *
+     * @param userId
+     * @returns FileStats
+     * @throws ApiError
+     */
+    public stats(
+        userId: string,
+    ): CancelablePromise<FileStats> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/user/{user_id}/file/stats',
+            path: {
+                'user_id': userId,
             },
         });
     }
