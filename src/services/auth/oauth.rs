@@ -35,7 +35,7 @@ impl Into<AuthMethod> for OAuthProvider {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OAuthState {
     /// User ID to attach account to.
     pub user_id: Option<String>,
@@ -213,6 +213,7 @@ pub struct OAuthUserData {
     pub verified: bool,
 }
 
+#[derive(Debug)]
 pub struct OAuthClient {
     http_client: reqwest::Client,
     client: BasicClient,

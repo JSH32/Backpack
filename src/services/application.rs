@@ -8,10 +8,12 @@ use super::{
 };
 use crate::{
     database::entity::{applications, users},
+    internal::validate_length,
     models::{ApplicationData, TokenResponse},
 };
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct ApplicationService {
     database: Arc<DatabaseConnection>,
     auth_service: Arc<AuthService>,
@@ -72,15 +74,7 @@ impl ApplicationService {
         user_id: &str,
         name: &str,
     ) -> ServiceResult<ApplicationData> {
-        if name.len() > 16 {
-            return Err(ServiceError::InvalidData(
-                "Application name too long (maximum 16 characters)".into(),
-            ));
-        } else if name.len() < 4 {
-            return Err(ServiceError::InvalidData(
-                "Application name too short (minimum 4 characters)".into(),
-            ));
-        }
+        validate_length("Application name", 4, 16, name)?;
 
         // Application with the same name owned by the same user already exists.
         if let Some(_) = applications::Entity::find()

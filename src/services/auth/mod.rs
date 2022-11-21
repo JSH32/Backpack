@@ -4,15 +4,13 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use rand::{rngs::OsRng, Rng};
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 use crate::{
     config::OAuthConfig,
     database::entity::{applications, auth_methods, sea_orm_active_enums::AuthMethod, users},
+    internal::lateinit::LateInit,
     models::{OAuthRequest, TokenResponse},
 };
 
@@ -30,11 +28,11 @@ pub mod auth_method;
 pub mod oauth;
 
 /// Handles authentication and validation.
+#[derive(Debug)]
 pub struct AuthService {
     auth_method_service: Arc<AuthMethodService>,
     user_service: Arc<UserService>,
-    // TODO: Figure out how to cleanly avoid this circular dependency.
-    application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
+    application_service: Arc<LateInit<ApplicationService>>,
     api_url: actix_http::Uri,
     jwt_key: String,
     /// Root URL of client.
@@ -49,7 +47,7 @@ impl AuthService {
     pub fn new(
         auth_method_service: Arc<AuthMethodService>,
         user_service: Arc<UserService>,
-        application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
+        application_service: Arc<LateInit<ApplicationService>>,
         api_url: &str,
         jwt_key: &str,
         client_url: &str,
@@ -152,10 +150,7 @@ impl AuthService {
                 let mut application = None;
 
                 if let Some(application_id) = claims.application_id {
-                    let application_service =
-                        self.application_service.read().unwrap().clone().unwrap();
-
-                    match application_service.by_id(application_id).await {
+                    match self.application_service.by_id(application_id).await {
                         Ok(v) => {
                             // Check if perm JWT token belongs to user
                             if v.user_id != user.id {
@@ -163,7 +158,7 @@ impl AuthService {
                             }
 
                             // Update last accessed
-                            application_service.update_accessed(&v.id).await?;
+                            self.application_service.update_accessed(&v.id).await?;
                             application = Some(v);
                         }
                         Err(e) => match e {

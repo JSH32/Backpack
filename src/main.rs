@@ -1,7 +1,7 @@
 use crate::{
     database::entity::files,
     docs::ApiDoc,
-    internal::GIT_VERSION,
+    internal::{lateinit::LateInit, GIT_VERSION},
     services::{
         album::AlbumService,
         application::ApplicationService,
@@ -19,7 +19,7 @@ use figlet_rs::FIGfont;
 use indicatif::{ProgressBar, ProgressStyle};
 use models::MessageResponse;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, Statement};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use tokio::{
     runtime::Builder,
     sync::mpsc::{unbounded_channel, UnboundedSender},
@@ -105,8 +105,13 @@ async fn main() -> std::io::Result<()> {
     let registration_key_service =
         Data::new(RegistrationKeyService::new(database.clone().into_inner()));
 
+    let file_service_late = Arc::new(LateInit::<FileService>::new());
+
     // Registration key service.
-    let album_service = Data::new(AlbumService::new(database.clone().into_inner()));
+    let album_service = Data::new(AlbumService::new(
+        database.clone().into_inner(),
+        file_service_late.clone(),
+    ));
 
     // File service.
     let file_service = Data::new(
@@ -119,6 +124,8 @@ async fn main() -> std::io::Result<()> {
         )
         .await,
     );
+
+    file_service_late.init_value(file_service.clone().into_inner());
 
     let auth_method_service = Data::new(AuthMethodService::new(database.clone().into_inner()));
 
@@ -133,13 +140,13 @@ async fn main() -> std::io::Result<()> {
         config.invite_only,
     ));
 
-    let application_service_container = Arc::new(RwLock::new(None));
+    let application_service_late = Arc::new(LateInit::<ApplicationService>::new());
 
     // Auth service.
     let auth_service = Data::new(AuthService::new(
         auth_method_service.clone().into_inner(),
         user_service.clone().into_inner(),
-        application_service_container.clone(),
+        application_service_late.clone(),
         &config.api_url,
         &config.jwt_key,
         &config.client_url,
@@ -154,10 +161,7 @@ async fn main() -> std::io::Result<()> {
         auth_service.clone().into_inner(),
     ));
 
-    application_service_container
-        .write()
-        .unwrap()
-        .replace(application_service.clone().into_inner());
+    application_service_late.init_value(application_service.clone().into_inner());
 
     // If the generate thumbnails flag is enabled
     if args.generate_thumbnails {

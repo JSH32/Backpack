@@ -26,6 +26,7 @@ use crate::{
     internal::random_string,
 };
 
+#[derive(Debug)]
 pub struct UserService {
     database: Arc<DatabaseConnection>,
     registration_key_service: Arc<RegistrationKeyService>,

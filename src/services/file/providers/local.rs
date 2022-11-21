@@ -5,6 +5,7 @@ use super::StorageProvider;
 use async_trait::async_trait;
 use tokio::io::AsyncWriteExt;
 
+#[derive(Debug)]
 pub struct LocalProvider {
     path: PathBuf,
 }

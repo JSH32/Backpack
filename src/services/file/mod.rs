@@ -28,6 +28,7 @@ use crate::{
 ///
 /// Files contain extra fields outside of the model which are located in the [`FileData`] model.
 /// Most operations in [`FileService`] return [`FileData`] instead of [`files::Model`].
+#[derive(Debug)]
 pub struct FileService {
     /// Public storage handle.
     /// Use at your own risk.
@@ -65,7 +66,7 @@ impl FileService {
         }
     }
 
-    /// Get a file. If you don't need ownership validation use `by_id`
+    /// Get a file. If you don't need access validation use `by_id`
     ///
     /// # Arguments
     ///
@@ -78,20 +79,9 @@ impl FileService {
     ) -> ServiceResult<FileData> {
         let file = self.by_id(id.into()).await?;
 
+        // Validate access if private.
         if !file.public {
-            if let Some(accessing_user) = accessing_user {
-                if file.uploader != accessing_user.id && accessing_user.role != Role::Admin {
-                    return Err(ServiceError::Forbidden {
-                        id: Some(id.into()),
-                        resource: self.resource_name(),
-                    });
-                }
-            } else {
-                return Err(ServiceError::Forbidden {
-                    id: Some(id.into()),
-                    resource: self.resource_name(),
-                });
-            }
+            let _ = self.validate_access(&file, accessing_user, true).await?;
         }
 
         Ok(self.to_file_data(file))
