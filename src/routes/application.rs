@@ -22,17 +22,17 @@ pub fn get_routes() -> Scope {
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
-        context_path = "/api/application",
-        tag = "application",
-        responses(
-            (status = 200, body = TokenResponse),
-            (status = 404, body = MessageResponse, description = "Application not found")
-        ),
-        params(
-            ("application_id" = str, Path, description = "Application ID to get token for"),
-        ),
-        security(("apiKey" = [])),
-    )]
+    context_path = "/api/application",
+    tag = "application",
+    responses(
+        (status = 200, body = TokenResponse),
+        (status = 404, body = MessageResponse, description = "Application not found")
+    ),
+    params(
+        ("application_id" = str, Path, description = "Application ID to get token for"),
+    ),
+    security(("apiKey" = [])),
+)]
 #[get("/{application_id}/token")]
 async fn token(
     service: web::Data<ApplicationService>,

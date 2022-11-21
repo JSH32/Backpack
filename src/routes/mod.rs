@@ -11,6 +11,7 @@ use actix_web::{get, web, HttpResponse, Responder, Scope};
 use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait};
 
 pub mod admin;
+pub mod album;
 pub mod application;
 pub mod auth;
 pub mod file;

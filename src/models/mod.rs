@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod album;
 pub mod application;
 pub mod auth;
 pub mod file;

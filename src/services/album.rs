@@ -8,6 +8,7 @@ use crate::{
     database::entity::{albums, files, users},
     internal::{lateinit::LateInit, validate_length},
 };
+
 use std::sync::Arc;
 
 use super::{file::FileService, prelude::*};
@@ -65,7 +66,7 @@ impl AlbumService {
         id: &str,
         delete_files: bool,
         accessing_user: Option<&users::Model>,
-    ) -> ServiceResult<()> {
+    ) -> ServiceResult<albums::Model> {
         let album = self
             .by_id_authorized(id.into(), accessing_user, true)
             .await?;
@@ -87,13 +88,13 @@ impl AlbumService {
         } else {
             files::Entity::update_many()
                 .col_expr(files::Column::AlbumId, Expr::value::<Option<String>>(None))
-                .filter(files::Column::AlbumId.eq(album.id))
+                .filter(files::Column::AlbumId.eq(album.id.to_owned()))
                 .exec(self.database.as_ref())
                 .await
                 .map_err(|e| ServiceError::DbErr(e))?;
         }
 
-        Ok(())
+        Ok(album)
     }
 
     /// Create an album.

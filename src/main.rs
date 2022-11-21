@@ -207,6 +207,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(auth_service.clone())
             .app_data(application_service.clone())
             .app_data(auth_method_service.clone())
+            .app_data(album_service.clone())
             .route(
                 "/api/docs/openapi.json",
                 web::get().to(|| async { ApiDoc::openapi().to_pretty_json() }),
@@ -222,6 +223,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
                     .service(routes::file::get_routes())
+                    .service(routes::album::get_routes())
                     .service(routes::admin::get_routes(invite_only))
                     .service(routes::get_routes()),
             )
