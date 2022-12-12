@@ -1,5 +1,5 @@
 use crate::{
-    database::entity::{files, settings},
+    database::entity::{settings, uploads},
     models::{AppInfo, OAuthProviders},
     services::{
         auth::{oauth::OAuthProvider, AuthService},
@@ -14,7 +14,7 @@ pub mod admin;
 pub mod album;
 pub mod application;
 pub mod auth;
-pub mod file;
+pub mod upload;
 pub mod user;
 
 pub fn get_routes() -> Scope {
@@ -51,7 +51,7 @@ async fn info(
                 },
                 user_service.invite_only(),
                 user_service.smtp_enabled(),
-                match files::Entity::find()
+                match uploads::Entity::find()
                     .count(database.as_ref())
                     .await
                     .map_err(|e| ServiceError::DbErr(e))

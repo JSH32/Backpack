@@ -20,16 +20,16 @@ use self::providers::StorageProvider;
 use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
-    database::entity::{files, sea_orm_active_enums::Role, users},
-    models::{BatchDeleteResponse, BatchFileError, FileData, FileStats},
+    database::entity::{sea_orm_active_enums::Role, uploads, users},
+    models::{BatchDeleteResponse, BatchFileError, FileStats, UploadData},
 };
 
 /// Service for managing files.
 ///
-/// Files contain extra fields outside of the model which are located in the [`FileData`] model.
-/// Most operations in [`FileService`] return [`FileData`] instead of [`files::Model`].
+/// Files contain extra fields outside of the model which are located in the [`UploadData`] model.
+/// Most operations in [`UploadService`] return [`UploadData`] instead of [`uploads::Model`].
 #[derive(Debug)]
-pub struct FileService {
+pub struct UploadService {
     /// Public storage handle.
     /// Use at your own risk.
     pub storage: Box<dyn StorageProvider>,
@@ -39,17 +39,17 @@ pub struct FileService {
     file_size_limit: usize,
 }
 
-data_service_owned!(FileService, files);
+data_service_owned!(UploadService, uploads);
 
 /// Result from uploading a file.
 pub enum UploadResult {
     /// Upload success.
-    Success(FileData),
+    Success(UploadData),
     /// File was already uploaded.
-    Conflict(FileData),
+    Conflict(UploadData),
 }
 
-impl FileService {
+impl UploadService {
     pub async fn new(
         database: Arc<DatabaseConnection>,
         album_service: Arc<AlbumService>,
@@ -76,7 +76,7 @@ impl FileService {
         &self,
         id: &str,
         accessing_user: Option<&users::Model>,
-    ) -> ServiceResult<FileData> {
+    ) -> ServiceResult<UploadData> {
         let file = self.by_id(id.into()).await?;
 
         // Validate access if private.
@@ -84,7 +84,7 @@ impl FileService {
             let _ = self.validate_access(&file, accessing_user, true).await?;
         }
 
-        Ok(self.to_file_data(file))
+        Ok(self.to_upload_data(file))
     }
 
     /// Delete a file.
@@ -129,8 +129,8 @@ impl FileService {
     ) -> ServiceResult<BatchDeleteResponse> {
         let mut response = BatchDeleteResponse::default();
 
-        let files = files::Entity::find()
-            .filter(files::Column::Id.is_in(ids.clone()))
+        let files = uploads::Entity::find()
+            .filter(uploads::Column::Id.is_in(ids.clone()))
             .all(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
@@ -203,17 +203,17 @@ impl FileService {
 
         let hash = &format!("{:x}", Sha256::digest(&buffer));
 
-        let file_exists = files::Entity::find()
-            .filter(files::Column::Hash.eq(hash.to_owned()))
+        let file_exists = uploads::Entity::find()
+            .filter(uploads::Column::Hash.eq(hash.to_owned()))
             .one(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
         if let Some(file) = file_exists {
-            return Ok(UploadResult::Conflict(self.to_file_data(file)));
+            return Ok(UploadResult::Conflict(self.to_upload_data(file)));
         }
 
-        let mut file = files::ActiveModel {
+        let mut file = uploads::ActiveModel {
             uploader: Set(user_id.into()),
             name: Set(filename.to_owned()),
             original_name: Set(name.into()),
@@ -253,7 +253,7 @@ impl FileService {
             }
         }
 
-        Ok(UploadResult::Success(self.to_file_data(file)))
+        Ok(UploadResult::Success(self.to_upload_data(file)))
     }
 
     pub async fn user_stats(
@@ -270,11 +270,11 @@ impl FileService {
             }
         }
 
-        let expr = files::Entity::find()
+        let expr = uploads::Entity::find()
             .select_only()
-            .filter(files::Column::Uploader.eq(user_id.clone()))
+            .filter(uploads::Column::Uploader.eq(user_id.clone()))
             .column_as(
-                files::Column::Size.sum().cast_as(Alias::new("BIGINT")),
+                uploads::Column::Size.sum().cast_as(Alias::new("BIGINT")),
                 "sum",
             )
             .build(self.database.get_database_backend())
@@ -304,12 +304,12 @@ impl FileService {
     ///
     /// * `page` - Page number
     /// * `page_size` - Size of each page
-    /// * `user_id` - User who should own these files
-    /// * `query` - Name of the file (search)
+    /// * `user_id` - User who should own these uploads
+    /// * `query` - Name of the upload (search)
     /// * `album_id` - Optional album
-    /// * `public` - Public file (query)
-    /// * `accessing_user` - User accessing the files
-    pub async fn get_file_page(
+    /// * `public` - Public upload (query)
+    /// * `accessing_user` - User accessing the uploads
+    pub async fn get_upload_page(
         &self,
         page: usize,
         page_size: usize,
@@ -318,11 +318,11 @@ impl FileService {
         album_id: Option<String>,
         public: Option<bool>,
         accessing_user: Option<&users::Model>,
-    ) -> ServiceResult<ServicePage<FileData>> {
+    ) -> ServiceResult<ServicePage<UploadData>> {
         let mut conditions = Condition::all();
 
         if let Some(user_id) = user_id.to_owned() {
-            conditions = conditions.add(files::Column::Uploader.eq(
+            conditions = conditions.add(uploads::Column::Uploader.eq(
                 if let (Some(accessing_user), "@me") = (accessing_user, user_id.as_ref()) {
                     accessing_user.id.to_owned()
                 } else {
@@ -332,7 +332,7 @@ impl FileService {
         }
 
         if let Some(query) = query {
-            conditions = conditions.add(files::Column::Name.like(&format!("%{}%", query)));
+            conditions = conditions.add(uploads::Column::Name.like(&format!("%{}%", query)));
         }
 
         if let Some(album_id) = album_id {
@@ -353,7 +353,7 @@ impl FileService {
                 }
             }
 
-            conditions = conditions.add(files::Column::AlbumId.eq(album_id));
+            conditions = conditions.add(uploads::Column::AlbumId.eq(album_id));
         }
 
         if let Some(public) = public {
@@ -374,7 +374,7 @@ impl FileService {
                 }
             }
 
-            conditions = conditions.add(files::Column::Public.eq(public));
+            conditions = conditions.add(uploads::Column::Public.eq(public));
         }
 
         let page = self.get_page(page, page_size, Some(conditions)).await?;
@@ -385,23 +385,23 @@ impl FileService {
             items: page
                 .items
                 .into_iter()
-                .map(|f| self.to_file_data(f))
+                .map(|f| self.to_upload_data(f))
                 .collect(),
         })
     }
 
-    /// Convert a model to [`FileData`].
-    fn to_file_data(&self, model: files::Model) -> FileData {
-        let mut file_data = FileData::from(model.clone());
+    /// Convert a model to [`UploadData`].
+    fn to_upload_data(&self, model: uploads::Model) -> UploadData {
+        let mut upload_data = UploadData::from(model.clone());
         let root_path = PathBuf::from(&self.storage_url);
 
-        file_data.set_url(root_path.clone());
+        upload_data.set_url(root_path.clone());
 
         if model.has_thumbnail {
-            file_data.set_thumbnail_url(root_path.clone());
+            upload_data.set_thumbnail_url(root_path.clone());
         }
 
-        file_data
+        upload_data
     }
 }
 

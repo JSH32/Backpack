@@ -254,7 +254,8 @@ pub trait DataService<
     }
 
     /// This is just a simple wrapper around [`get_page`] that ensures `user_id` and `accessing_user`'s ID are equal (or admin).
-    /// This doesn't have special relation logic like `by_id_authenticated`
+    /// This doesn't have special relation logic like `by_id_authenticated`.
+    /// This accepts `@me` for `user_id` which will resolve to `accessing_user`'s ID.
     async fn get_page_authorized(
         &self,
         page: usize,

@@ -5,20 +5,20 @@ use crate::internal::auth::AuthOptional;
 use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
-    models::{FileData, FileQuery, FileStats},
-    services::{file::FileService, ToResponse},
+    models::{FileStats, UploadData, UploadQuery},
+    services::{upload::UploadService, ToResponse},
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/file").service(stats).service(list)
+    web::scope("/upload").service(stats).service(list)
 }
 
 /// Get a paginated list of files
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-	context_path = "/api/user/{user_id}/file",
-	tag = "file",
+	context_path = "/api/user/{user_id}/upload",
+	tag = "upload",
 	responses(
 		(status = 200, body = FilePage),
 		(status = 400, body = MessageResponse, description = "Invalid page number"),
@@ -27,21 +27,21 @@ pub fn get_routes() -> Scope {
 	params(
 		("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
 		("user_id" = str, Path),
-		FileQuery
+		UploadQuery
 	),
 	security(("apiKey" = [])),
 )]
 #[get("/list/{page_number}")]
 async fn list(
-    service: web::Data<FileService>,
+    service: web::Data<UploadService>,
     params: web::Path<(String, usize)>,
     user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
-    query: web::Query<FileQuery>,
+    query: web::Query<UploadQuery>,
 ) -> impl Responder {
     let (user_id, page_number) = params.to_owned();
 
     service
-        .get_file_page(
+        .get_upload_page(
             page_number,
             25,
             Some(user_id.to_string()),
@@ -51,22 +51,22 @@ async fn list(
             user.user.as_ref(),
         )
         .await
-        .to_page_response::<FileData>(StatusCode::OK)
+        .to_page_response::<UploadData>(StatusCode::OK)
 }
 
 /// Get file stats for user
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-	context_path = "/api/user/{user_id}/file",
-	tag = "file",
+	context_path = "/api/user/{user_id}/upload",
+	tag = "upload",
 	responses((status = 200, body = FileStats)),
 	security(("apiKey" = [])),
 	params(("user_id" = str, Path))
 )]
 #[get("/stats")]
 async fn stats(
-    service: web::Data<FileService>,
+    service: web::Data<UploadService>,
     user_id: web::Path<String>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {

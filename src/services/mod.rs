@@ -8,8 +8,8 @@ pub mod album;
 pub mod application;
 pub mod auth;
 pub mod data_service;
-pub mod file;
 pub mod registration_key;
+pub mod upload;
 pub mod user;
 
 pub mod prelude {

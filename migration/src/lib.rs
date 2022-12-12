@@ -5,6 +5,7 @@ mod m20220101_000001_initial_structure;
 mod m20220810_114915_settings_table;
 mod m20220920_105037_auth_methods;
 mod m20220923_084331_albums;
+mod m20221211_142249_rename_file_table;
 
 pub struct Migrator;
 
@@ -16,6 +17,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220810_114915_settings_table::Migration),
             Box::new(m20220920_105037_auth_methods::Migration),
             Box::new(m20220923_084331_albums::Migration),
+            Box::new(m20221211_142249_rename_file_table::Migration),
         ]
     }
 }

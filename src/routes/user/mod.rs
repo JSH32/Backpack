@@ -12,15 +12,17 @@ use crate::{
     services::{user::UserService, ToResponse},
 };
 
+pub mod album;
 pub mod application;
-pub mod file;
+pub mod upload;
 
 pub fn get_routes() -> Scope {
     web::scope("/user")
         .service(
             web::scope("/{user_id}")
-                .service(file::get_routes())
+                .service(upload::get_routes())
                 .service(application::get_routes())
+                .service(album::get_routes())
                 .service(settings)
                 .service(info)
                 .service(resend_verify)

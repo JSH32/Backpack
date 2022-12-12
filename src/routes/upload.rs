@@ -3,9 +3,9 @@ use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responde
 
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
-    models::{BatchDeleteRequest, BatchDeleteResponse, FileData, UploadConflict, UploadFile},
+    models::{BatchDeleteRequest, BatchDeleteResponse, UploadConflict, UploadData, UploadFile},
     services::{
-        file::{FileService, UploadResult},
+        upload::{UploadResult, UploadService},
         ToMessageResponse, ToResponse,
     },
 };
@@ -36,7 +36,7 @@ pub fn get_routes() -> Scope {
 )]
 #[delete("/{file_id}")]
 async fn delete_file(
-    service: web::Data<FileService>,
+    service: web::Data<UploadService>,
     file_id: web::Path<String>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
@@ -46,13 +46,13 @@ async fn delete_file(
         .to_message_response(StatusCode::OK)
 }
 
-/// Delete multiple files by ID.
+/// Delete multiple uploads by ID.
 /// This will ignore any invalid IDs.
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file",
-    tag = "file",
+    context_path = "/api/upload",
+    tag = "upload",
     responses(
         (status = 200, body = BatchDeleteResponse, description = "Information about the batch operation result."),
     ),
@@ -61,7 +61,7 @@ async fn delete_file(
 )]
 #[delete("/batch")]
 async fn delete_files(
-    service: web::Data<FileService>,
+    service: web::Data<UploadService>,
     body: web::Json<BatchDeleteRequest>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
@@ -75,28 +75,28 @@ async fn delete_files(
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file", 
-    tag = "file",
+    context_path = "/api/upload", 
+    tag = "upload",
     responses(
         (status = 200, body = FileData),
         (status = 403, body = MessageResponse, description = "Access denied"),
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, Path, description = "File ID"),
+        ("upload_id" = u64, Path, description = "Upload ID"),
     ),
     security(("apiKey" = [])),
 )]
-#[get("/{file_id}")]
+#[get("/{upload_id}")]
 async fn info(
-    service: web::Data<FileService>,
-    file_id: web::Path<String>,
+    service: web::Data<UploadService>,
+    upload_id: web::Path<String>,
     user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
     service
-        .get_file(&file_id, user.as_ref())
+        .get_file(&upload_id, user.as_ref())
         .await
-        .to_response::<FileData>(StatusCode::OK)
+        .to_response::<UploadData>(StatusCode::OK)
 }
 
 /// Upload a file.
@@ -104,8 +104,8 @@ async fn info(
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file",
-    tag = "file",
+    context_path = "/api/upload",
+    tag = "upload",
     responses(
         (status = 200, body = FileData),
         (status = 409, body = MessageResponse, description = "File already uploaded"),
@@ -116,7 +116,7 @@ async fn info(
 )]
 #[post("")]
 async fn upload(
-    service: web::Data<FileService>,
+    service: web::Data<UploadService>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
     file: Multipart<UploadFile>,
 ) -> impl Responder {
@@ -125,10 +125,10 @@ async fn upload(
         .await
     {
         Ok(v) => match v {
-            UploadResult::Success(file) => HttpResponse::Ok().json(file),
-            UploadResult::Conflict(file) => HttpResponse::Conflict().json(UploadConflict {
+            UploadResult::Success(upload) => HttpResponse::Ok().json(upload),
+            UploadResult::Conflict(upload) => HttpResponse::Conflict().json(UploadConflict {
                 message: "File was already uploaded".into(),
-                file,
+                upload,
             }),
         },
         Err(e) => e.to_response(),

@@ -37,3 +37,25 @@ impl From<albums::Model> for AlbumData {
 pub struct AlbumDelete {
     pub delete_files: Option<bool>,
 }
+
+#[derive(Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AlbumCreate {
+    /// Album name.
+    pub name: String,
+    /// Optional album description.
+    pub description: Option<String>,
+    /// Is the album public.
+    pub public: bool,
+}
+
+#[derive(Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AlbumUpdate {
+    /// Album name.
+    pub name: Option<String>,
+    /// Optional album description.
+    pub description: Option<Option<String>>,
+    /// Is the album public.
+    pub public: Option<bool>,
+}

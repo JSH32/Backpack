@@ -2,7 +2,7 @@ pub mod admin;
 pub mod album;
 pub mod application;
 pub mod auth;
-pub mod file;
+pub mod uploads;
 pub mod user;
 
 use crate::{database::entity::settings, internal::GIT_VERSION};
@@ -16,7 +16,7 @@ use std::fmt::Display;
 use utoipa::ToSchema;
 
 use self::registration_key::RegistrationKeyData;
-pub use self::{admin::*, application::*, auth::*, file::*, user::*};
+pub use self::{admin::*, application::*, auth::*, uploads::*, user::*};
 
 /// Standard message response.
 ///
@@ -142,7 +142,7 @@ impl Responder for MessageResponse {
 
 #[derive(Serialize, ToSchema)]
 #[aliases(
-    FilePage = Page<FileData>,
+    FilePage = Page<UploadData>,
     RegistrationKeyPage = Page<RegistrationKeyData>,
     ApplicationPage = Page<ApplicationData>
 )]

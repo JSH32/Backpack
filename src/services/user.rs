@@ -11,17 +11,17 @@ use std::sync::Arc;
 
 use super::{
     auth::{auth_method::AuthMethodService, new_password, validate_password},
-    file::FileService,
     prelude::*,
     registration_key::RegistrationKeyService,
+    upload::UploadService,
     ToOption,
 };
 use crate::{
     config::SMTPConfig,
     database::entity::{
-        auth_methods, files,
+        auth_methods,
         sea_orm_active_enums::{AuthMethod, Role},
-        users, verifications,
+        uploads, users, verifications,
     },
     internal::random_string,
 };
@@ -30,7 +30,7 @@ use crate::{
 pub struct UserService {
     database: Arc<DatabaseConnection>,
     registration_key_service: Arc<RegistrationKeyService>,
-    file_service: Arc<FileService>,
+    upload_service: Arc<UploadService>,
     auth_method_service: Arc<AuthMethodService>,
     // If we need to send more emails, this should be split into an email service.
     smtp: Option<(AsyncSmtpTransport<Tokio1Executor>, String)>,
@@ -65,7 +65,7 @@ impl UserService {
     pub fn new(
         database: Arc<DatabaseConnection>,
         registration_key_service: Arc<RegistrationKeyService>,
-        file_service: Arc<FileService>,
+        upload_service: Arc<UploadService>,
         auth_method_service: Arc<AuthMethodService>,
         smtp_config: Option<SMTPConfig>,
         client_url: &str,
@@ -74,7 +74,7 @@ impl UserService {
         Self {
             database,
             registration_key_service,
-            file_service,
+            upload_service,
             auth_method_service,
             smtp: match smtp_config {
                 Some(config) => {
@@ -485,7 +485,7 @@ impl UserService {
             .await?;
 
         let mut files: Vec<String> = user
-            .find_related(files::Entity)
+            .find_related(uploads::Entity)
             .all(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?
@@ -510,7 +510,7 @@ impl UserService {
             .map_err(|e| ServiceError::DbErr(e))?;
 
         // Delete every file.
-        let _ = self.file_service.storage.delete_objects(files).await;
+        let _ = self.upload_service.storage.delete_objects(files).await;
 
         Ok(())
     }

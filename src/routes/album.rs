@@ -1,17 +1,21 @@
 use actix_http::StatusCode;
-use actix_web::{get, web, Responder, Scope};
+use actix_web::{get, post, put, web, Responder, Scope};
 
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
     models::{
-        album::{AlbumData, AlbumDelete},
+        album::{AlbumCreate, AlbumData, AlbumDelete, AlbumUpdate},
         MessageResponse,
     },
     services::{album::AlbumService, ToResponse},
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/album").service(info).service(delete)
+    web::scope("/album")
+        .service(info)
+        .service(delete)
+        .service(create)
+        .service(update)
 }
 
 /// Get album info.
@@ -80,4 +84,55 @@ async fn delete(
         .http_response(),
         Err(e) => e.to_response(),
     }
+}
+
+/// Create an album
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses((status = 200, body = AlbumData)),
+    request_body = AlbumCreate,
+    security(("apiKey" = [])),
+)]
+#[post("")]
+async fn create(
+    service: web::Data<AlbumService>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+    form: web::Json<AlbumCreate>,
+) -> impl Responder {
+    service
+        .create_album(&user.id, &form.name, form.description.clone(), form.public)
+        .await
+        .to_response::<AlbumData>(StatusCode::OK)
+}
+
+/// Update album settings
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/application",
+    tag = "application",
+    responses((status = 200, body = AlbumData)),
+    request_body = AlbumUpdate,
+    security(("apiKey" = [])),
+)]
+#[put("/{album_id}")]
+async fn update(
+    service: web::Data<AlbumService>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+    album_id: web::Path<String>,
+    form: web::Json<AlbumUpdate>,
+) -> impl Responder {
+    service
+        .update(
+            &album_id,
+            form.name.to_owned(),
+            form.description.to_owned(),
+            form.public,
+            Some(&user),
+        )
+        .await
+        .to_response::<AlbumData>(StatusCode::OK)
 }

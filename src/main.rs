@@ -1,13 +1,13 @@
 use crate::{
-    database::entity::files,
+    database::entity::uploads,
     docs::ApiDoc,
     internal::{lateinit::LateInit, GIT_VERSION},
     services::{
         album::AlbumService,
         application::ApplicationService,
         auth::{auth_method::AuthMethodService, AuthService},
-        file::FileService,
         registration_key::RegistrationKeyService,
+        upload::UploadService,
         user::UserService,
     },
 };
@@ -105,17 +105,17 @@ async fn main() -> std::io::Result<()> {
     let registration_key_service =
         Data::new(RegistrationKeyService::new(database.clone().into_inner()));
 
-    let file_service_late = Arc::new(LateInit::<FileService>::new());
+    let upload_service_late = Arc::new(LateInit::<UploadService>::new());
 
     // Registration key service.
     let album_service = Data::new(AlbumService::new(
         database.clone().into_inner(),
-        file_service_late.clone(),
+        upload_service_late.clone(),
     ));
 
     // File service.
-    let file_service = Data::new(
-        FileService::new(
+    let upload_service = Data::new(
+        UploadService::new(
             database.clone().into_inner(),
             album_service.clone().into_inner(),
             config.storage_provider.clone(),
@@ -125,7 +125,7 @@ async fn main() -> std::io::Result<()> {
         .await,
     );
 
-    file_service_late.init_value(file_service.clone().into_inner());
+    upload_service_late.init_value(upload_service.clone().into_inner());
 
     let auth_method_service = Data::new(AuthMethodService::new(database.clone().into_inner()));
 
@@ -133,7 +133,7 @@ async fn main() -> std::io::Result<()> {
     let user_service = Data::new(UserService::new(
         database.clone().into_inner(),
         registration_key_service.clone().into_inner(),
-        file_service.clone().into_inner(),
+        upload_service.clone().into_inner(),
         auth_method_service.clone().into_inner(),
         config.smtp_config,
         &config.client_url,
@@ -165,7 +165,9 @@ async fn main() -> std::io::Result<()> {
 
     // If the generate thumbnails flag is enabled
     if args.generate_thumbnails {
-        generate_thumbnails(&database, &file_service).await.unwrap();
+        generate_thumbnails(&database, &upload_service)
+            .await
+            .unwrap();
         return Ok(());
     }
 
@@ -203,7 +205,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(registration_key_service.clone())
             .app_data(user_service.clone())
             .app_data(album_service.clone())
-            .app_data(file_service.clone())
+            .app_data(upload_service.clone())
             .app_data(auth_service.clone())
             .app_data(application_service.clone())
             .app_data(auth_method_service.clone())
@@ -222,7 +224,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::user::get_routes())
                     .service(routes::auth::get_routes())
                     .service(routes::application::get_routes())
-                    .service(routes::file::get_routes())
+                    .service(routes::upload::get_routes())
                     .service(routes::album::get_routes())
                     .service(routes::admin::get_routes(invite_only))
                     .service(routes::get_routes()),
@@ -295,14 +297,14 @@ async fn get_db_version(database: &DatabaseConnection) -> Result<String, anyhow:
 /// This is a multithreaded blocking operation used in the CLI.
 async fn generate_thumbnails(
     database: &Arc<DatabaseConnection>,
-    file_service: &Arc<FileService>,
+    upload_service: &Arc<UploadService>,
 ) -> anyhow::Result<()> {
     log::info!("Regenerating image thumbnails");
 
-    let files = files::Entity::find().all(database.as_ref()).await?;
+    let files = uploads::Entity::find().all(database.as_ref()).await?;
 
     // Get every file which is an image or has an image extension.
-    let image_files: Vec<files::Model> = files
+    let image_files: Vec<uploads::Model> = files
         .iter()
         .filter(|file| {
             let extension = Path::new(&file.name)
@@ -353,7 +355,7 @@ async fn generate_thumbnails(
             .into_iter()
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
-            let file_service = file_service.clone();
+            let file_service = upload_service.clone();
             let task_tx: UnboundedSender<Result<String, (String, String)>> = tx.clone();
             let spawner = runtime.handle().clone();
             tokio::spawn(async move {

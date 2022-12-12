@@ -5,7 +5,7 @@ use sea_orm::{entity::prelude::*, Set};
 use super::DB_SONYFLAKE;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "files")]
+#[sea_orm(table_name = "uploads")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
