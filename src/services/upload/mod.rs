@@ -21,7 +21,7 @@ use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
     database::entity::{sea_orm_active_enums::Role, uploads, users},
-    models::{BatchDeleteResponse, BatchFileError, FileStats, UploadData},
+    models::{BatchDeleteResponse, BatchFileError, UploadData, UploadStats},
 };
 
 /// Service for managing files.
@@ -260,9 +260,12 @@ impl UploadService {
         &self,
         user_id: &str,
         accessing_user: Option<&users::Model>,
-    ) -> ServiceResult<FileStats> {
+    ) -> ServiceResult<UploadStats> {
         if let Some(accessing_user) = accessing_user {
-            if accessing_user.id != user_id && accessing_user.role != Role::Admin {
+            if user_id != "@me"
+                && accessing_user.id != user_id
+                && accessing_user.role != Role::Admin
+            {
                 return Err(ServiceError::Forbidden {
                     id: Some(user_id.into()),
                     resource: "user's stats".into(),
@@ -286,7 +289,7 @@ impl UploadService {
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
-        Ok(FileStats {
+        Ok(UploadStats {
             usage: match usage {
                 // The query can fail if no files are uploaded.
                 Some(v) => match v.try_get("", "sum") {

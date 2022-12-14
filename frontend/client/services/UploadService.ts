@@ -2,16 +2,16 @@
 /* tslint:disable */
 import type { BatchDeleteRequest } from '../models/BatchDeleteRequest';
 import type { BatchDeleteResponse } from '../models/BatchDeleteResponse';
-import type { FileData } from '../models/FileData';
-import type { FilePage } from '../models/FilePage';
-import type { FileStats } from '../models/FileStats';
 import type { MessageResponse } from '../models/MessageResponse';
+import type { UploadData } from '../models/UploadData';
 import type { UploadFile } from '../models/UploadFile';
+import type { UploadPage } from '../models/UploadPage';
+import type { UploadStats } from '../models/UploadStats';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 
-export class FileService {
+export class UploadService {
 
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
@@ -22,15 +22,15 @@ export class FileService {
      * - Application token allowed: `true`
      *
      * @param formData
-     * @returns FileData
+     * @returns UploadData
      * @throws ApiError
      */
     public upload(
         formData: UploadFile,
-    ): CancelablePromise<FileData> {
+    ): CancelablePromise<UploadData> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/file',
+            url: '/api/upload',
             formData: formData,
             mediaType: 'multipart/form-data',
             errors: {
@@ -41,7 +41,7 @@ export class FileService {
     }
 
     /**
-     * Delete multiple files by ID.
+     * Delete multiple uploads by ID.
      * This will ignore any invalid IDs.
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
@@ -55,34 +55,9 @@ export class FileService {
     ): CancelablePromise<BatchDeleteResponse> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/file/batch',
+            url: '/api/upload/batch',
             body: requestBody,
             mediaType: 'application/json',
-        });
-    }
-
-    /**
-     * Get file data by ID
-     * - Allow unverified users: `false`
-     * - Application token allowed: `true`
-     *
-     * @param fileId File ID
-     * @returns FileData
-     * @throws ApiError
-     */
-    public info(
-        fileId: string,
-    ): CancelablePromise<FileData> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/file/{file_id}',
-            path: {
-                'file_id': fileId,
-            },
-            errors: {
-                403: `Access denied`,
-                404: `File not found`,
-            },
         });
     }
 
@@ -100,9 +75,34 @@ export class FileService {
     ): CancelablePromise<MessageResponse> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/file/{file_id}',
+            url: '/api/upload/{file_id}',
             path: {
                 'file_id': fileId,
+            },
+            errors: {
+                403: `Access denied`,
+                404: `File not found`,
+            },
+        });
+    }
+
+    /**
+     * Get file data by ID
+     * - Allow unverified users: `false`
+     * - Application token allowed: `true`
+     *
+     * @param uploadId Upload ID
+     * @returns UploadData
+     * @throws ApiError
+     */
+    public info(
+        uploadId: string,
+    ): CancelablePromise<UploadData> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/upload/{upload_id}',
+            path: {
+                'upload_id': uploadId,
             },
             errors: {
                 403: `Access denied`,
@@ -121,7 +121,7 @@ export class FileService {
      * @param query Query by name of file.
      * @param albumId For non admins, this must be a public album
      * @param _public If accessing another user as a non admin, this must be `true`
-     * @returns FilePage
+     * @returns UploadPage
      * @throws ApiError
      */
     public list(
@@ -130,10 +130,10 @@ export class FileService {
         query?: string,
         albumId?: string,
         _public?: boolean,
-    ): CancelablePromise<FilePage> {
+    ): CancelablePromise<UploadPage> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/user/{user_id}/file/list/{page_number}',
+            url: '/api/user/{user_id}/upload/list/{page_number}',
             path: {
                 'page_number': pageNumber,
                 'user_id': userId,
@@ -156,15 +156,15 @@ export class FileService {
      * - Application token allowed: `true`
      *
      * @param userId
-     * @returns FileStats
+     * @returns UploadStats
      * @throws ApiError
      */
     public stats(
         userId: string,
-    ): CancelablePromise<FileStats> {
+    ): CancelablePromise<UploadStats> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/user/{user_id}/file/stats',
+            url: '/api/user/{user_id}/upload/stats',
             path: {
                 'user_id': userId,
             },

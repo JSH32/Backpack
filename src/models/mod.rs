@@ -142,7 +142,7 @@ impl Responder for MessageResponse {
 
 #[derive(Serialize, ToSchema)]
 #[aliases(
-    FilePage = Page<UploadData>,
+    UploadPage = Page<UploadData>,
     RegistrationKeyPage = Page<RegistrationKeyData>,
     ApplicationPage = Page<ApplicationData>
 )]

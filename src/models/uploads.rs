@@ -66,7 +66,7 @@ impl UploadData {
 
 /// File stats for user.
 #[derive(Serialize, ToSchema)]
-pub struct FileStats {
+pub struct UploadStats {
     /// Total usage in bytes
     pub usage: i64,
 }

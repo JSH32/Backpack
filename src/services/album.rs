@@ -7,7 +7,6 @@ use sea_orm::{
 use crate::{
     database::entity::{albums, sea_orm_active_enums::Role, uploads, users},
     internal::{lateinit::LateInit, validate_length},
-    models::album::AlbumData,
 };
 
 use std::sync::Arc;

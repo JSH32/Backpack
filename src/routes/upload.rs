@@ -11,9 +11,9 @@ use crate::{
 };
 
 pub fn get_routes() -> Scope {
-    web::scope("/file")
-        .service(info)
+    web::scope("/upload")
         .service(upload)
+        .service(info)
         .service(delete_files)
         .service(delete_file)
 }
@@ -22,8 +22,8 @@ pub fn get_routes() -> Scope {
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/file",
-    tag = "file",
+    context_path = "/api/upload",
+    tag = "upload",
     responses(
         (status = 200, body = MessageResponse, description = "File deleted"),
         (status = 403, body = MessageResponse, description = "Access denied"),
@@ -78,7 +78,7 @@ async fn delete_files(
     context_path = "/api/upload", 
     tag = "upload",
     responses(
-        (status = 200, body = FileData),
+        (status = 200, body = UploadData),
         (status = 403, body = MessageResponse, description = "Access denied"),
         (status = 404, body = MessageResponse, description = "File not found")
     ),
@@ -107,7 +107,7 @@ async fn info(
     context_path = "/api/upload",
     tag = "upload",
     responses(
-        (status = 200, body = FileData),
+        (status = 200, body = UploadData),
         (status = 409, body = MessageResponse, description = "File already uploaded"),
         (status = 413, body = MessageResponse, description = "File too large")
     ),

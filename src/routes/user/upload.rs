@@ -5,7 +5,7 @@ use crate::internal::auth::AuthOptional;
 use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
-    models::{FileStats, UploadData, UploadQuery},
+    models::{UploadData, UploadQuery, UploadStats},
     services::{upload::UploadService, ToResponse},
 };
 
@@ -20,7 +20,7 @@ pub fn get_routes() -> Scope {
 	context_path = "/api/user/{user_id}/upload",
 	tag = "upload",
 	responses(
-		(status = 200, body = FilePage),
+		(status = 200, body = UploadPage),
 		(status = 400, body = MessageResponse, description = "Invalid page number"),
 		(status = 404, body = MessageResponse, description = "Page not found")
 	),
@@ -60,7 +60,7 @@ async fn list(
 #[utoipa::path(
 	context_path = "/api/user/{user_id}/upload",
 	tag = "upload",
-	responses((status = 200, body = FileStats)),
+	responses((status = 200, body = UploadStats)),
 	security(("apiKey" = [])),
 	params(("user_id" = str, Path))
 )]
@@ -73,5 +73,5 @@ async fn stats(
     service
         .user_stats(user_id.as_str(), Some(&user))
         .await
-        .to_response::<FileStats>(StatusCode::OK)
+        .to_response::<UploadStats>(StatusCode::OK)
 }

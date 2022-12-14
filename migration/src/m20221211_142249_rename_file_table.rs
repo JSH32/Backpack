@@ -9,7 +9,7 @@ impl MigrationTrait for Migration {
         manager
             .rename_table(
                 Table::rename()
-                    .table(Alias::new("uploads"), Alias::new("files"))
+                    .table(Alias::new("files"), Alias::new("uploads"))
                     .take(),
             )
             .await
@@ -19,7 +19,7 @@ impl MigrationTrait for Migration {
         manager
             .rename_table(
                 Table::rename()
-                    .table(Alias::new("files"), Alias::new("uploads"))
+                    .table(Alias::new("uploads"), Alias::new("files"))
                     .take(),
             )
             .await

@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 
-export type FileData = {
+export type UploadData = {
     albumId?: string;
     hash: string;
     id: string;

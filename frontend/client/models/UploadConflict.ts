@@ -1,13 +1,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 
-import type { FileData } from './FileData';
+import type { UploadData } from './UploadData';
 
 /**
  * Identical file was already uploaded.
  */
 export type UploadConflict = {
-    file: FileData;
     message: string;
+    upload: UploadData;
 };
 
