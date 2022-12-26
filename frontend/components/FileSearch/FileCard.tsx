@@ -3,12 +3,12 @@ import { dateToString, getExtension } from "helpers/util"
 import * as React from "react"
 import InfoIcon from "assets/icons/info.svg"
 import DeleteIcon from "assets/icons/trash.svg"
-import { FileData } from "@/client"
+import { UploadData } from "@/client"
 
 const FileCard: React.FC<{ 
-    file: FileData, 
-    onDetails: (file: FileData) => void, 
-    onDelete: (file: FileData) => void
+    file: UploadData, 
+    onDetails: (file: UploadData) => void, 
+    onDelete: (file: UploadData) => void
 }> = ({ file, onDetails, onDelete }) => {
     const ext = getExtension(file.name)
 

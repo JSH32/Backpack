@@ -17,70 +17,74 @@ use std::{
 
 use self::providers::StorageProvider;
 
-use super::prelude::*;
+use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
-    database::entity::files,
-    models::{BatchDeleteResponse, BatchFileError, FileData, FileStats},
+    database::entity::{sea_orm_active_enums::Role, uploads, users},
+    models::{BatchDeleteResponse, BatchFileError, UploadData, UploadStats},
 };
 
 /// Service for managing files.
 ///
-/// Files contain extra fields outside of the model which are located in the [`FileData`] model.
-/// Most operations in [`FileService`] return [`FileData`] instead of [`files::Model`].
-pub struct FileService {
+/// Files contain extra fields outside of the model which are located in the [`UploadData`] model.
+/// Most operations in [`UploadService`] return [`UploadData`] instead of [`uploads::Model`].
+#[derive(Debug)]
+pub struct UploadService {
     /// Public storage handle.
     /// Use at your own risk.
     pub storage: Box<dyn StorageProvider>,
     database: Arc<DatabaseConnection>,
+    album_service: Arc<AlbumService>,
     storage_url: String,
     file_size_limit: usize,
 }
 
-data_service!(FileService, files);
+data_service_owned!(UploadService, uploads);
 
 /// Result from uploading a file.
 pub enum UploadResult {
     /// Upload success.
-    Success(FileData),
+    Success(UploadData),
     /// File was already uploaded.
-    Conflict(FileData),
+    Conflict(UploadData),
 }
 
-impl FileService {
+impl UploadService {
     pub async fn new(
         database: Arc<DatabaseConnection>,
+        album_service: Arc<AlbumService>,
         config: StorageConfig,
         storage_url: &str,
         file_size_limit: usize,
     ) -> Self {
         Self {
             database,
+            album_service,
             storage: providers::new_storage(config).await,
             storage_url: storage_url.into(),
             file_size_limit: file_size_limit * 1000 * 1000,
         }
     }
 
-    /// Get a file. If you don't need ownership validation use `by_id`
+    /// Get a file. If you don't need access validation use `by_id`
     ///
     /// # Arguments
     ///
     /// * `id` - File ID.
-    /// * `user_id` - User who owns this file. This will validate ownership.
-    pub async fn get_file(&self, id: &str, user_id: Option<&str>) -> ServiceResult<FileData> {
+    /// * `accessing_user` - User who is accessing this file.
+    pub async fn get_file(
+        &self,
+        id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<UploadData> {
         let file = self.by_id(id.into()).await?;
 
-        if let Some(user_id) = user_id {
-            if file.uploader != user_id {
-                return Err(ServiceError::Forbidden {
-                    id: id.into(),
-                    resource: self.resource_name(),
-                });
-            }
+        // Validate access if private.
+        if !file.public {
+            let _ = self.validate_access(&file, accessing_user, true).await?;
         }
 
-        Ok(self.to_file_data(file))
+        Ok(self.to_upload_data(file))
     }
 
     /// Delete a file.
@@ -88,18 +92,15 @@ impl FileService {
     /// # Arguments
     ///
     /// * `id` - File ID.
-    /// * `user_id` - User who owns this file. If provided this will validate ownership.
-    pub async fn delete_file(&self, id: &str, user_id: Option<&str>) -> ServiceResult<String> {
-        let file = self.by_id(id.into()).await?;
-
-        if let Some(user_id) = user_id {
-            if file.uploader != user_id {
-                return Err(ServiceError::Forbidden {
-                    id: id.into(),
-                    resource: self.resource_name(),
-                });
-            }
-        }
+    /// * `accessing_user` - User accessing this file for deletion.
+    pub async fn delete_file(
+        &self,
+        id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<String> {
+        let file = self
+            .by_id_authorized(id.into(), accessing_user, false)
+            .await?;
 
         file.clone()
             .delete(self.database.as_ref())
@@ -124,22 +125,22 @@ impl FileService {
     pub async fn delete_batch(
         &self,
         ids: &Vec<String>,
-        user_id: Option<&str>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<BatchDeleteResponse> {
         let mut response = BatchDeleteResponse::default();
 
-        let files = files::Entity::find()
-            .filter(files::Column::Id.is_in(ids.clone()))
+        let files = uploads::Entity::find()
+            .filter(uploads::Column::Id.is_in(ids.clone()))
             .all(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
         // All IDs found in the query.
-        let ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
+        let found_ids: HashSet<String> = files.iter().map(|f| f.id.to_owned()).collect();
 
         // Add errors for every ID in the request that was not found in the query.
-        for id in &ids {
-            if !ids.contains(id) {
+        for id in ids {
+            if !found_ids.contains(id) {
                 response.errors.push(BatchFileError {
                     id: id.to_string(),
                     error: "That file does not exist.".to_string(),
@@ -148,8 +149,9 @@ impl FileService {
         }
 
         for file in files {
-            if let Some(user_id) = user_id {
-                if file.uploader != user_id {
+            if let Some(accessing_user) = accessing_user {
+                // Don't use `validate_access` because of extra DB calls.
+                if file.uploader != accessing_user.id && accessing_user.role != Role::Admin {
                     response.errors.push(BatchFileError {
                         id: file.id,
                         error: "You are not allowed to access this file.".to_string(),
@@ -177,6 +179,7 @@ impl FileService {
     }
 
     /// Upload a file to the storage provider.
+    /// You cannot upload files for another user.
     pub async fn upload_file(
         &self,
         user_id: &str,
@@ -200,17 +203,17 @@ impl FileService {
 
         let hash = &format!("{:x}", Sha256::digest(&buffer));
 
-        let file_exists = files::Entity::find()
-            .filter(files::Column::Hash.eq(hash.to_owned()))
+        let file_exists = uploads::Entity::find()
+            .filter(uploads::Column::Hash.eq(hash.to_owned()))
             .one(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
         if let Some(file) = file_exists {
-            return Ok(UploadResult::Conflict(self.to_file_data(file)));
+            return Ok(UploadResult::Conflict(self.to_upload_data(file)));
         }
 
-        let mut file = files::ActiveModel {
+        let mut file = uploads::ActiveModel {
             uploader: Set(user_id.into()),
             name: Set(filename.to_owned()),
             original_name: Set(name.into()),
@@ -250,15 +253,31 @@ impl FileService {
             }
         }
 
-        Ok(UploadResult::Success(self.to_file_data(file)))
+        Ok(UploadResult::Success(self.to_upload_data(file)))
     }
 
-    pub async fn user_stats(&self, user_id: &str) -> ServiceResult<FileStats> {
-        let expr = files::Entity::find()
+    pub async fn user_stats(
+        &self,
+        user_id: &str,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<UploadStats> {
+        if let Some(accessing_user) = accessing_user {
+            if user_id != "@me"
+                && accessing_user.id != user_id
+                && accessing_user.role != Role::Admin
+            {
+                return Err(ServiceError::Forbidden {
+                    id: Some(user_id.into()),
+                    resource: "user's stats".into(),
+                });
+            }
+        }
+
+        let expr = uploads::Entity::find()
             .select_only()
-            .filter(files::Column::Uploader.eq(user_id.clone()))
+            .filter(uploads::Column::Uploader.eq(user_id.clone()))
             .column_as(
-                files::Column::Size.sum().cast_as(Alias::new("BIGINT")),
+                uploads::Column::Size.sum().cast_as(Alias::new("BIGINT")),
                 "sum",
             )
             .build(self.database.get_database_backend())
@@ -270,7 +289,7 @@ impl FileService {
             .await
             .map_err(|e| ServiceError::DbErr(e))?;
 
-        Ok(FileStats {
+        Ok(UploadStats {
             usage: match usage {
                 // The query can fail if no files are uploaded.
                 Some(v) => match v.try_get("", "sum") {
@@ -283,21 +302,82 @@ impl FileService {
     }
 
     /// This should be used instead of [`DataService`]'s `get_page` for most cases.
-    pub async fn get_file_page(
+    ///
+    /// # Arguments
+    ///
+    /// * `page` - Page number
+    /// * `page_size` - Size of each page
+    /// * `user_id` - User who should own these uploads
+    /// * `query` - Name of the upload (search)
+    /// * `album_id` - Optional album
+    /// * `public` - Public upload (query)
+    /// * `accessing_user` - User accessing the uploads
+    pub async fn get_upload_page(
         &self,
         page: usize,
         page_size: usize,
         user_id: Option<String>,
         query: Option<String>,
-    ) -> ServiceResult<ServicePage<FileData>> {
+        album_id: Option<String>,
+        public: Option<bool>,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<ServicePage<UploadData>> {
         let mut conditions = Condition::all();
 
-        if let Some(user_id) = user_id {
-            conditions = conditions.add(files::Column::Uploader.eq(user_id));
+        if let Some(user_id) = user_id.to_owned() {
+            conditions = conditions.add(uploads::Column::Uploader.eq(
+                if let (Some(accessing_user), "@me") = (accessing_user, user_id.as_ref()) {
+                    accessing_user.id.to_owned()
+                } else {
+                    user_id
+                },
+            ));
         }
 
         if let Some(query) = query {
-            conditions = conditions.add(files::Column::Name.like(&format!("%{}%", query)));
+            conditions = conditions.add(uploads::Column::Name.like(&format!("%{}%", query)));
+        }
+
+        if let Some(album_id) = album_id {
+            let album = self.album_service.by_id(album_id.to_owned()).await?;
+
+            // Non admin can't access a private album owned by another user.
+            if !album.public {
+                if let Some(accessing_user) = accessing_user {
+                    if accessing_user.role != Role::Admin && album.user_id != accessing_user.id {
+                        return Err(ServiceError::InvalidData(
+                            "Cannot access private album owned by another user.".into(),
+                        ));
+                    }
+                } else {
+                    return Err(ServiceError::InvalidData(
+                        "Cannot access private album owned by another user.".into(),
+                    ));
+                }
+            }
+
+            conditions = conditions.add(uploads::Column::AlbumId.eq(album_id));
+        }
+
+        if let Some(public) = public {
+            // Non admin can't access someone elses private files.
+            if let (Some(user_id), false) = (user_id, public) {
+                if let Some(accessing_user) = accessing_user {
+                    // Not owned by the proper user or admin.
+                    if accessing_user.role != Role::Admin && user_id != accessing_user.id {
+                        return Err(ServiceError::InvalidData(
+                            "Cannot access user's private files".into(),
+                        ));
+                    }
+                } else {
+                    // No user provided.
+                    return Err(ServiceError::InvalidData(
+                        "Cannot access user's private files".into(),
+                    ));
+                }
+            }
+
+            conditions = conditions.add(uploads::Column::Public.eq(public));
         }
 
         let page = self.get_page(page, page_size, Some(conditions)).await?;
@@ -308,23 +388,23 @@ impl FileService {
             items: page
                 .items
                 .into_iter()
-                .map(|f| self.to_file_data(f))
+                .map(|f| self.to_upload_data(f))
                 .collect(),
         })
     }
 
-    /// Convert a model to [`FileData`].
-    fn to_file_data(&self, model: files::Model) -> FileData {
-        let mut file_data = FileData::from(model.clone());
+    /// Convert a model to [`UploadData`].
+    fn to_upload_data(&self, model: uploads::Model) -> UploadData {
+        let mut upload_data = UploadData::from(model.clone());
         let root_path = PathBuf::from(&self.storage_url);
 
-        file_data.set_url(root_path.clone());
+        upload_data.set_url(root_path.clone());
 
         if model.has_thumbnail {
-            file_data.set_thumbnail_url(root_path.clone());
+            upload_data.set_thumbnail_url(root_path.clone());
         }
 
-        file_data
+        upload_data
     }
 }
 

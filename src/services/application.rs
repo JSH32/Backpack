@@ -1,25 +1,25 @@
 use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 
 use super::{
     auth::AuthService,
-    prelude::{data_service, DataService},
+    prelude::{data_service_owned, UserOwnedService},
     ServiceError, ServiceResult,
 };
 use crate::{
-    database::entity::applications,
+    database::entity::{applications, users},
+    internal::validate_length,
     models::{ApplicationData, TokenResponse},
 };
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct ApplicationService {
     database: Arc<DatabaseConnection>,
     auth_service: Arc<AuthService>,
 }
 
-data_service!(ApplicationService, applications);
+data_service_owned!(ApplicationService, applications);
 
 impl ApplicationService {
     pub fn new(database: Arc<DatabaseConnection>, auth_service: Arc<AuthService>) -> Self {
@@ -37,15 +37,11 @@ impl ApplicationService {
     pub async fn generate_token(
         &self,
         id: &str,
-        user_id: Option<&str>,
+        accessing_user: Option<&users::Model>,
     ) -> ServiceResult<TokenResponse> {
-        let mut condition = Condition::all().add(applications::Column::Id.eq(id.to_owned()));
-
-        if let Some(user_id) = user_id {
-            condition = condition.add(applications::Column::UserId.eq(user_id));
-        }
-
-        let application = self.by_condition(condition).await?;
+        let application = self
+            .by_id_authorized(id.into(), accessing_user, false)
+            .await?;
 
         self.auth_service
             .new_jwt(&application.user_id, Some(application.id))
@@ -78,15 +74,7 @@ impl ApplicationService {
         user_id: &str,
         name: &str,
     ) -> ServiceResult<ApplicationData> {
-        if name.len() > 16 {
-            return Err(ServiceError::InvalidData(
-                "Application name too long (maximum 16 characters)".into(),
-            ));
-        } else if name.len() < 4 {
-            return Err(ServiceError::InvalidData(
-                "Application name too short (minimum 4 characters)".into(),
-            ));
-        }
+        validate_length("Application name", 4, 16, name)?;
 
         // Application with the same name owned by the same user already exists.
         if let Some(_) = applications::Entity::find()

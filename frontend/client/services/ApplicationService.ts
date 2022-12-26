@@ -15,7 +15,6 @@ export class ApplicationService {
 
     /**
      * Create an application
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -38,30 +37,7 @@ export class ApplicationService {
     }
 
     /**
-     * Get all applications
-     * - Minimum required role: `user`
-     * - Allow unverified users: `false`
-     * - Application token allowed: `false`
-     *
-     * @param pageNumber Page to get applications by (starts at 1)
-     * @returns ApplicationPage
-     * @throws ApiError
-     */
-    public list(
-        pageNumber: number,
-    ): CancelablePromise<ApplicationPage> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/application/list/{page_number}',
-            path: {
-                'page_number': pageNumber,
-            },
-        });
-    }
-
-    /**
      * Get token info
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -83,7 +59,6 @@ export class ApplicationService {
 
     /**
      * Delete an application
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -108,7 +83,6 @@ export class ApplicationService {
 
     /**
      * Get token by application ID
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
      *
@@ -127,6 +101,30 @@ export class ApplicationService {
             },
             errors: {
                 404: `Application not found`,
+            },
+        });
+    }
+
+    /**
+     * Get all applications owned by a user.
+     * - Allow unverified users: `false`
+     * - Application token allowed: `false`
+     *
+     * @param pageNumber Page to get applications by (starts at 1)
+     * @param userId
+     * @returns ApplicationPage
+     * @throws ApiError
+     */
+    public list(
+        pageNumber: string,
+        userId: string,
+    ): CancelablePromise<ApplicationPage> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/user/{user_id}/application/{page_number}',
+            path: {
+                'page_number': pageNumber,
+                'user_id': userId,
             },
         });
     }

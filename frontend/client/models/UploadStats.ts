@@ -4,7 +4,7 @@
 /**
  * File stats for user.
  */
-export type FileStats = {
+export type UploadStats = {
     /**
      * Total usage in bytes
      */

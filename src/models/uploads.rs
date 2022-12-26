@@ -8,11 +8,11 @@ use utoipa::{IntoParams, ToSchema};
 
 use crate::internal::file::can_have_thumbnail;
 
-use crate::database::entity::files;
+use crate::database::entity::uploads;
 
 #[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct FileData {
+pub struct UploadData {
     pub id: String,
     pub uploader: String,
     pub name: String,
@@ -21,20 +21,24 @@ pub struct FileData {
     pub thumbnail_url: Option<String>,
     pub hash: String,
     pub size: i64,
+    pub album_id: Option<String>,
+    pub public: bool,
     #[schema(value_type = f64)]
     pub uploaded: DateTime<Utc>,
 }
 
-impl From<files::Model> for FileData {
-    fn from(file: files::Model) -> Self {
+impl From<uploads::Model> for UploadData {
+    fn from(upload: uploads::Model) -> Self {
         Self {
-            id: file.id,
-            uploader: file.uploader,
-            name: file.name,
-            original_name: file.original_name,
-            hash: file.hash,
-            uploaded: file.uploaded.into(),
-            size: file.size,
+            id: upload.id,
+            uploader: upload.uploader,
+            name: upload.name,
+            original_name: upload.original_name,
+            hash: upload.hash,
+            uploaded: upload.uploaded.into(),
+            size: upload.size,
+            album_id: upload.album_id,
+            public: upload.public,
             // These fields are not stored in database
             // They are filled in by the route returning it
             url: None,
@@ -43,7 +47,7 @@ impl From<files::Model> for FileData {
     }
 }
 
-impl FileData {
+impl UploadData {
     /// Computes and sets the URL based on a root storage path
     pub fn set_url(&mut self, mut root_path: PathBuf) {
         root_path.push(&self.name);
@@ -62,7 +66,7 @@ impl FileData {
 
 /// File stats for user.
 #[derive(Serialize, ToSchema)]
-pub struct FileStats {
+pub struct UploadStats {
     /// Total usage in bytes
     pub usage: i64,
 }
@@ -98,7 +102,7 @@ pub struct BatchFileError {
 #[derive(Serialize, ToSchema)]
 pub struct UploadConflict {
     pub message: String,
-    pub file: FileData,
+    pub upload: UploadData,
 }
 
 /// Upload a file.
@@ -110,6 +114,12 @@ pub struct UploadFile {
 }
 
 #[derive(Deserialize, IntoParams)]
-pub struct FileQuery {
+pub struct UploadQuery {
+    /// Query by name of file.
     pub query: Option<String>,
+    /// For non admins, this must be a public album
+    /// or a private album owned by you.
+    pub album_id: Option<String>,
+    /// If accessing another user as a non admin, this must be `true`
+    pub public: Option<bool>,
 }

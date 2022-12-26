@@ -6,14 +6,12 @@ use crate::{
     internal::auth::{auth_role, Auth},
     models::application::*,
     services::{
-        application::ApplicationService, prelude::DataService, ToMessageResponse, ToPageResponse,
-        ToResponse,
+        application::ApplicationService, prelude::UserOwnedService, ToMessageResponse, ToResponse,
     },
 };
 
 pub fn get_routes() -> Scope {
     web::scope("/application")
-        .service(list)
         .service(info)
         .service(create)
         .service(delete)
@@ -21,7 +19,6 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get token by application ID
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -43,42 +40,12 @@ async fn token(
     user: Auth<auth_role::User>,
 ) -> impl Responder {
     service
-        .generate_token(&application_id, Some(&user.id))
+        .generate_token(&application_id, Some(&user))
         .await
         .to_response::<TokenResponse>(StatusCode::OK)
 }
 
-/// Get all applications
-/// - Minimum required role: `user`
-/// - Allow unverified users: `false`
-/// - Application token allowed: `false`
-#[utoipa::path(
-    context_path = "/api/application",
-    tag = "application",
-    responses((status = 200, body = ApplicationPage)),
-    params(
-        ("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
-    ),
-    security(("apiKey" = [])),
-)]
-#[get("/list/{page_number}")]
-async fn list(
-    service: web::Data<ApplicationService>,
-    page_number: web::Path<usize>,
-    user: Auth<auth_role::User>,
-) -> impl Responder {
-    service
-        .get_page(
-            *page_number,
-            5,
-            Some(Condition::any().add(applications::Column::UserId.eq(user.id.to_owned()))),
-        )
-        .await
-        .to_page_response::<ApplicationData>(StatusCode::OK)
-}
-
 /// Get token info
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -97,17 +64,16 @@ async fn info(
     application_id: web::Path<String>,
 ) -> impl Responder {
     service
-        .by_condition(
-            Condition::all()
-                .add(applications::Column::UserId.eq(user.id.to_owned()))
-                .add(applications::Column::Id.eq(application_id.to_owned())),
+        .by_condition_authorized(
+            Condition::all().add(applications::Column::Id.eq(application_id.to_owned())),
+            Some(&user),
+            true,
         )
         .await
         .to_response::<ApplicationData>(StatusCode::OK)
 }
 
 /// Create an application
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -133,7 +99,6 @@ async fn create(
 }
 
 /// Delete an application
-/// - Minimum required role: `user`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -152,11 +117,7 @@ async fn delete(
     application_id: web::Path<String>,
 ) -> impl Responder {
     service
-        .delete(
-            application_id.to_string(),
-            false,
-            Some(Condition::all().add(applications::Column::UserId.eq(user.id.to_owned()))),
-        )
+        .delete_authorized(application_id.to_string(), None, Some(&user))
         .await
         .to_message_response(StatusCode::OK)
 }

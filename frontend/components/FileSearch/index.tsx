@@ -15,15 +15,15 @@ import {
   Spinner,
   Text
 } from "@chakra-ui/react"
-import { FileData, FilePage } from "@/client"
+import { UploadData, UploadPage } from "@/client"
 
 export const FileSearch: React.FC<{
-  onSearch: (page: number, query?: string) => Promise<FilePage>
+  onSearch: (page: number, query?: string) => Promise<UploadPage>
   onDelete: (fileId: string) => Promise<void>
   onFileDetails: (fileId: string) => void
 }> = ({ onSearch, onDelete, onFileDetails }) => {
   const [searchResult, setSearchResult] =
-    React.useState<FilePage | null>(null)
+    React.useState<UploadPage | null>(null)
 
   const [queryString, setQueryString] = React.useState<string>("")
   const [currentPage, setCurrentPage] = React.useState(1)
@@ -93,12 +93,12 @@ export const FileSearch: React.FC<{
         </Box>
       ) : (
         <Flex justifyContent="center" gap="20px" wrap="wrap" mt={6}>
-          {searchResult.items.map((file: FileData) => (
+          {searchResult.items.map((file: UploadData) => (
             <FileCard
               key={file.id}
               file={file}
-              onDetails={(file: FileData) => onFileDetails(file.id)}
-              onDelete={(file: FileData) => deleteFile(file.id)}
+              onDetails={(file: UploadData) => onFileDetails(file.id)}
+              onDelete={(file: UploadData) => deleteFile(file.id)}
             />
           ))}
         </Flex>

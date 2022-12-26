@@ -1,6 +1,4 @@
-use actix_web::{
-    delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder, Scope,
-};
+use actix_web::{delete, get, http::StatusCode, patch, post, web, Responder, Scope};
 
 use crate::{
     database::entity::sea_orm_active_enums::AuthMethod,
@@ -14,42 +12,56 @@ use crate::{
     services::{user::UserService, ToResponse},
 };
 
+pub mod album;
+pub mod application;
+pub mod upload;
+
 pub fn get_routes() -> Scope {
     web::scope("/user")
-        .service(create)
-        .service(delete)
-        .service(settings)
-        .service(info)
-        .service(resend_verify)
+        .service(
+            web::scope("/{user_id}")
+                .service(upload::get_routes())
+                .service(application::get_routes())
+                .service(album::get_routes())
+                .service(settings)
+                .service(info)
+                .service(resend_verify)
+                .service(register_key)
+                .service(delete),
+        )
         .service(verify)
-        .service(register_key)
+        .service(create)
 }
 
-/// Get current user information
-/// - Minimum required role: `user`
+/// Get private user information. This is not the same thing as a user profile.
 /// - Allow unverified users: `true`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/user",
+    context_path = "/api/user/{user_id}",
     tag = "user",
     responses(
         (status = 200, body = UserData)
     ),
+    params(("user_id" = str, Path)),
     security(("apiKey" = []))
 )]
 #[get("")]
 async fn info(
+    service: web::Data<UserService>,
+    user_id: web::Path<String>,
     user: Auth<auth_role::User, AllowUnverified, AllowApplication, AllowUnregistered>,
 ) -> impl Responder {
-    HttpResponse::Ok().json(UserData::from(user.user))
+    service
+        .by_id_authorized(&user_id, Some(&user))
+        .await
+        .to_response::<UserData>(StatusCode::OK)
 }
 
 /// Change user settings
-/// - Minimum required role: `user`
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 #[utoipa::path(
-    context_path = "/api/user",
+    context_path = "/api/user/{user_id}",
     tag = "user",
     responses(
         (status = 200, body = UserData),
@@ -57,21 +69,24 @@ async fn info(
         (status = 409, body = MessageResponse)
     ),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path)),
     request_body = UpdateUserSettings
 )]
-#[put("/settings")]
+#[patch("/settings")]
 async fn settings(
     service: web::Data<UserService>,
     form: web::Json<UpdateUserSettings>,
+    user_id: web::Path<String>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
 ) -> impl Responder {
     service
         .update_settings(
-            &user,
+            &user_id,
             form.0.email,
             form.0.username,
             form.0.new_password,
             form.0.current_password,
+            Some(&user),
         )
         .await
         .to_response::<UserData>(StatusCode::OK)
@@ -79,23 +94,28 @@ async fn settings(
 
 /// Register account using a registration key.
 /// This is only required on services with `invite_only` enabled.
+/// Admins can register a user without a key.
 #[utoipa::path(
-    context_path = "/api/user",
+    context_path = "/api/user/{user_id}",
     tag = "user",
     responses(
         (status = 200, body = UserData),
         (status = 400, body = MessageResponse),
     ),
-    params(RegistrationParams)
+    params(
+        RegistrationParams,
+        ("user_id" = str, Path)
+    ),
 )]
 #[get("/register")]
 async fn register_key(
     service: web::Data<UserService>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
+    user_id: web::Path<String>,
     params: web::Query<RegistrationParams>,
 ) -> impl Responder {
     service
-        .register_user(&user, &params.key)
+        .register_user(&user_id, params.key.clone(), Some(&user))
         .await
         .to_response::<UserData>(StatusCode::OK)
 }
@@ -109,7 +129,7 @@ async fn register_key(
         (status = 400, body = MessageResponse),
         (status = 409, body = MessageResponse)
     ),
-    request_body = UserCreateForm
+    request_body = UserCreateForm,
 )]
 #[post("")]
 async fn create(
@@ -132,13 +152,12 @@ async fn create(
 }
 
 /// Resend a verification code to the email
-/// - Minimum required role: `user`
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 ///
 /// This will be disabled if `smtp` is disabled in server settings
 #[utoipa::path(
-    context_path = "/api/user",
+    context_path = "/api/user/{user_id}",
     tag = "user",
     responses(
         (status = 200, body = MessageResponse),
@@ -146,13 +165,15 @@ async fn create(
         (status = 410, body = MessageResponse, description = "SMTP is disabled")
     ),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path))
 )]
 #[patch("/verify/resend")]
 async fn resend_verify(
     service: web::Data<UserService>,
+    user_id: web::Path<String>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
 ) -> impl Responder {
-    match service.resend_verification(&user).await {
+    match service.resend_verification(&user_id, Some(&user)).await {
         Ok(v) => MessageResponse::new(
             StatusCode::OK,
             &format!("Verification email resent to {}", v),
@@ -162,8 +183,9 @@ async fn resend_verify(
     }
 }
 
-/// Verify using a verification code
+/// Verify using a verification code.
 ///
+/// This will verify whatever user the code was created for.
 /// This will be disabled if `smtp` is disabled in server settings
 #[utoipa::path(
     context_path = "/api/user",
@@ -186,11 +208,10 @@ async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> imp
 }
 
 /// Delete a user and all files owned by the user
-/// - Minimum required role: `user`
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 #[utoipa::path(
-    context_path = "/api/user",
+    context_path = "/api/user/{user_id}",
     tag = "user",
     responses(
         (status = 200, body = MessageResponse, description = "User was deleted"),
@@ -198,14 +219,19 @@ async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> imp
     ),
     request_body(content = UserDeleteForm, description = "Verify your password"),
     security(("apiKey" = [])),
+    params(("user_id" = str, Path))
 )]
 #[delete("")]
 async fn delete(
     service: web::Data<UserService>,
+    user_id: web::Path<String>,
     user: Auth<auth_role::User, AllowUnverified, DenyApplication, AllowUnregistered>,
     form: web::Json<UserDeleteForm>,
 ) -> impl Responder {
-    match service.delete(&user, form.password.clone()).await {
+    match service
+        .delete(&user_id, form.password.clone(), Some(&user))
+        .await
+    {
         Ok(_) => MessageResponse::new(StatusCode::OK, "User has been deleted").http_response(),
         Err(e) => e.to_response(),
     }

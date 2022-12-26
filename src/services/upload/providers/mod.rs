@@ -1,6 +1,8 @@
 pub mod local;
 pub mod s3;
 
+use std::fmt::Debug;
+
 use async_trait::async_trait;
 use tokio::fs;
 
@@ -10,7 +12,7 @@ use self::{local::LocalProvider, s3::S3Provider};
 
 #[async_trait]
 /// Base storage provider type
-pub trait StorageProvider: Sync + Send {
+pub trait StorageProvider: Sync + Send + Debug {
     /// Put the object.
     async fn put_object(&self, name: &str, data: &Vec<u8>) -> Result<(), anyhow::Error>;
 

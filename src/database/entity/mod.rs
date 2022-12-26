@@ -4,12 +4,13 @@ use crate::database::sonyflake::Sonyflake;
 
 pub mod prelude;
 
+pub mod albums;
 pub mod applications;
 pub mod auth_methods;
-pub mod files;
 pub mod registration_keys;
 pub mod sea_orm_active_enums;
 pub mod settings;
+pub mod uploads;
 pub mod users;
 pub mod verifications;
 

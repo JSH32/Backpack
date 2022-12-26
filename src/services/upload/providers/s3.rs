@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use super::StorageProvider;
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -13,6 +15,15 @@ use rusoto_s3::{
 pub struct S3Provider {
     bucket: String,
     client: S3Client,
+}
+
+impl Debug for S3Provider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("S3Provider")
+            .field("bucket", &self.bucket)
+            .field("client", &"[NO DATA]")
+            .finish()
+    }
 }
 
 impl S3Provider {

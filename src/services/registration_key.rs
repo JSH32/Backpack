@@ -7,6 +7,7 @@ use uuid::Uuid;
 use super::prelude::*;
 use crate::database::entity::registration_keys;
 
+#[derive(Debug)]
 pub struct RegistrationKeyService {
     database: Arc<DatabaseConnection>,
 }

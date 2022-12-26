@@ -4,15 +4,13 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use rand::{rngs::OsRng, Rng};
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 use crate::{
     config::OAuthConfig,
     database::entity::{applications, auth_methods, sea_orm_active_enums::AuthMethod, users},
+    internal::lateinit::LateInit,
     models::{OAuthRequest, TokenResponse},
 };
 
@@ -30,11 +28,11 @@ pub mod auth_method;
 pub mod oauth;
 
 /// Handles authentication and validation.
+#[derive(Debug)]
 pub struct AuthService {
     auth_method_service: Arc<AuthMethodService>,
     user_service: Arc<UserService>,
-    // TODO: Figure out how to avoid this circular dependency.
-    application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
+    application_service: Arc<LateInit<ApplicationService>>,
     api_url: actix_http::Uri,
     jwt_key: String,
     /// Root URL of client.
@@ -49,7 +47,7 @@ impl AuthService {
     pub fn new(
         auth_method_service: Arc<AuthMethodService>,
         user_service: Arc<UserService>,
-        application_service: Arc<RwLock<Option<Arc<ApplicationService>>>>,
+        application_service: Arc<LateInit<ApplicationService>>,
         api_url: &str,
         jwt_key: &str,
         client_url: &str,
@@ -134,45 +132,47 @@ impl AuthService {
         .map_err(|_| ServiceError::Unauthorized("You are not authorized".into()))?
         .claims;
 
-        let mut user = self.user_service.by_id(claims.sub).await?;
-
-        if !user.verified {
-            if self.user_service.smtp_enabled() {
-                if !allow_unverified {
-                    return Err(ServiceError::Unauthorized(
-                        "You need to verify your email".into(),
-                    ));
-                }
-            } else {
-                self.user_service.verify_user(&user).await?;
-                user.verified = true;
-            }
-        }
-
-        let mut application = None;
-
-        if let Some(application_id) = claims.application_id {
-            let application_service = self.application_service.read().unwrap().clone().unwrap();
-            match application_service.by_id(application_id).await {
-                Ok(v) => {
-                    // Check if perm JWT token belongs to user
-                    if v.user_id != user.id {
-                        return Err(ServiceError::unauthorized());
+        match self.user_service.by_id(claims.sub).await.to_option()? {
+            Some(mut user) => {
+                if !user.verified {
+                    if self.user_service.smtp_enabled() {
+                        if !allow_unverified {
+                            return Err(ServiceError::Unauthorized(
+                                "You need to verify your email".into(),
+                            ));
+                        }
+                    } else {
+                        self.user_service.verify_user(&user).await?;
+                        user.verified = true;
                     }
-
-                    // Update last accessed
-                    application_service.update_accessed(&v.id).await?;
-                    application = Some(v);
                 }
-                Err(e) => match e {
-                    ServiceError::NotFound(_) => return Err(ServiceError::unauthorized()),
-                    // Any other error should actually be an error.
-                    e => return Err(e),
-                },
-            }
-        }
 
-        Ok((user, application))
+                let mut application = None;
+
+                if let Some(application_id) = claims.application_id {
+                    match self.application_service.by_id(application_id).await {
+                        Ok(v) => {
+                            // Check if perm JWT token belongs to user
+                            if v.user_id != user.id {
+                                return Err(ServiceError::unauthorized());
+                            }
+
+                            // Update last accessed
+                            self.application_service.update_accessed(&v.id).await?;
+                            application = Some(v);
+                        }
+                        Err(e) => match e {
+                            ServiceError::NotFound(_) => return Err(ServiceError::unauthorized()),
+                            // Any other error should actually be an error.
+                            e => return Err(e),
+                        },
+                    }
+                }
+
+                Ok((user, application))
+            }
+            None => Err(ServiceError::unauthorized()),
+        }
     }
 
     /// Create a new JWT for the user

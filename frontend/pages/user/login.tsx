@@ -62,11 +62,11 @@ const Login: NextPage = observer(() => {
     const tokenLogin = React.useCallback((token: string) => {
         localStorage.setItem("token", token)
 
-        api.user.info().then(userInfo => {
+        api.user.info("@me").then(userInfo => {
             store?.setUserInfo(userInfo)
             userInfo.verified 
                 ? router.replace("/user/uploads") 
-                : setPostLoginUnverifiedEmail(userInfo.email)
+                : setPostLoginUnverifiedEmail(userInfo.email!)
 
             toast({
                 title: "Logged in",

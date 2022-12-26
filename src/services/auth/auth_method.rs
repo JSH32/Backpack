@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use super::{new_password, validate_password};
 
+#[derive(Debug)]
 pub struct AuthMethodService {
     database: Arc<DatabaseConnection>,
 }

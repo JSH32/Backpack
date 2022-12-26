@@ -69,7 +69,7 @@ const Password: NextPage = observer(() => {
         }
 
         setLoading(true)
-        api.user.settings({ 
+        api.user.settings("@me", { 
             newPassword: form.newPassword, 
             currentPassword: form?.currentPassword 
         })

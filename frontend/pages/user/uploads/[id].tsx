@@ -24,24 +24,24 @@ import {
     Icon,
     useToast
 } from "@chakra-ui/react"
-import { FileData } from "@/client"
+import { UploadData } from "@/client"
 import api from "helpers/api"
 
 const FileInfo: React.FC = () => {
     const router = useRouter()
     const { id } = router.query
-    const [fileInfo, setFileInfo] = React.useState<FileData | null>(null)
+    const [fileInfo, setFileInfo] = React.useState<UploadData | null>(null)
     const [isError, setIsError] = React.useState(false)
     const toast = useToast()
 
     React.useEffect(() => {
-        api.file.info(id as string)
+        api.upload.info(id as string)
             .then(setFileInfo)
             .catch(() => setIsError(true))
     }, [])
 
     const deleteCallback = React.useCallback(() => {
-        api.file.deleteFile(fileInfo?.id as string)
+        api.upload.deleteFile(fileInfo?.id as string)
             .then(() => {
                 toast({
                     title: "File deleted",
@@ -93,6 +93,10 @@ const FileInfo: React.FC = () => {
                             <Tr>
                                 <Td>Original Name</Td>
                                 <Td>{fileInfo.originalName}</Td>
+                            </Tr>
+                            <Tr>
+                                <Td>Album</Td>
+                                <Td>{fileInfo.albumId}</Td>
                             </Tr>
                             <Tr>
                                 <Td>Size</Td>
