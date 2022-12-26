@@ -1,5 +1,5 @@
 use actix_http::StatusCode;
-use actix_web::{get, post, put, web, Responder, Scope};
+use actix_web::{delete, get, patch, post, web, Responder, Scope};
 
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
@@ -20,7 +20,7 @@ pub fn get_routes() -> Scope {
 
 /// Get album info.
 ///
-/// This won't work if you don't have access to the album and the album is privated.
+/// This wont work if you don't have access to the album and the album is privated.
 ///
 /// **For private albums:**
 /// - Allow unverified users: `false`
@@ -59,7 +59,7 @@ async fn info(
     ),
     security(("apiKey" = [])),
 )]
-#[get("/{album_id}")]
+#[delete("/{album_id}")]
 async fn delete(
     service: web::Data<AlbumService>,
     album_id: web::Path<String>,
@@ -90,8 +90,8 @@ async fn delete(
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/application",
-    tag = "application",
+    context_path = "/api/album",
+    tag = "album",
     responses((status = 200, body = AlbumData)),
     request_body = AlbumCreate,
     security(("apiKey" = [])),
@@ -112,13 +112,13 @@ async fn create(
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
-    context_path = "/api/application",
-    tag = "application",
+    context_path = "/api/album",
+    tag = "album",
     responses((status = 200, body = AlbumData)),
     request_body = AlbumUpdate,
     security(("apiKey" = [])),
 )]
-#[put("/{album_id}")]
+#[patch("/{album_id}")]
 async fn update(
     service: web::Data<AlbumService>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,

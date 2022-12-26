@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react"
 
 export const Resource: React.FC<{
-    backPath: string,
+    backPath?: string,
     title: string,
     id: string,
     right?: JSX.Element | JSX.Element[],
@@ -32,7 +32,7 @@ export const Resource: React.FC<{
                 bg={useColorModeValue("gray.50", "gray.800")}>
                 <Flex
                     py={{ base: 2 }}
-                    px={{ base: 4 }}
+                    px={{ base: backPath ? 4 : 0 }}
                     minH="60px"
                     maxW={1000}
                     w="100vw"
@@ -40,7 +40,7 @@ export const Resource: React.FC<{
                     align="center">
 
                     <HStack spacing={5}>
-                        <Button _hover={{ bg: useColorModeValue("gray.300", "gray.700") }} onClick={() => Router.push(backPath)} w={10} h={10}><Icon as={ArrowBackIcon}/></Button>
+                        {backPath && <Button _hover={{ bg: useColorModeValue("gray.300", "gray.700") }} onClick={() => Router.push(backPath)} w={10} h={10}><Icon as={ArrowBackIcon}/></Button>}
                         <Stack spacing={0.01}>
                             <Text fontWeight="bold">{title}</Text>
                             <HStack>

@@ -5,6 +5,7 @@ import type { OpenAPIConfig } from './core/OpenAPI';
 import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 
 import { AdminService } from './services/AdminService';
+import { AlbumService } from './services/AlbumService';
 import { ApplicationService } from './services/ApplicationService';
 import { AuthenticationService } from './services/AuthenticationService';
 import { ServerService } from './services/ServerService';
@@ -16,6 +17,7 @@ type HttpRequestConstructor = new (config: OpenAPIConfig) => BaseHttpRequest;
 export class BackpackClient {
 
     public readonly admin: AdminService;
+    public readonly album: AlbumService;
     public readonly application: ApplicationService;
     public readonly authentication: AuthenticationService;
     public readonly server: ServerService;
@@ -38,6 +40,7 @@ export class BackpackClient {
         });
 
         this.admin = new AdminService(this.request);
+        this.album = new AlbumService(this.request);
         this.application = new ApplicationService(this.request);
         this.authentication = new AuthenticationService(this.request);
         this.server = new ServerService(this.request);

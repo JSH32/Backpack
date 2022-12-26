@@ -8,6 +8,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AlbumCreate } from './models/AlbumCreate';
+export type { AlbumData } from './models/AlbumData';
+export type { AlbumUpdate } from './models/AlbumUpdate';
 export type { AppInfo } from './models/AppInfo';
 export type { ApplicationCreate } from './models/ApplicationCreate';
 export type { ApplicationData } from './models/ApplicationData';
@@ -38,6 +41,7 @@ export type { UserDeleteForm } from './models/UserDeleteForm';
 export { UserRole } from './models/UserRole';
 
 export { AdminService } from './services/AdminService';
+export { AlbumService } from './services/AlbumService';
 export { ApplicationService } from './services/ApplicationService';
 export { AuthenticationService } from './services/AuthenticationService';
 export { ServerService } from './services/ServerService';

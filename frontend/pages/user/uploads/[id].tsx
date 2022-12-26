@@ -95,6 +95,10 @@ const FileInfo: React.FC = () => {
                                 <Td>{fileInfo.originalName}</Td>
                             </Tr>
                             <Tr>
+                                <Td>Album</Td>
+                                <Td>{fileInfo.albumId}</Td>
+                            </Tr>
+                            <Tr>
                                 <Td>Size</Td>
                                 <Td>{convertBytes(fileInfo.size)}</Td>
                             </Tr>

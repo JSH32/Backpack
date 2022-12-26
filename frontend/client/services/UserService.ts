@@ -147,7 +147,7 @@ export class UserService {
         requestBody: UpdateUserSettings,
     ): CancelablePromise<UserData> {
         return this.httpRequest.request({
-            method: 'PUT',
+            method: 'PATCH',
             url: '/api/user/{user_id}/settings',
             path: {
                 'user_id': userId,

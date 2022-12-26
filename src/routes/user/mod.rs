@@ -1,4 +1,4 @@
-use actix_web::{delete, get, http::StatusCode, patch, post, put, web, Responder, Scope};
+use actix_web::{delete, get, http::StatusCode, patch, post, web, Responder, Scope};
 
 use crate::{
     database::entity::sea_orm_active_enums::AuthMethod,
@@ -72,7 +72,7 @@ async fn info(
     params(("user_id" = str, Path)),
     request_body = UpdateUserSettings
 )]
-#[put("/settings")]
+#[patch("/settings")]
 async fn settings(
     service: web::Data<UserService>,
     form: web::Json<UpdateUserSettings>,
