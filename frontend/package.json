@@ -38,7 +38,7 @@
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
     "eslint": "^8.17.0",
-    "eslint-config-next": "12.1.6",
+    "eslint-config-next": "13.1.1",
     "i": "^0.3.7",
     "npm": "^8.12.2",
     "typescript": "4.7.3"
