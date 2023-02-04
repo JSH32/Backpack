@@ -19,7 +19,7 @@ features = [
 
 [dependencies]
 migration = { path = "migration" }
-tokio = { version = "1.10.0", features = ["full"] }
+tokio = { version = "1.18.5", features = ["full"] }
 clap = { version = "3.2.16", features = ["derive"] }
 serde = "1.0.126"
 sqlx = { version = "0.6.0", features = [ "runtime-tokio-rustls", "postgres", "chrono", "sqlite" ] }
