@@ -70,7 +70,7 @@ impl Sonyflake {
 
                     to_sonyflake_time(time)
                 }
-                None => to_sonyflake_time(Utc.ymd(2014, 9, 1).and_hms(0, 0, 0)),
+                None => to_sonyflake_time(Utc.with_ymd_and_hms(2014, 9, 1, 0, 0, 0).unwrap()),
             },
             worker_state: Mutex::new(WorkerState {
                 elapsed_time: 0,
@@ -123,7 +123,7 @@ impl Clone for Sonyflake {
 const SONYFLAKE_TIME_UNIT: i64 = 10_000_000; // nanoseconds, i.e. 10msec
 
 fn to_sonyflake_time(time: DateTime<Utc>) -> i64 {
-    time.timestamp_nanos() / SONYFLAKE_TIME_UNIT
+    time.timestamp_nanos_opt().unwrap() / SONYFLAKE_TIME_UNIT
 }
 
 fn current_elapsed_time(start_time: i64) -> i64 {
@@ -132,5 +132,7 @@ fn current_elapsed_time(start_time: i64) -> i64 {
 
 fn sleep_time(overtime: i64) -> Duration {
     Duration::from_millis(overtime as u64 * 10)
-        - Duration::from_nanos((Utc::now().timestamp_nanos() % SONYFLAKE_TIME_UNIT) as u64)
+        - Duration::from_nanos(
+            (Utc::now().timestamp_nanos_opt().unwrap() % SONYFLAKE_TIME_UNIT) as u64,
+        )
 }

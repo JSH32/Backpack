@@ -22,8 +22,8 @@ pub mod prelude {
 pub type ServiceResult<T> = Result<T, ServiceError>;
 
 pub struct ServicePage<T> {
-    pub page: usize,
-    pub pages: usize,
+    pub page: u64,
+    pub pages: u64,
     pub items: Vec<T>,
 }
 

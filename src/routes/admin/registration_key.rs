@@ -53,7 +53,7 @@ async fn create(
 #[get("/list/{page_number}")]
 async fn list(
     service: web::Data<RegistrationKeyService>,
-    page_number: web::Path<usize>,
+    page_number: web::Path<u64>,
     _user: Auth<auth_role::Admin>,
 ) -> impl Responder {
     service

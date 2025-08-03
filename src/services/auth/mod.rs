@@ -1,7 +1,7 @@
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use rand::{rngs::OsRng, Rng};
+use rand::Rng;
 use sea_orm::{ColumnTrait, Condition};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
@@ -35,9 +35,6 @@ pub struct AuthService {
     application_service: Arc<LateInit<ApplicationService>>,
     api_url: actix_http::Uri,
     jwt_key: String,
-    /// Root URL of client.
-    pub client_url: String,
-
     google_oauth_client: Option<OAuthClient>,
     github_oauth_client: Option<OAuthClient>,
     discord_oauth_client: Option<OAuthClient>,
@@ -50,7 +47,6 @@ impl AuthService {
         application_service: Arc<LateInit<ApplicationService>>,
         api_url: &str,
         jwt_key: &str,
-        client_url: &str,
         google_oauth: Option<OAuthConfig>,
         github_oauth: Option<OAuthConfig>,
         discord_oauth: Option<OAuthConfig>,
@@ -61,7 +57,6 @@ impl AuthService {
             application_service,
             api_url: api_url.parse::<actix_http::Uri>().unwrap(),
             jwt_key: jwt_key.into(),
-            client_url: client_url.into(),
             google_oauth_client: match google_oauth {
                 Some(config) => Some(
                     OAuthProvider::Google
@@ -457,7 +452,10 @@ pub fn new_password(password: &str) -> ServiceResult<String> {
         ))
     } else {
         Ok(Argon2::default()
-            .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
+            .hash_password(
+                password.as_bytes(),
+                &SaltString::generate(&mut argon2::password_hash::rand_core::OsRng),
+            )
             .map_err(|e| ServiceError::ServerError(e.into()))?
             .to_string())
     }
@@ -465,7 +463,7 @@ pub fn new_password(password: &str) -> ServiceResult<String> {
 
 fn random_digit_str(digits: u32) -> i32 {
     let p = 10i32.pow(digits - 1);
-    rand::thread_rng().gen_range(p..10 * p)
+    rand::rng().random_range(p..10 * p)
 }
 
 fn make_redirect_url(

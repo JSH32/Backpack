@@ -1,6 +1,6 @@
 use sea_orm_migration::{prelude::*, sea_orm::DbBackend, sea_query::extension::postgres::Type};
 
-use crate::extensions::{ColumnExtension, ManagerExtension};
+use crate::extensions::ColumnExtension;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -46,7 +46,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(AuthMethods::LastAccessed)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -71,10 +71,16 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Auth methods in another table including password.
-        manager.drop_column(Users::Table, Users::Password).await?;
-
         // Post registration can occur, add registered column.
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .drop_column(Users::Password)
+                    .to_owned(),
+            )
+            .await?;
+
         manager
             .alter_table(
                 Table::alter()
@@ -101,12 +107,19 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(Users::Table)
-                    .add_column(ColumnDef::new(Users::Password).string_len(128).not_null())
+                    .drop_column(Users::Registered)
                     .to_owned(),
             )
             .await?;
 
-        manager.drop_column(Users::Table, Users::Registered).await
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .add_column(ColumnDef::new(Users::Password).string_len(128).not_null())
+                    .to_owned(),
+            )
+            .await
     }
 }
 

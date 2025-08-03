@@ -258,8 +258,8 @@ pub trait DataService<
     /// This accepts `@me` for `user_id` which will resolve to `accessing_user`'s ID.
     async fn get_page_authorized(
         &self,
-        page: usize,
-        page_size: usize,
+        page: u64,
+        page_size: u64,
         condition: Option<Condition>,
         user_id: &str,
         accessing_user: &users::Model,
@@ -277,8 +277,8 @@ pub trait DataService<
     /// Get a [`ServicePage`] of [`M`].
     async fn get_page(
         &self,
-        page: usize,
-        page_size: usize,
+        page: u64,
+        page_size: u64,
         condition: Option<Condition>,
     ) -> ServiceResult<ServicePage<M>> {
         let (db, _) = self.get_data_source();

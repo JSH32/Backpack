@@ -56,7 +56,7 @@ async fn info(
                     .await
                     .map_err(|e| ServiceError::DbErr(e))
                 {
-                    Ok(v) => v,
+                    Ok(v) => v as usize,
                     Err(e) => return e.to_response(),
                 },
                 OAuthProviders {

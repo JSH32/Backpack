@@ -147,8 +147,8 @@ impl Responder for MessageResponse {
     ApplicationPage = Page<ApplicationData>
 )]
 pub struct Page<T> {
-    pub page: usize,
-    pub pages: usize,
+    pub page: u64,
+    pub pages: u64,
     pub items: Vec<T>,
 }
 

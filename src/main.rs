@@ -61,7 +61,7 @@ mod services;
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Regenerate image thumbnails
-    #[clap(short, long, takes_value = false)]
+    #[clap(short, long)]
     generate_thumbnails: bool,
 }
 
@@ -95,7 +95,7 @@ async fn main() -> std::io::Result<()> {
 
     // Apply all pending migrations
     if config.run_migrations {
-        Migrator::up(&database, None).await.unwrap();
+        Migrator::up(database.get_ref(), None).await.unwrap();
     }
 
     // Get setting as single boolean before client gets moved
@@ -149,7 +149,6 @@ async fn main() -> std::io::Result<()> {
         application_service_late.clone(),
         &config.api_url,
         &config.jwt_key,
-        &config.client_url,
         config.google_oauth,
         config.github_oauth,
         config.discord_oauth,

@@ -1,6 +1,5 @@
 mod providers;
 
-use image::{io::Reader, ImageError};
 use migration::Alias;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
@@ -10,7 +9,6 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashSet,
     ffi::OsStr,
-    io::Cursor,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -21,6 +19,7 @@ use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
     database::entity::{sea_orm_active_enums::Role, uploads, users},
+    internal::file::{get_thumbnail_image, IMAGE_EXTS},
     models::{BatchDeleteResponse, BatchFileError, UploadData, UploadStats},
 };
 
@@ -237,7 +236,7 @@ impl UploadService {
             .into_iter()
             .any(|ext| ext.eq(&extension.to_uppercase()))
         {
-            if let Ok(image) = &create_thumbnail_image(&buffer) {
+            if let Ok(image) = &get_thumbnail_image(&buffer) {
                 if let Ok(_) = self
                     .storage
                     .put_object(&format!("thumb/{}", &filename), image)
@@ -275,7 +274,7 @@ impl UploadService {
 
         let expr = uploads::Entity::find()
             .select_only()
-            .filter(uploads::Column::Uploader.eq(user_id.clone()))
+            .filter(uploads::Column::Uploader.eq(user_id))
             .column_as(
                 uploads::Column::Size.sum().cast_as(Alias::new("BIGINT")),
                 "sum",
@@ -314,8 +313,8 @@ impl UploadService {
     /// * `accessing_user` - User accessing the uploads
     pub async fn get_upload_page(
         &self,
-        page: usize,
-        page_size: usize,
+        page: u64,
+        page_size: u64,
         user_id: Option<String>,
         query: Option<String>,
         album_id: Option<String>,
@@ -406,19 +405,4 @@ impl UploadService {
 
         upload_data
     }
-}
-
-const IMAGE_EXTS: &'static [&'static str] =
-    &["PNG", "JPG", "JPEG", "GIF", "WEBP", "JFIF", "PJPEG", "PJP"];
-
-fn create_thumbnail_image(bytes: &Vec<u8>) -> Result<Vec<u8>, ImageError> {
-    let mut buf = Vec::new();
-
-    Reader::new(Cursor::new(bytes))
-        .with_guessed_format()?
-        .decode()?
-        .thumbnail(500, 500)
-        .write_to(&mut Cursor::new(&mut buf), image::ImageOutputFormat::Png)?;
-
-    Ok(buf)
 }

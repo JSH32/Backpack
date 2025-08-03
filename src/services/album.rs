@@ -43,8 +43,8 @@ impl AlbumService {
     /// * `accessing_user` - User accessing the albums
     pub async fn get_album_page(
         &self,
-        page: usize,
-        page_size: usize,
+        page: u64,
+        page_size: u64,
         user_id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<ServicePage<albums::Model>> {

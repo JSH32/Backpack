@@ -27,7 +27,7 @@ pub fn get_routes() -> Scope {
 #[get("/{page_number}")]
 async fn list(
     service: web::Data<AlbumService>,
-    params: web::Path<(String, usize)>,
+    params: web::Path<(String, u64)>,
     user: AuthOptional<auth_role::User>,
 ) -> impl Responder {
     let (user_id, page_number) = params.to_owned();

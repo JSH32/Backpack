@@ -143,7 +143,6 @@ const Tokens: NextPage = () => {
 
   // Initial load page 1.
   React.useEffect(() => {
-    console.log("hi")
     getApplicationPage(1)
   }, [])
 
@@ -173,7 +172,7 @@ const Tokens: NextPage = () => {
                 h="60px"
                 zIndex={4}>
                 <Icon w={5} h={5} as={PlusIcon} />
-              </Button> 
+              </Button>
               <Modal isOpen={isOpen} onClose={closeForm}>
                 <ModalOverlay />
                 <ModalContent>
@@ -199,7 +198,7 @@ const Tokens: NextPage = () => {
                 </ModalContent>
               </Modal>
               <Divider />
-              { applications !== null ? <DataList>
+              {applications !== null ? <DataList>
                 <DataListHeader>
                   <DataListCell
                     colName="name"
@@ -254,13 +253,13 @@ const Tokens: NextPage = () => {
                 ))}
               </DataList> : <DataList>
                 <Center h="9rem">
-                  {loadingTokens ? <Spinner size="lg"/> : <VStack color="gray.500">
-                    <Icon as={KeyIcon} w="30px" h="30px"/>
+                  {loadingTokens ? <Spinner size="lg" /> : <VStack color="gray.500">
+                    <Icon as={KeyIcon} w="30px" h="30px" />
                     <Heading as="h2" size="2lg">
                       No Tokens found. <Link color="primary.400" onClick={onOpen}>Create one</Link>
                     </Heading>
                   </VStack>}
-                </Center>  
+                </Center>
               </DataList>}
               {applications && (
                 <Flex justifyContent="center" mt={5}>

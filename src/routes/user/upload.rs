@@ -34,7 +34,7 @@ pub fn get_routes() -> Scope {
 #[get("/list/{page_number}")]
 async fn list(
     service: web::Data<UploadService>,
-    params: web::Path<(String, usize)>,
+    params: web::Path<(String, u64)>,
     user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
     query: web::Query<UploadQuery>,
 ) -> impl Responder {

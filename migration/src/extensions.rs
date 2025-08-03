@@ -1,10 +1,11 @@
 use sea_orm_migration::{
     async_trait::async_trait,
-    sea_orm::{ConnectionTrait, DbBackend, Statement},
-    sea_query::{
-        ColumnDef, ForeignKey, ForeignKeyBuilder, ForeignKeyCreateStatement, Iden, Mode, SqlWriter,
-        SqliteQueryBuilder, Table,
+    prelude::{
+        inject_parameters, ForeignKey, ForeignKeyBuilder, ForeignKeyCreateStatement, Mode,
+        SqlWriterValues, SqliteQueryBuilder,
     },
+    sea_orm::{ConnectionTrait, DbBackend, Iden, Statement},
+    sea_query::ColumnDef,
     DbErr, SchemaManager,
 };
 
@@ -27,31 +28,25 @@ pub trait ManagerExtension {
     /// Get sqlite table definition as a string in SQlite.
     async fn sqlite_get_table_def(&self, tbl: &str) -> Result<String, DbErr>;
 
-    /// Alternative [`SchemaManager::create_foreign_key`] that supports SQlite.
-    /// This is more dangerous and can mess up your schema due to overwriting the master in SQlite.
-    /// Foreign keys will not be named in SQlite.
+    /// Create foreign key constraint with SQLite support.
+    ///
+    /// For SQLite, this recreates the table with the foreign key constraint.
+    /// For other databases, uses the standard `create_foreign_key`.
     async fn create_fkey<T: Iden + 'static>(
         &self,
         table: T,
         stmt: ForeignKeyCreateStatement,
     ) -> Result<(), DbErr>;
 
-    /// Alternative [`SchemaManager::drop_foreign_key`] that supports SQlite.
-    /// `fkey_name` will be used for all databases except SQlite which will use `column` since fkeys aren't named in SQlite.
+    /// Drop foreign key constraint with SQLite support.
+    ///
+    /// For SQLite, removes the constraint from table definition and recreates the table.
+    /// For other databases, uses the standard `drop_foreign_key` with the given name.
     async fn drop_fkey<T: Iden + 'static, C: Iden + 'static>(
         &self,
         table: T,
         column: C,
         fkey_name: &str,
-    ) -> Result<(), DbErr>;
-
-    /// Drop a column on any database including SQlite.
-    /// This can be removed after this is natively supported:
-    /// https://github.com/SeaQL/sea-query/issues/457
-    async fn drop_column<T: Iden + 'static, C: Iden + 'static>(
-        &self,
-        table: T,
-        column: C,
     ) -> Result<(), DbErr>;
 }
 
@@ -86,23 +81,35 @@ impl ManagerExtension for SchemaManager<'_> {
     ) -> Result<(), DbErr> {
         if self.get_database_backend() == DbBackend::Sqlite {
             // Get the old table definition.
-            let old_tbl_def = self.sqlite_get_table_def(&table.to_string()).await?;
+            let old_table_def = self.sqlite_get_table_def(&table.to_string()).await?;
 
-            let mut new_tbl_def =
-                old_tbl_def[0..old_tbl_def.rfind(")").unwrap_or(old_tbl_def.len())].to_string();
+            // Find the closing parenthesis to insert the foreign key constraint
+            let insert_pos = old_table_def
+                .rfind(")")
+                .ok_or_else(|| DbErr::Custom("Invalid table definition".to_string()))?;
 
-            // Write foreign key creation logic.
-            let mut writer = SqlWriter::new();
-            SqliteQueryBuilder.prepare_foreign_key_create_statement_internal(
-                &stmt,
-                &mut writer,
-                Mode::Creation,
-            );
+            let mut new_table_def = old_table_def[..insert_pos].to_string();
 
-            // Push prior removed ')' with new constraint.
-            new_tbl_def.push_str(&format!(", {})", writer.result()));
+            // Generate the foreign key constraint SQL
+            let fkey_sql = {
+                let mut writer = SqlWriterValues::new("?", false);
+                SqliteQueryBuilder.prepare_foreign_key_create_statement_internal(
+                    &stmt,
+                    &mut writer,
+                    Mode::Creation,
+                );
+                let (fkey_sql, values) = writer.into_parts();
+                if !values.0.is_empty() {
+                    inject_parameters(&fkey_sql, values.0, &SqliteQueryBuilder)
+                } else {
+                    fkey_sql
+                }
+            };
 
-            self.exec_sql(&sqlite_change_schema(&table.to_string(), &new_tbl_def))
+            // Add the constraint before the closing parenthesis
+            new_table_def.push_str(&format!(", {})", fkey_sql));
+
+            self.exec_sql(&sqlite_change_schema(&table.to_string(), &new_table_def))
                 .await
         } else {
             self.create_foreign_key(stmt).await
@@ -156,24 +163,6 @@ impl ManagerExtension for SchemaManager<'_> {
                 .await
         }
     }
-
-    async fn drop_column<T: Iden + 'static, C: Iden + 'static>(
-        &self,
-        table: T,
-        column: C,
-    ) -> Result<(), DbErr> {
-        if self.get_database_backend() == DbBackend::Sqlite {
-            self.exec_sql(&format!(
-                "ALTER TABLE {} DROP COLUMN {};",
-                table.to_string(),
-                column.to_string()
-            ))
-            .await
-        } else {
-            self.alter_table(Table::alter().table(table).drop_column(column).to_owned())
-                .await
-        }
-    }
 }
 
 /// Create query to change table schema.
@@ -185,7 +174,7 @@ fn sqlite_change_schema(tbl_name: &str, new_schema: &str) -> String {
         BEGIN TRANSACTION;
 
         ALTER TABLE {tbl_name} RENAME TO _{tbl_name}_old;
-        
+
         {new_schema};
 
         INSERT INTO {tbl_name} SELECT * FROM _{tbl_name}_old;

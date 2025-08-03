@@ -22,7 +22,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Albums::Created)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .col(ColumnDef::new(Albums::UserId).sonyflake().not_null())
                     .col(ColumnDef::new(Albums::Name).string_len(16).not_null())
@@ -98,8 +98,15 @@ impl MigrationTrait for Migration {
             .drop_fkey(Files::Table, Files::AlbumId, "files_album_id_fkey")
             .await?;
 
-        manager.drop_column(Files::Table, Files::AlbumId).await?;
-        manager.drop_column(Files::Table, Files::Public).await?;
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Files::Table)
+                    .drop_column(Files::AlbumId)
+                    .drop_column(Files::Public)
+                    .to_owned(),
+            )
+            .await?;
 
         manager
             .drop_table(Table::drop().table(Albums::Table).to_owned())
