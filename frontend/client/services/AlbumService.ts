@@ -3,8 +3,8 @@
 import type { AlbumCreate } from '../models/AlbumCreate';
 import type { AlbumData } from '../models/AlbumData';
 import type { AlbumUpdate } from '../models/AlbumUpdate';
-import type { ApplicationPage } from '../models/ApplicationPage';
 import type { MessageResponse } from '../models/MessageResponse';
+import type { Page_ApplicationData } from '../models/Page_ApplicationData';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -14,10 +14,8 @@ export class AlbumService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Create an album
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
-     *
      * @param requestBody
      * @returns AlbumData
      * @throws ApiError
@@ -34,14 +32,11 @@ export class AlbumService {
     }
 
     /**
-     * Get album info.
-     *
      * This wont work if you don't have access to the album and the album is privated.
      *
      * **For private albums:**
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
-     *
      * @param albumId
      * @returns AlbumData
      * @throws ApiError
@@ -59,11 +54,8 @@ export class AlbumService {
     }
 
     /**
-     * Delete an album.
-     *
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param albumId
      * @returns MessageResponse
      * @throws ApiError
@@ -81,10 +73,8 @@ export class AlbumService {
     }
 
     /**
-     * Update album settings
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
-     *
      * @param albumId
      * @param requestBody
      * @returns AlbumData
@@ -106,19 +96,17 @@ export class AlbumService {
     }
 
     /**
-     * Get all albums owned by a user.
      * - Allow unverified users: `true`
      * - Application token allowed: `true`
-     *
      * @param pageNumber Page to get albums by (starts at 1)
      * @param userId
-     * @returns ApplicationPage
+     * @returns Page_ApplicationData
      * @throws ApiError
      */
     public list(
-        pageNumber: string,
+        pageNumber: number,
         userId: string,
-    ): CancelablePromise<ApplicationPage> {
+    ): CancelablePromise<Page_ApplicationData> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/user/{user_id}/album/{page_number}',

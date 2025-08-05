@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 import type { MessageResponse } from '../models/MessageResponse';
+import type { Page_RegistrationKeyData } from '../models/Page_RegistrationKeyData';
 import type { RegistrationKeyData } from '../models/RegistrationKeyData';
-import type { RegistrationKeyPage } from '../models/RegistrationKeyPage';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -12,19 +12,17 @@ export class AdminService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Create a registration key
      * - Minimum required role: `admin`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param uses Maximum amount of key uses.
      * @param expiration Expiration in milliseconds from creation date.
      * @returns RegistrationKeyData
      * @throws ApiError
      */
     public create(
-        uses?: number,
-        expiration?: number,
+        uses?: number | null,
+        expiration?: number | null,
     ): CancelablePromise<RegistrationKeyData> {
         return this.httpRequest.request({
             method: 'POST',
@@ -37,17 +35,15 @@ export class AdminService {
     }
 
     /**
-     * Get registration keys
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param pageNumber Page to get
-     * @returns RegistrationKeyPage
+     * @returns Page_RegistrationKeyData
      * @throws ApiError
      */
     public list(
         pageNumber: number,
-    ): CancelablePromise<RegistrationKeyPage> {
+    ): CancelablePromise<Page_RegistrationKeyData> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/admin/registrationKey/list/{page_number}',
@@ -58,16 +54,14 @@ export class AdminService {
     }
 
     /**
-     * Get a single registration key
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param registrationId Registration key to get
      * @returns RegistrationKeyData
      * @throws ApiError
      */
     public getOne(
-        registrationId: string,
+        registrationId: number,
     ): CancelablePromise<RegistrationKeyData> {
         return this.httpRequest.request({
             method: 'GET',
@@ -82,16 +76,14 @@ export class AdminService {
     }
 
     /**
-     * Delete a registration key
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param registrationId Registration key to delete
      * @returns MessageResponse Registration key was deleted
      * @throws ApiError
      */
     public delete(
-        registrationId: string,
+        registrationId: number,
     ): CancelablePromise<MessageResponse> {
         return this.httpRequest.request({
             method: 'DELETE',

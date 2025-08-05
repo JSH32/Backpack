@@ -2,16 +2,16 @@
 /* tslint:disable */
 
 export type UploadData = {
-    albumId?: string;
+    albumId?: string | null;
     hash: string;
     id: string;
     name: string;
     originalName: string;
     public: boolean;
     size: number;
-    thumbnailUrl?: string;
+    thumbnailUrl?: string | null;
     uploaded: number;
     uploader: string;
-    url?: string;
+    url?: string | null;
 };
 

@@ -5,14 +5,14 @@ export type AlbumUpdate = {
     /**
      * Optional album description.
      */
-    description?: string;
+    description?: string | null;
     /**
      * Album name.
      */
-    name?: string;
+    name?: string | null;
     /**
      * Is the album public.
      */
-    public?: boolean;
+    public?: boolean | null;
 };
 

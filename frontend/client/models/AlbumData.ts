@@ -9,7 +9,7 @@ export type AlbumData = {
     /**
      * Optional album description
      */
-    description?: string;
+    description?: string | null;
     id: string;
     name: string;
     /**

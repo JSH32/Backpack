@@ -11,6 +11,6 @@ export type UnlinkAuthMethod = {
     /**
      * Password required if present.
      */
-    password?: string;
+    password?: string | null;
 };
 

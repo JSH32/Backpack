@@ -1,9 +1,12 @@
 use actix_multipart_extract::Multipart;
-use actix_web::{delete, get, http::StatusCode, post, web, HttpResponse, Responder, Scope};
+use actix_web::{delete, get, http::StatusCode, patch, post, web, HttpResponse, Responder, Scope};
 
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
-    models::{BatchDeleteRequest, BatchDeleteResponse, UploadConflict, UploadData, UploadFile},
+    models::{
+        BatchDeleteRequest, BatchDeleteResponse, MessageResponse, SetPublicQuery, UploadConflict,
+        UploadData, UploadFile,
+    },
     services::{
         upload::{UploadResult, UploadService},
         ToMessageResponse, ToResponse,
@@ -14,11 +17,13 @@ pub fn get_routes() -> Scope {
     web::scope("/upload")
         .service(upload)
         .service(info)
+        .service(set_public)
         .service(delete_files)
         .service(delete_file)
 }
 
-/// Delete file data by ID.
+/// Delete file by ID.
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -30,23 +35,24 @@ pub fn get_routes() -> Scope {
         (status = 404, body = MessageResponse, description = "File not found")
     ),
     params(
-        ("file_id" = u64, Path, description = "File ID"),
+        ("upload_id" = String, Path, description = "File ID"),
     ),
     security(("apiKey" = [])),
 )]
-#[delete("/{file_id}")]
+#[delete("/{upload_id}")]
 async fn delete_file(
     service: web::Data<UploadService>,
-    file_id: web::Path<String>,
+    upload_id: web::Path<String>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
 ) -> impl Responder {
     service
-        .delete_file(&file_id, Some(&user))
+        .delete_file(&upload_id, Some(&user))
         .await
         .to_message_response(StatusCode::OK)
 }
 
 /// Delete multiple uploads by ID.
+///
 /// This will ignore any invalid IDs.
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
@@ -72,6 +78,7 @@ async fn delete_files(
 }
 
 /// Get file data by ID
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -99,7 +106,38 @@ async fn info(
         .to_response::<UploadData>(StatusCode::OK)
 }
 
+/// Set file public status
+///
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    patch,
+    context_path = "/api/upload", 
+    tag = "upload",
+    responses(
+        (status = 200, body = UploadData),
+    ),
+    params(
+        ("upload_id" = String, Path, description = "Upload ID to set status"),
+        SetPublicQuery
+    ),
+    security(("apiKey" = [])),
+)]
+#[patch("/{upload_id}")]
+async fn set_public(
+    service: web::Data<UploadService>,
+    upload_id: web::Path<String>,
+    params: web::Query<SetPublicQuery>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+) -> impl Responder {
+    service
+        .set_public(&upload_id, params.public, Some(&user))
+        .await
+        .to_response::<UploadData>(StatusCode::OK)
+}
+
 /// Upload a file.
+///
 /// You can only upload a file for yourself regardless of admin status.
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`

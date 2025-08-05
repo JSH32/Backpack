@@ -3,8 +3,8 @@ use crate::{
         auth_role, get_token, AllowUnregistered, AllowUnverified, Auth, DenyApplication,
     },
     models::{
-        auth::BasicAuthForm, AuthMethods, LoginRedirectUrl, OAuthLoginQuery, OAuthRequest,
-        TokenResponse, UnlinkAuthMethod,
+        auth::BasicAuthForm, AuthMethods, LoginRedirectUrl, MessageResponse, OAuthLoginQuery,
+        OAuthRequest, TokenResponse, UnlinkAuthMethod,
     },
     services::{
         auth::{auth_method::AuthMethodService, oauth::OAuthProvider, AuthService},
@@ -82,6 +82,7 @@ async fn unlink_method(
 }
 
 /// Get URL for OAuth2 authentication.
+///
 /// If token is provided, this will link to the existing account.
 #[utoipa::path(
     context_path = "/api/auth",
@@ -119,13 +120,14 @@ pub async fn oauth_login(
 }
 
 /// Callback for OAuth providers.
+///
 /// This redirects to the redirect provided in the oauth initialization route.
 #[utoipa::path(
     context_path = "/api/auth",
     tag = "authentication",
-    request_body(content = OAuthRequest),
     params(
-        ("provider" = str, Path, description = "Provider to callback to.")
+        ("provider" = str, Path, description = "Provider to callback to."),
+        OAuthRequest,
     )
 )]
 #[get("/{provider}/callback")]

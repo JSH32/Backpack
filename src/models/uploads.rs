@@ -123,3 +123,11 @@ pub struct UploadQuery {
     /// If accessing another user as a non admin, this must be `true`
     pub public: Option<bool>,
 }
+
+#[derive(Deserialize, IntoParams)]
+pub struct SetPublicQuery {
+    /// Public or private.
+    /// If public can be read by anyone.
+    /// If private can be read by uploader and admins.
+    pub public: bool,
+}

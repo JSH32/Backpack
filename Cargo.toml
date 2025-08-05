@@ -35,7 +35,8 @@ actix-web = "4.11.0"
 actix-files = "0.6.6"
 actix-multipart = "0.7.2"
 actix-http = "3.11.0"
-utoipa = { version = "2.0.1", features = ["actix_extras"] }
+utoipa-actix-web = "0.1.2"
+utoipa = { version = "5", features = ["actix_extras"] }
 figlet-rs = "0.1.5"
 indicatif = "0.18.0"
 colored = "3.0.0"

@@ -87,6 +87,7 @@ async fn delete(
 }
 
 /// Create an album
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -109,6 +110,7 @@ async fn create(
 }
 
 /// Update album settings
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(

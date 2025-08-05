@@ -1,6 +1,5 @@
 mod providers;
 
-use migration::Alias;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
     IntoActiveModel, ModelTrait, QueryFilter, QuerySelect, QueryTrait, Set,
@@ -86,6 +85,33 @@ impl UploadService {
         Ok(self.to_upload_data(file))
     }
 
+    /// Set file status (public/private).
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - File ID.
+    /// * `accessing_user` - User who is accessing this file.
+    pub async fn set_public(
+        &self,
+        id: &str,
+        public: bool,
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<UploadData> {
+        let mut file = self
+            .by_id_authorized(id.into(), accessing_user, true)
+            .await?
+            .into_active_model();
+
+        file.public = Set(public);
+
+        let updated_file = file
+            .update(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        Ok(self.to_upload_data(updated_file))
+    }
+
     /// Delete a file.
     ///
     /// # Arguments
@@ -98,7 +124,7 @@ impl UploadService {
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<String> {
         let file = self
-            .by_id_authorized(id.into(), accessing_user, false)
+            .by_id_authorized(id.into(), accessing_user, true)
             .await?;
 
         file.clone()
@@ -257,9 +283,10 @@ impl UploadService {
 
     pub async fn user_stats(
         &self,
-        user_id: &str,
+        mut user_id: &str,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<UploadStats> {
+        // Check if has permission to get user stats
         if let Some(accessing_user) = accessing_user {
             if user_id != "@me"
                 && accessing_user.id != user_id
@@ -269,16 +296,15 @@ impl UploadService {
                     id: Some(user_id.into()),
                     resource: "user's stats".into(),
                 });
+            } else {
+                user_id = &accessing_user.id;
             }
         }
 
         let expr = uploads::Entity::find()
             .select_only()
             .filter(uploads::Column::Uploader.eq(user_id))
-            .column_as(
-                uploads::Column::Size.sum().cast_as(Alias::new("BIGINT")),
-                "sum",
-            )
+            .column_as(uploads::Column::Size.sum(), "sum")
             .build(self.database.get_database_backend())
             .to_owned();
 

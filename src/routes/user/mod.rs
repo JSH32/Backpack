@@ -33,7 +33,8 @@ pub fn get_routes() -> Scope {
         .service(create)
 }
 
-/// Get private user information. This is not the same thing as a user profile.
+/// Get user information.
+///
 /// - Allow unverified users: `true`
 /// - Application token allowed: `true`
 #[utoipa::path(
@@ -58,6 +59,7 @@ async fn info(
 }
 
 /// Change user settings
+///
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -93,6 +95,7 @@ async fn settings(
 }
 
 /// Register account using a registration key.
+///
 /// This is only required on services with `invite_only` enabled.
 /// Admins can register a user without a key.
 #[utoipa::path(
@@ -152,6 +155,7 @@ async fn create(
 }
 
 /// Resend a verification code to the email
+///
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 ///
@@ -208,6 +212,7 @@ async fn verify(service: web::Data<UserService>, code: web::Path<String>) -> imp
 }
 
 /// Delete a user and all files owned by the user
+///
 /// - Allow unverified users: `true`
 /// - Application token allowed: `false`
 #[utoipa::path(

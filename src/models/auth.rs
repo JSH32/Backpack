@@ -10,7 +10,7 @@ pub struct BasicAuthForm {
 }
 
 /// OAuth redirect request parameters.
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 pub struct OAuthRequest {
     pub code: String,
     pub state: String,

@@ -5,7 +5,7 @@ export type AlbumCreate = {
     /**
      * Optional album description.
      */
-    description?: string;
+    description?: string | null;
     /**
      * Album name.
      */

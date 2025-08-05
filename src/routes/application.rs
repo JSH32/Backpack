@@ -4,7 +4,7 @@ use sea_orm::{prelude::*, Condition};
 use crate::{
     database::entity::applications,
     internal::auth::{auth_role, Auth},
-    models::application::*,
+    models::{application::*, MessageResponse},
     services::{
         application::ApplicationService, prelude::UserOwnedService, ToMessageResponse, ToResponse,
     },
@@ -19,6 +19,7 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get token by application ID
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -46,6 +47,7 @@ async fn token(
 }
 
 /// Get token info
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -74,6 +76,7 @@ async fn info(
 }
 
 /// Create an application
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -99,6 +102,7 @@ async fn create(
 }
 
 /// Delete an application
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(

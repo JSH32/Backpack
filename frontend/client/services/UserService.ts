@@ -14,8 +14,6 @@ export class UserService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Create a new user
-     *
      * @param requestBody
      * @returns UserData
      * @throws ApiError
@@ -32,11 +30,8 @@ export class UserService {
     }
 
     /**
-     * Verify using a verification code.
-     *
      * This will verify whatever user the code was created for.
      * This will be disabled if `smtp` is disabled in server settings
-     *
      * @param code Verification code to verify
      * @returns MessageResponse
      * @throws ApiError
@@ -58,10 +53,8 @@ export class UserService {
     }
 
     /**
-     * Get private user information. This is not the same thing as a user profile.
      * - Allow unverified users: `true`
      * - Application token allowed: `true`
-     *
      * @param userId
      * @returns UserData
      * @throws ApiError
@@ -79,10 +72,8 @@ export class UserService {
     }
 
     /**
-     * Delete a user and all files owned by the user
      * - Allow unverified users: `true`
      * - Application token allowed: `false`
-     *
      * @param userId
      * @param requestBody Verify your password
      * @returns MessageResponse User was deleted
@@ -107,10 +98,8 @@ export class UserService {
     }
 
     /**
-     * Register account using a registration key.
      * This is only required on services with `invite_only` enabled.
      * Admins can register a user without a key.
-     *
      * @param userId
      * @param key This doesn't have to be provided if an admin is calling this route.
      * @returns UserData
@@ -118,7 +107,7 @@ export class UserService {
      */
     public registerKey(
         userId: string,
-        key?: string,
+        key?: string | null,
     ): CancelablePromise<UserData> {
         return this.httpRequest.request({
             method: 'GET',
@@ -133,10 +122,8 @@ export class UserService {
     }
 
     /**
-     * Change user settings
      * - Allow unverified users: `true`
      * - Application token allowed: `false`
-     *
      * @param userId
      * @param requestBody
      * @returns UserData
@@ -158,12 +145,10 @@ export class UserService {
     }
 
     /**
-     * Resend a verification code to the email
      * - Allow unverified users: `true`
      * - Application token allowed: `false`
      *
      * This will be disabled if `smtp` is disabled in server settings
-     *
      * @param userId
      * @returns MessageResponse
      * @throws ApiError

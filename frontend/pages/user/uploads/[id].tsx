@@ -5,6 +5,8 @@ import { Result } from "components/Result"
 import { convertBytes, dateToString } from "helpers/util"
 import TrashIcon from "assets/icons/trash.svg"
 import { Page } from "layouts/Page"
+import { Checkbox } from '@chakra-ui/react'
+
 
 import {
     Box,
@@ -35,7 +37,7 @@ const FileInfo: React.FC = () => {
     const toast = useToast()
 
     React.useEffect(() => {
-        api.upload.info(id as string)
+        api.upload.info(id as unknown as number)
             .then(setFileInfo)
             .catch(() => setIsError(true))
     }, [])
@@ -63,6 +65,20 @@ const FileInfo: React.FC = () => {
             })
     }, [fileInfo])
 
+    const setPublic = React.useCallback((pub: boolean) => {
+        api.upload.setPublic(fileInfo?.id as string, pub)
+            .then(setFileInfo)
+            .catch(error => {
+                toast({
+                    title: "Error",
+                    description: error.body.message,
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true
+                })
+            })
+    }, [fileInfo])
+
     return <Box className="fileinfo">
         {isError ? <Page title="Invalid File">
             <Result type="error" title="Invalid resource">
@@ -77,8 +93,8 @@ const FileInfo: React.FC = () => {
                 </Button>}
                 id={fileInfo.id}>
                 <Box mt={5}>
-                    { fileInfo.thumbnailUrl ?
-                        <Image mb="10px" maxH="300px" src={fileInfo.url} alt={fileInfo.name} /> : <></>}
+                    {fileInfo.thumbnailUrl ?
+                        <Image mb="10px" maxH="300px" src={fileInfo.url as string} alt={fileInfo.name} /> : <></>}
                     <Divider />
                     <Table wordBreak="break-all" sx={{ "font-variant-numeric": "unset;" }}>
                         <Tbody>
@@ -99,6 +115,10 @@ const FileInfo: React.FC = () => {
                                 <Td>{fileInfo.albumId}</Td>
                             </Tr>
                             <Tr>
+                                <Td>Public</Td>
+                                <Td><Checkbox checked={fileInfo.public} onChange={e => setPublic(e.target.checked)} /></Td>
+                            </Tr>
+                            <Tr>
                                 <Td>Size</Td>
                                 <Td>{convertBytes(fileInfo.size)}</Td>
                             </Tr>
@@ -108,7 +128,7 @@ const FileInfo: React.FC = () => {
                             </Tr>
                             <Tr>
                                 <Td>URL</Td>
-                                <Td><Link color="primary.300" target="_blank" href={fileInfo.url}>{fileInfo.url}</Link></Td>
+                                <Td><Link color="primary.300" target="_blank" href={fileInfo.url as string}>{fileInfo.url}</Link></Td>
                             </Tr>
                             <Tr>
                                 <Td>Hash</Td>

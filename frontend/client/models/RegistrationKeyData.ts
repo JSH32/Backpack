@@ -18,6 +18,6 @@ export type RegistrationKeyData = {
     /**
      * Amount of uses left.
      */
-    usesLeft?: number;
+    usesLeft?: number | null;
 };
 

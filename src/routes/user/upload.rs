@@ -2,6 +2,7 @@ use actix_http::StatusCode;
 use actix_web::{get, web, Responder, Scope};
 
 use crate::internal::auth::AuthOptional;
+use crate::models::{MessageResponse, Page};
 use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
@@ -14,13 +15,14 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get a paginated list of files
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(
 	context_path = "/api/user/{user_id}/upload",
 	tag = "upload",
 	responses(
-		(status = 200, body = UploadPage),
+		(status = 200, body = Page<UploadData>),
 		(status = 400, body = MessageResponse, description = "Invalid page number"),
 		(status = 404, body = MessageResponse, description = "Page not found")
 	),
@@ -55,6 +57,7 @@ async fn list(
 }
 
 /// Get file stats for user
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `true`
 #[utoipa::path(

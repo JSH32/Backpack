@@ -141,11 +141,6 @@ impl Responder for MessageResponse {
 }
 
 #[derive(Serialize, ToSchema)]
-#[aliases(
-    UploadPage = Page<UploadData>,
-    RegistrationKeyPage = Page<RegistrationKeyData>,
-    ApplicationPage = Page<ApplicationData>
-)]
 pub struct Page<T> {
     pub page: u64,
     pub pages: u64,

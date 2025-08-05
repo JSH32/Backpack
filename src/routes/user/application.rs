@@ -4,7 +4,7 @@ use sea_orm::{prelude::*, Condition};
 use crate::{
     database::entity::applications,
     internal::auth::{auth_role, Auth},
-    models::application::*,
+    models::{application::*, Page},
     services::{application::ApplicationService, prelude::DataService, ToPageResponse},
 };
 
@@ -13,12 +13,13 @@ pub fn get_routes() -> Scope {
 }
 
 /// Get all applications owned by a user.
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
 	context_path = "/api/user/{user_id}/application",
 	tag = "application",
-	responses((status = 200, body = ApplicationPage)),
+	responses((status = 200, body = Page<ApplicationData>)),
 	params(
 		("page_number" = u64, Path, description = "Page to get applications by (starts at 1)"),
 		("user_id" = str, Path)
