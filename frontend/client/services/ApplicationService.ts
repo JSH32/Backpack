@@ -2,8 +2,8 @@
 /* tslint:disable */
 import type { ApplicationCreate } from '../models/ApplicationCreate';
 import type { ApplicationData } from '../models/ApplicationData';
-import type { ApplicationPage } from '../models/ApplicationPage';
 import type { MessageResponse } from '../models/MessageResponse';
+import type { Page_ApplicationData } from '../models/Page_ApplicationData';
 import type { TokenResponse } from '../models/TokenResponse';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -14,11 +14,8 @@ export class ApplicationService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Create an application
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param requestBody
      * @returns ApplicationData
      * @throws ApiError
@@ -38,33 +35,8 @@ export class ApplicationService {
     }
 
     /**
-     * Get all applications
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
-     * @param pageNumber Page to get applications by (starts at 1)
-     * @returns ApplicationPage
-     * @throws ApiError
-     */
-    public list(
-        pageNumber: number,
-    ): CancelablePromise<ApplicationPage> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/application/list/{page_number}',
-            path: {
-                'page_number': pageNumber,
-            },
-        });
-    }
-
-    /**
-     * Get token info
-     * - Minimum required role: `user`
-     * - Allow unverified users: `false`
-     * - Application token allowed: `false`
-     *
      * @param applicationId
      * @returns ApplicationData
      * @throws ApiError
@@ -82,11 +54,8 @@ export class ApplicationService {
     }
 
     /**
-     * Delete an application
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param applicationId
      * @returns MessageResponse Application was deleted
      * @throws ApiError
@@ -107,11 +76,8 @@ export class ApplicationService {
     }
 
     /**
-     * Get token by application ID
-     * - Minimum required role: `user`
      * - Allow unverified users: `false`
      * - Application token allowed: `false`
-     *
      * @param applicationId Application ID to get token for
      * @returns TokenResponse
      * @throws ApiError
@@ -127,6 +93,28 @@ export class ApplicationService {
             },
             errors: {
                 404: `Application not found`,
+            },
+        });
+    }
+
+    /**
+     * - Allow unverified users: `false`
+     * - Application token allowed: `false`
+     * @param pageNumber Page to get applications by (starts at 1)
+     * @param userId
+     * @returns Page_ApplicationData
+     * @throws ApiError
+     */
+    public list(
+        pageNumber: number,
+        userId: string,
+    ): CancelablePromise<Page_ApplicationData> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/user/{user_id}/application/{page_number}',
+            path: {
+                'page_number': pageNumber,
+                'user_id': userId,
             },
         });
     }

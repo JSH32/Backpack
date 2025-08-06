@@ -14,7 +14,6 @@ pub struct Config {
     pub client_url: String,
     pub storage_url: String,
     pub database_url: String,
-    pub worker_id: u16,
     pub jwt_key: String,
     pub file_size_limit: usize,
     pub storage_provider: StorageConfig,
@@ -73,7 +72,6 @@ impl Config {
             api_url: get_env("API_URL"),
             client_url: get_env("CLIENT_URL"),
             file_size_limit: get_env_or("FILE_SIZE_LIMIT", 100),
-            worker_id: get_env::<u16>("WORKER_ID"),
             invite_only: get_env_or("INVITE_ONLY", false),
             run_migrations: get_env_or("RUN_MIGRATIONS", true),
             storage_provider: {

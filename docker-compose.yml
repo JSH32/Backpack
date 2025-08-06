@@ -22,8 +22,6 @@ services:
     env_file: .env
     ports:
       - ${PORT}:3000
-    volumes:
-      - $PWD/proxy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - backpack_api
       - backpack_frontend

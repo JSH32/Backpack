@@ -10,8 +10,6 @@ export class ServerService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Get public server configuration
-     *
      * @returns AppInfo
      * @throws ApiError
      */

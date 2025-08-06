@@ -1,5 +1,6 @@
 import TimeAgo from "javascript-time-ago"
 import en from "javascript-time-ago/locale/en.json"
+import { useState } from "react"
 TimeAgo.addLocale(en)
 
 // Global timeAgo instance

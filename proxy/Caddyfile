@@ -1,6 +1,6 @@
 :3000 {
 	@proxy_files_on vars {env.PROXY_FILES} "on"
-	@proxy_files_off expression `{env.PROXY_FILES} != "on"`
+	@proxy_files_off not vars {env.PROXY_FILES} "on"
 
 	# This is kind of jank but works for our needs.
     handle /* {

@@ -5,11 +5,7 @@ use utoipa::openapi::LicenseBuilder;
 use utoipa::Modify;
 use utoipa::OpenApi;
 
-use crate::models::*;
-
-use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
-use crate::services::auth::oauth::OAuthProvider;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
@@ -23,14 +19,21 @@ use crate::services::auth::oauth::OAuthProvider;
         routes::user::resend_verify,
         routes::user::delete,
         routes::user::register_key,
-        routes::file::upload,
-        routes::file::stats,
-        routes::file::list,
-        routes::file::info,
-        routes::file::delete_file,
-        routes::file::delete_files,
+        routes::user::upload::stats,
+        routes::user::upload::list,
+        routes::album::delete,
+        routes::album::create,
+        routes::album::update,
+        routes::album::info,
+        routes::album::add_uploads,
+        routes::user::album::list,
+        routes::upload::upload,
+        routes::upload::info,
+        routes::upload::delete_file,
+        routes::upload::delete_files,
+        routes::upload::set_public,
         routes::application::token,
-        routes::application::list,
+        routes::user::application::list,
         routes::application::info,
         routes::application::create,
         routes::application::delete,
@@ -44,40 +47,11 @@ use crate::services::auth::oauth::OAuthProvider;
         routes::auth::enabled_methods,
         routes::auth::unlink_method,
     ),
-    components(
-        schemas(
-            AppInfo,
-            MessageResponse,
-            UserData,
-            UserRole,
-            UpdateUserSettings,
-            UserCreateForm,
-            UserDeleteForm,
-            UploadFile,
-            UploadConflict,
-            FileData,
-            FileStats,
-            FilePage,
-            ApplicationData,
-            TokenResponse,
-            ApplicationCreate,
-            BasicAuthForm,
-            OAuthRequest,
-            RegistrationKeyData,
-            BatchDeleteRequest,
-            BatchDeleteResponse,
-            BatchFileError,
-            OAuthProviders,
-            AuthMethods,
-            UnlinkAuthMethod,
-            OAuthProvider,
-            LoginRedirectUrl
-        )
-    ),
     tags(
         (name = "server", description = "Server information endpoints."),
         (name = "user", description = "User management endpoints."),
-        (name = "file", description = "File management endpoints."),
+        (name = "album", description = "Album management endpoints."),
+        (name = "upload", description = "Upload management endpoints."),
         (name = "application", description = "Application and token management endpoints."),
         (name = "authentication", description = "User authentication endpoints."),
         (name = "admin", description = "Server administration endpoints."),

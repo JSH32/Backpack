@@ -53,7 +53,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Users::Created)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .col(
                         ColumnDef::new(Users::Role)
@@ -82,13 +82,13 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Applications::LastAccessed)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .col(
                         ColumnDef::new(Applications::Created)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -175,7 +175,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Files::Uploaded)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .col(ColumnDef::new(Files::Size).big_integer().not_null())
                     .col(

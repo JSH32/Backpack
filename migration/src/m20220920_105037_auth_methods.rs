@@ -1,8 +1,4 @@
-use sea_orm_migration::{
-    prelude::*,
-    sea_orm::{ConnectionTrait, DbBackend, Statement},
-    sea_query::extension::postgres::Type,
-};
+use sea_orm_migration::{prelude::*, sea_orm::DbBackend, sea_query::extension::postgres::Type};
 
 use crate::extensions::ColumnExtension;
 
@@ -50,7 +46,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(AuthMethods::LastAccessed)
                             .timestamp_with_time_zone()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .default(Expr::current_timestamp()),
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -75,35 +71,24 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Remove password column on Users table.
-        if manager.get_database_backend() == DbBackend::Sqlite {
-            // SQlite 3.35.0 supports dropping columns but SeaORM hasn't updated yet.
-            // TODO: Remove this when SeaORM supports it.
+        // Post registration can occur, add registered column.
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .drop_column(Users::Password)
+                    .to_owned(),
+            )
+            .await?;
 
-            let sql = r#"
-            ALTER TABLE users DROP COLUMN password;
-            ALTER TABLE users ADD COLUMN registered BOOLEAN NOT NULL;
-            "#;
-
-            manager
-                .get_connection()
-                .execute(Statement::from_string(
-                    manager.get_database_backend(),
-                    sql.to_owned(),
-                ))
-                .await
-                .map(|_| ())
-        } else {
-            manager
-                .alter_table(
-                    Table::alter()
-                        .table(Users::Table)
-                        .drop_column(Users::Password)
-                        .add_column(ColumnDef::new(Users::Registered).boolean().not_null())
-                        .to_owned(),
-                )
-                .await
-        }
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .add_column(ColumnDef::new(Users::Registered).boolean().not_null())
+                    .to_owned(),
+            )
+            .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -117,7 +102,24 @@ impl MigrationTrait for Migration {
                 .await?;
         }
 
-        Ok(())
+        // Post registration can occur, add registered column.
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .drop_column(Users::Registered)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Users::Table)
+                    .add_column(ColumnDef::new(Users::Password).string_len(128).not_null())
+                    .to_owned(),
+            )
+            .await
     }
 }
 

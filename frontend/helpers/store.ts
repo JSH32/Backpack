@@ -12,7 +12,7 @@ export class Store {
 
     constructor() {
         makeAutoObservable(this)
-        api.user.info()
+        api.user.info("@me")
             .then(this.setUserInfo)
             .catch(() => this.setUserInfo(undefined))
 

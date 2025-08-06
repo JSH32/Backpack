@@ -4,14 +4,6 @@ FROM rust:1.60 as build
 RUN USER=root cargo new --bin backpack
 WORKDIR /backpack
 
-# # copy over your manifests
-# COPY Cargo.toml Cargo.lock ./
-# COPY migration/Cargo.toml ./migration/Cargo.toml
-
-# # Cache dependencies
-# RUN cargo build --release
-# RUN rm src/*.rs
-
 # # Copy source
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock

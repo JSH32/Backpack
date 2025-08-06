@@ -4,7 +4,6 @@ import type { AuthMethods } from '../models/AuthMethods';
 import type { BasicAuthForm } from '../models/BasicAuthForm';
 import type { LoginRedirectUrl } from '../models/LoginRedirectUrl';
 import type { OAuthProvider } from '../models/OAuthProvider';
-import type { OAuthRequest } from '../models/OAuthRequest';
 import type { TokenResponse } from '../models/TokenResponse';
 import type { UnlinkAuthMethod } from '../models/UnlinkAuthMethod';
 
@@ -16,8 +15,6 @@ export class AuthenticationService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Login with email and password.
-     *
      * @param requestBody
      * @returns TokenResponse
      * @throws ApiError
@@ -37,8 +34,6 @@ export class AuthenticationService {
     }
 
     /**
-     * Get all enabled auth methods for this user.
-     *
      * @returns AuthMethods
      * @throws ApiError
      */
@@ -50,9 +45,7 @@ export class AuthenticationService {
     }
 
     /**
-     * Get URL for OAuth2 authentication.
      * If token is provided, this will link to the existing account.
-     *
      * @param provider
      * @param includeToken
      * @param redirect
@@ -62,7 +55,7 @@ export class AuthenticationService {
     public oauthLogin(
         provider: OAuthProvider,
         includeToken: boolean,
-        redirect?: string,
+        redirect?: string | null,
     ): CancelablePromise<LoginRedirectUrl> {
         return this.httpRequest.request({
             method: 'GET',
@@ -76,8 +69,6 @@ export class AuthenticationService {
     }
 
     /**
-     * Unlink an OAuth method from a user.
-     *
      * @param requestBody
      * @returns AuthMethods
      * @throws ApiError
@@ -97,17 +88,17 @@ export class AuthenticationService {
     }
 
     /**
-     * Callback for OAuth providers.
      * This redirects to the redirect provided in the oauth initialization route.
-     *
      * @param provider Provider to callback to.
-     * @param requestBody
+     * @param code
+     * @param state
      * @returns void
      * @throws ApiError
      */
     public oauthCallback(
         provider: string,
-        requestBody: OAuthRequest,
+        code: string,
+        state: string,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
@@ -115,8 +106,10 @@ export class AuthenticationService {
             path: {
                 'provider': provider,
             },
-            body: requestBody,
-            mediaType: 'application/json',
+            query: {
+                'code': code,
+                'state': state,
+            },
         });
     }
 

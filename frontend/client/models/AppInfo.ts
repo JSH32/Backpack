@@ -27,6 +27,9 @@ export type AppInfo = {
      * Are registration keys enabled?
      */
     inviteOnly: boolean;
+    /**
+     * Enabled OAuth providers.
+     */
     oauthProviders: OAuthProviders;
     /**
      * Is SMTP (email verification) enabled on the server?

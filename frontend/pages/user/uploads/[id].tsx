@@ -5,6 +5,8 @@ import { Result } from "components/Result"
 import { convertBytes, dateToString } from "helpers/util"
 import TrashIcon from "assets/icons/trash.svg"
 import { Page } from "layouts/Page"
+import { Checkbox } from '@chakra-ui/react'
+
 
 import {
     Box,
@@ -24,24 +26,24 @@ import {
     Icon,
     useToast
 } from "@chakra-ui/react"
-import { FileData } from "@/client"
+import { UploadData } from "@/client"
 import api from "helpers/api"
 
 const FileInfo: React.FC = () => {
     const router = useRouter()
     const { id } = router.query
-    const [fileInfo, setFileInfo] = React.useState<FileData | null>(null)
+    const [fileInfo, setFileInfo] = React.useState<UploadData | null>(null)
     const [isError, setIsError] = React.useState(false)
     const toast = useToast()
 
     React.useEffect(() => {
-        api.file.info(id as string)
+        api.upload.info(id as unknown as number)
             .then(setFileInfo)
             .catch(() => setIsError(true))
     }, [])
 
     const deleteCallback = React.useCallback(() => {
-        api.file.deleteFile(fileInfo?.id as string)
+        api.upload.deleteFile(fileInfo?.id as string)
             .then(() => {
                 toast({
                     title: "File deleted",
@@ -52,6 +54,20 @@ const FileInfo: React.FC = () => {
                 })
                 Router.push("/user/uploads")
             })
+            .catch(error => {
+                toast({
+                    title: "Error",
+                    description: error.body.message,
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true
+                })
+            })
+    }, [fileInfo])
+
+    const setPublic = React.useCallback((pub: boolean) => {
+        api.upload.setPublic(fileInfo?.id as string, pub)
+            .then(setFileInfo)
             .catch(error => {
                 toast({
                     title: "Error",
@@ -77,8 +93,8 @@ const FileInfo: React.FC = () => {
                 </Button>}
                 id={fileInfo.id}>
                 <Box mt={5}>
-                    { fileInfo.thumbnailUrl ?
-                        <Image mb="10px" maxH="300px" src={fileInfo.url} alt={fileInfo.name} /> : <></>}
+                    {fileInfo.thumbnailUrl ?
+                        <Image mb="10px" maxH="300px" src={fileInfo.url as string} alt={fileInfo.name} /> : <></>}
                     <Divider />
                     <Table wordBreak="break-all" sx={{ "font-variant-numeric": "unset;" }}>
                         <Tbody>
@@ -95,6 +111,10 @@ const FileInfo: React.FC = () => {
                                 <Td>{fileInfo.originalName}</Td>
                             </Tr>
                             <Tr>
+                                <Td>Public</Td>
+                                <Td><Checkbox checked={fileInfo.public} onChange={e => setPublic(e.target.checked)} /></Td>
+                            </Tr>
+                            <Tr>
                                 <Td>Size</Td>
                                 <Td>{convertBytes(fileInfo.size)}</Td>
                             </Tr>
@@ -104,7 +124,7 @@ const FileInfo: React.FC = () => {
                             </Tr>
                             <Tr>
                                 <Td>URL</Td>
-                                <Td><Link color="primary.300" target="_blank" href={fileInfo.url}>{fileInfo.url}</Link></Td>
+                                <Td><Link color="primary.300" target="_blank" href={fileInfo.url as string}>{fileInfo.url}</Link></Td>
                             </Tr>
                             <Tr>
                                 <Td>Hash</Td>

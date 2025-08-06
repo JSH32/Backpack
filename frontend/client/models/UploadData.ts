@@ -1,15 +1,16 @@
 /* istanbul ignore file */
 /* tslint:disable */
 
-export type FileData = {
+export type UploadData = {
     hash: string;
     id: string;
     name: string;
     originalName: string;
+    public: boolean;
     size: number;
-    thumbnailUrl?: string;
+    thumbnailUrl?: string | null;
     uploaded: number;
     uploader: string;
-    url?: string;
+    url?: string | null;
 };
 

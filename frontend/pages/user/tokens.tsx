@@ -44,13 +44,13 @@ import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
 import { timeAgo, copyText } from "helpers/util"
-import { ApplicationPage } from "@/client"
 import api from "helpers/api"
+import { Page_ApplicationData } from "@/client"
 
 const Tokens: NextPage = () => {
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const [applications, setApplications] = React.useState<ApplicationPage | null>()
+  const [applications, setApplications] = React.useState<Page_ApplicationData | null>()
   const tokenForm = useForm()
   const [loadingTokens, setLoadingTokens] = React.useState(true)
 
@@ -78,7 +78,7 @@ const Tokens: NextPage = () => {
   }
 
   const getApplicationPage = React.useCallback((page: number) => {
-    api.application.list(page)
+    api.application.list(page, "@me")
       .then(data => {
         setApplications(data)
         setLoadingTokens(false)
@@ -172,7 +172,7 @@ const Tokens: NextPage = () => {
                 h="60px"
                 zIndex={4}>
                 <Icon w={5} h={5} as={PlusIcon} />
-              </Button> 
+              </Button>
               <Modal isOpen={isOpen} onClose={closeForm}>
                 <ModalOverlay />
                 <ModalContent>
@@ -198,7 +198,7 @@ const Tokens: NextPage = () => {
                 </ModalContent>
               </Modal>
               <Divider />
-              { applications !== null ? <DataList>
+              {applications !== null ? <DataList>
                 <DataListHeader>
                   <DataListCell
                     colName="name"
@@ -253,13 +253,13 @@ const Tokens: NextPage = () => {
                 ))}
               </DataList> : <DataList>
                 <Center h="9rem">
-                  {loadingTokens ? <Spinner size="lg"/> : <VStack color="gray.500">
-                    <Icon as={KeyIcon} w="30px" h="30px"/>
+                  {loadingTokens ? <Spinner size="lg" /> : <VStack color="gray.500">
+                    <Icon as={KeyIcon} w="30px" h="30px" />
                     <Heading as="h2" size="2lg">
                       No Tokens found. <Link color="primary.400" onClick={onOpen}>Create one</Link>
                     </Heading>
                   </VStack>}
-                </Center>  
+                </Center>
               </DataList>}
               {applications && (
                 <Flex justifyContent="center" mt={5}>

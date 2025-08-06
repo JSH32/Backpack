@@ -5,6 +5,9 @@
  * Delete multiple files.
  */
 export type BatchDeleteRequest = {
+    /**
+     * IDs to delete.
+     */
     ids: Array<string>;
 };
 

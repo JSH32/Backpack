@@ -1,7 +1,8 @@
 pub mod admin;
+pub mod album;
 pub mod application;
 pub mod auth;
-pub mod file;
+pub mod uploads;
 pub mod user;
 
 use crate::{database::entity::settings, internal::GIT_VERSION};
@@ -14,8 +15,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use utoipa::ToSchema;
 
-use self::registration_key::RegistrationKeyData;
-pub use self::{admin::*, application::*, auth::*, file::*, user::*};
+pub use self::{application::*, auth::*, uploads::*, user::*};
 
 /// Standard message response.
 ///
@@ -140,14 +140,9 @@ impl Responder for MessageResponse {
 }
 
 #[derive(Serialize, ToSchema)]
-#[aliases(
-    FilePage = Page<FileData>,
-    RegistrationKeyPage = Page<RegistrationKeyData>,
-    ApplicationPage = Page<ApplicationData>
-)]
 pub struct Page<T> {
-    pub page: usize,
-    pub pages: usize,
+    pub page: u64,
+    pub pages: u64,
     pub items: Vec<T>,
 }
 

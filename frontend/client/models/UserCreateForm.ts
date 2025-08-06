@@ -7,7 +7,7 @@ export type UserCreateForm = {
     /**
      * Required when creating a user with password.
      */
-    registrationKey?: string;
+    registrationKey?: string | null;
     username: string;
 };
 

@@ -144,6 +144,94 @@ impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> From
     }
 }
 
+/// Optional version of [`Auth`], `user` is an [`Option`].
+/// TODO: Figure out a better way to do stuff like this.
+pub struct AuthOptional<
+    R: Role,
+    VOpt: VerifiedOpt = DenyUnverified,
+    AOpt: ApplicationOpt = DenyApplication,
+    ROpt: RegisteredOpt = DenyUnregistered,
+> {
+    pub user: Option<users::Model>,
+    _markers: (
+        std::marker::PhantomData<R>,
+        std::marker::PhantomData<VOpt>,
+        std::marker::PhantomData<AOpt>,
+        std::marker::PhantomData<ROpt>,
+    ),
+}
+
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> Deref
+    for AuthOptional<R, VOpt, AOpt, ROpt>
+{
+    type Target = Option<users::Model>;
+
+    fn deref(&self) -> &Option<users::Model> {
+        &self.user
+    }
+}
+
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt>
+    AuthOptional<R, VOpt, AOpt, ROpt>
+{
+    fn new(user: Option<users::Model>) -> Self {
+        AuthOptional {
+            user,
+            _markers: (
+                std::marker::PhantomData,
+                std::marker::PhantomData,
+                std::marker::PhantomData,
+                std::marker::PhantomData,
+            ),
+        }
+    }
+}
+
+impl<R: Role, VOpt: VerifiedOpt, AOpt: ApplicationOpt, ROpt: RegisteredOpt> FromRequest
+    for AuthOptional<R, VOpt, AOpt, ROpt>
+{
+    type Error = Error;
+    type Future = std::pin::Pin<
+        Box<dyn futures::Future<Output = Result<AuthOptional<R, VOpt, AOpt, ROpt>, Error>>>,
+    >;
+
+    fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
+        let req = req.clone();
+
+        Box::pin(async move {
+            let auth_service = req
+                .app_data::<Data<AuthService>>()
+                .expect("AuthService was not found");
+
+            Ok(match get_token(&req) {
+                Some(jwt_token) => {
+                    match auth_service
+                        .validate_jwt(VOpt::ALLOW as bool, &jwt_token)
+                        .await
+                    {
+                        Ok((user, application)) => {
+                            if (application.is_some() && !AOpt::ALLOW)
+                                || (UserRole::from(user.role.clone()) < R::LEVEL)
+                                || !user.registered && !(ROpt::ALLOW as bool)
+                            {
+                                AuthOptional::new(None)
+                            } else {
+                                AuthOptional::new(Some(user))
+                            }
+                        }
+                        Err(_) => AuthOptional::new(None),
+                    }
+                }
+                None => AuthOptional::new(None),
+            })
+        })
+    }
+
+    fn extract(req: &HttpRequest) -> Self::Future {
+        Self::from_request(req, &mut actix_http::Payload::None)
+    }
+}
+
 pub fn get_token(req: &HttpRequest) -> Option<String> {
     match req.headers().get("Authorization") {
         Some(header) => match header.to_str() {

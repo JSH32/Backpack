@@ -12,7 +12,8 @@
     "@typescript-eslint/no-explicit-any": "off",
     "react-hooks/rules-of-hooks": "off",
     "react-hooks/exhaustive-deps": "off",
-    "@next/next/link-passhref": "off"
+    "@next/next/link-passhref": "off",
+    "@typescript-eslint/no-non-null-assertion": "off"
   },
   "ignorePatterns": ["client/**"]
 }

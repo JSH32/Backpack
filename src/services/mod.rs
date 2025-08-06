@@ -4,11 +4,12 @@ use actix_web::{HttpResponse, ResponseError};
 use serde::Serialize;
 use thiserror::Error;
 
+pub mod album;
 pub mod application;
 pub mod auth;
 pub mod data_service;
-pub mod file;
 pub mod registration_key;
+pub mod upload;
 pub mod user;
 
 pub mod prelude {
@@ -21,8 +22,8 @@ pub mod prelude {
 pub type ServiceResult<T> = Result<T, ServiceError>;
 
 pub struct ServicePage<T> {
-    pub page: usize,
-    pub pages: usize,
+    pub page: u64,
+    pub pages: u64,
     pub items: Vec<T>,
 }
 
@@ -109,7 +110,10 @@ pub enum ServiceError {
     #[error("{0}")]
     Unauthorized(String),
     #[error("You are not allowed to access this {resource}")]
-    Forbidden { id: String, resource: String },
+    Forbidden {
+        id: Option<String>,
+        resource: String,
+    },
 }
 
 impl ServiceError {

@@ -15,7 +15,7 @@ export type ApplicationData = {
     /**
      * Only sent when the token is originally created
      */
-    token?: string;
+    token?: string | null;
     /**
      * User ID who owns the application
      */

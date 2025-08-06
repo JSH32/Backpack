@@ -63,7 +63,7 @@ const Profile: NextPage = observer(() => {
                 <ModalOverlay />
                 <ModalContent>
                     <form onSubmit={finalSubmitForm.handleSubmit(form => {
-                        api.user.settings({ ...newData, currentPassword: form?.password })
+                        api.user.settings("@me", { ...newData, currentPassword: form?.password })
                             .then(newData => {
                                 store?.setUserInfo(newData)
                                 toast({

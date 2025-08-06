@@ -3,7 +3,10 @@ use actix_web::{delete, get, post, web, Responder, Scope};
 
 use crate::{
     internal::auth::{auth_role, Auth},
-    models::admin::registration_key::{RegistrationKeyData, RegistrationKeyParams},
+    models::{
+        admin::registration_key::{RegistrationKeyData, RegistrationKeyParams},
+        MessageResponse, Page,
+    },
     services::{prelude::*, registration_key::RegistrationKeyService},
 };
 
@@ -16,6 +19,7 @@ pub fn get_routes() -> Scope {
 }
 
 /// Create a registration key
+///
 /// - Minimum required role: `admin`
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
@@ -39,13 +43,13 @@ async fn create(
 }
 
 /// Get registration keys
-/// - Minimum required role: `admin`
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
     context_path = "/api/admin/registrationKey",
     tag = "admin",
-    responses((status = 200, body = RegistrationKeyPage)),
+    responses((status = 200, body = Page<RegistrationKeyData>)),
     params(
         ("page_number" = usize, Path, description = "Page to get")
     ),
@@ -54,7 +58,7 @@ async fn create(
 #[get("/list/{page_number}")]
 async fn list(
     service: web::Data<RegistrationKeyService>,
-    page_number: web::Path<usize>,
+    page_number: web::Path<u64>,
     _user: Auth<auth_role::Admin>,
 ) -> impl Responder {
     service
@@ -64,7 +68,7 @@ async fn list(
 }
 
 /// Get a single registration key
-/// - Minimum required role: `admin`
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -92,7 +96,7 @@ async fn get_one(
 }
 
 /// Delete a registration key
-/// - Minimum required role: `admin`
+///
 /// - Allow unverified users: `false`
 /// - Application token allowed: `false`
 #[utoipa::path(
@@ -114,7 +118,7 @@ async fn delete(
     _user: Auth<auth_role::Admin>,
 ) -> impl Responder {
     service
-        .delete(registration_id.to_string(), true, None)
+        .delete(registration_id.to_string(), None)
         .await
         .to_message_response(StatusCode::OK)
 }

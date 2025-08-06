@@ -6,6 +6,7 @@ import Router from "next/router"
 import SunIcon from "/assets/icons/sun.svg"
 import MoonIcon from "/assets/icons/moon.svg"
 import UploadIcon from "/assets/icons/upload.svg"
+import FolderIcon from "/assets/icons/folder.svg"
 import SettingsIcon from "/assets/icons/settings.svg"
 import LogOutIcon from "/assets/icons/log-out.svg"
 import KeyIcon from "/assets/icons/key.svg"
@@ -36,6 +37,12 @@ const NAV_ITEMS: NavItem[] = [
     subLabel: "Access your file uploads",
     icon: UploadIcon,
     to: "/user/uploads"
+  },
+  {
+    label: 'Albums',
+    subLabel: "Access your albums",
+    icon: FolderIcon,
+    to: "/user/album"
   },
   {
     label: "Settings",
@@ -77,7 +84,7 @@ const Header: React.FC = () => {
       </Button>
     ) : (
       <Flex alignItems="center">
-        <Menu matchWidth={true} autoSelect={false}>
+        <Menu autoSelect={false}>
           <MenuButton
             as={Button}
             rounded="full"
@@ -89,23 +96,23 @@ const Header: React.FC = () => {
           </MenuButton>
 
           <MenuList>
-            {NAV_ITEMS.map(item => <MenuItem 
-              key={item.label} 
-              icon={<Icon as={item.icon} color="gray.400" fontSize="md" mt="5px"/>} 
+            {NAV_ITEMS.map(item => <MenuItem
+              key={item.label}
+              icon={<Icon as={item.icon} color="gray.400" fontSize="md" mt="5px" />}
               onClick={() => Router.push(item.to)}>
-                {item.label}
-              </MenuItem>)}
+              {item.label}
+            </MenuItem>)}
 
-            <MenuDivider/>
+            <MenuDivider />
 
             <MenuItem icon={<Icon
-              as={LogOutIcon} 
-              color="gray.400" 
-              fontSize="md" 
-              mt="5px"/>} 
+              as={LogOutIcon}
+              color="gray.400"
+              fontSize="md"
+              mt="5px" />}
               onClick={onLogout}>
-                Logout
-              </MenuItem>
+              Logout
+            </MenuItem>
           </MenuList>
         </Menu>
       </Flex>
@@ -137,9 +144,9 @@ const Header: React.FC = () => {
           spacing={6}
         >
           <Button onClick={toggleColorMode} variant="ghost">
-              {colorMode === "light" ? <Icon as={MoonIcon} /> : <Icon as={SunIcon} />}
+            {colorMode === "light" ? <Icon as={MoonIcon} /> : <Icon as={SunIcon} />}
           </Button>
-          <User/>
+          <User />
         </Stack>
       </Flex>
     </Box>

@@ -8,15 +8,15 @@ export type AuthMethods = {
     /**
      * Cached discord tag.
      */
-    discord?: string;
+    discord?: string | null;
     /**
      * Cached github username.
      */
-    github?: string;
+    github?: string | null;
     /**
      * Google username (email before the @).
      */
-    google?: string;
+    google?: string | null;
     /**
      * Is password authentication enabled.
      */

@@ -3,9 +3,10 @@ use std::pin::Pin;
 use derive_more::Display;
 use futures::Future;
 use moka::future::Cache;
+use oauth2::EndpointSet;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
-    ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl,
+    Scope, TokenResponse, TokenUrl,
 };
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
@@ -35,7 +36,7 @@ impl Into<AuthMethod> for OAuthProvider {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OAuthState {
     /// User ID to attach account to.
     pub user_id: Option<String>,
@@ -213,9 +214,27 @@ pub struct OAuthUserData {
     pub verified: bool,
 }
 
+// Why does oauth2 module make us do this?
+type QualifiedClient = oauth2::Client<
+    oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
+    oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
+    oauth2::StandardTokenIntrospectionResponse<
+        oauth2::EmptyExtraTokenFields,
+        oauth2::basic::BasicTokenType,
+    >,
+    oauth2::StandardRevocableToken,
+    oauth2::StandardErrorResponse<oauth2::RevocationErrorResponseType>,
+    EndpointSet,
+    oauth2::EndpointNotSet,
+    oauth2::EndpointNotSet,
+    oauth2::EndpointNotSet,
+    EndpointSet,
+>;
+
+#[derive(Debug)]
 pub struct OAuthClient {
     http_client: reqwest::Client,
-    client: BasicClient,
+    client: QualifiedClient,
     scopes: Vec<Scope>,
     data_request: DataRequest,
     /// Cache stores CSRF token secrets to OAuth state.
@@ -235,18 +254,18 @@ impl OAuthClient {
         let auth_url = AuthUrl::new(auth_url.to_string()).unwrap();
         let token_url = TokenUrl::new(token_url.to_string()).unwrap();
 
+        let client = BasicClient::new(ClientId::new(oauth_config.client_id))
+            .set_client_secret(ClientSecret::new(oauth_config.client_secret))
+            .set_auth_uri(AuthUrl::new(auth_url.to_string()).expect("Invalid Auth URL"))
+            .set_token_uri(TokenUrl::new(token_url.to_string()).expect("Invalid Token URL"))
+            .set_redirect_uri(RedirectUrl::new(redirect_url.into()).expect("Invalid redirect URL"));
+
         Self {
             http_client: reqwest::Client::builder()
                 .user_agent("Backpack")
                 .build()
                 .unwrap(),
-            client: BasicClient::new(
-                ClientId::new(oauth_config.client_id),
-                Some(ClientSecret::new(oauth_config.client_secret)),
-                auth_url,
-                Some(token_url),
-            )
-            .set_redirect_uri(RedirectUrl::new(redirect_url.into()).expect("Invalid redirect URL")),
+            client: client,
             scopes: scopes
                 .to_vec()
                 .iter()
@@ -299,7 +318,7 @@ impl OAuthClient {
         let code = AuthorizationCode::new(oauth_request.code.clone());
         let state = CsrfToken::new(oauth_request.state.clone());
 
-        let oauth_state = match self.state_cache.get(state.secret()) {
+        let oauth_state = match self.state_cache.get(state.secret()).await {
             Some(oauth_state) => {
                 self.state_cache.invalidate(state.secret()).await;
                 oauth_state
@@ -311,7 +330,7 @@ impl OAuthClient {
         let token = match self
             .client
             .exchange_code(code)
-            .request_async(async_http_client)
+            .request_async(&self.http_client)
             .await
         {
             Ok(v) => v,

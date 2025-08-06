@@ -1,4 +1,4 @@
-use image::{io::Reader, ImageError};
+use image::{ImageError, ImageReader};
 use std::{ffi::OsStr, io::Cursor, path::Path};
 
 /// Image extensions
@@ -8,11 +8,11 @@ pub const IMAGE_EXTS: &'static [&'static str] =
 pub fn get_thumbnail_image(bytes: &Vec<u8>) -> Result<Vec<u8>, ImageError> {
     let mut buf = Vec::new();
 
-    Reader::new(Cursor::new(bytes))
+    ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()?
         .decode()?
         .thumbnail(500, 500)
-        .write_to(&mut Cursor::new(&mut buf), image::ImageOutputFormat::Png)?;
+        .write_to(&mut Cursor::new(&mut buf), image::ImageFormat::Png)?;
 
     Ok(buf)
 }
