@@ -2,7 +2,6 @@
 /* tslint:disable */
 
 export type UploadData = {
-    albumId?: string | null;
     hash: string;
     id: string;
     name: string;

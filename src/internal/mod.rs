@@ -29,11 +29,11 @@ pub fn validate_length(
     max_length: usize,
     string: &str,
 ) -> ServiceResult<()> {
-    if string.len() > 16 {
+    if string.len() > max_length {
         Err(ServiceError::InvalidData(
             format!("{resource} too long (maximum {max_length} characters)").into(),
         ))
-    } else if string.len() < 4 {
+    } else if string.len() < min_length {
         Err(ServiceError::InvalidData(
             format!("{resource} too short (minimum {min_length} characters)").into(),
         ))

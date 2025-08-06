@@ -44,13 +44,13 @@ import KeyIcon from "assets/icons/key.svg"
 import ClipboardIcon from "assets/icons/clipboard.svg"
 import MoreVerticalIcon from "assets/icons/more-vertical.svg"
 import { timeAgo, copyText } from "helpers/util"
-import { ApplicationPage } from "@/client"
 import api from "helpers/api"
+import { Page_ApplicationData } from "@/client"
 
 const Tokens: NextPage = () => {
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const [applications, setApplications] = React.useState<ApplicationPage | null>()
+  const [applications, setApplications] = React.useState<Page_ApplicationData | null>()
   const tokenForm = useForm()
   const [loadingTokens, setLoadingTokens] = React.useState(true)
 
@@ -78,7 +78,7 @@ const Tokens: NextPage = () => {
   }
 
   const getApplicationPage = React.useCallback((page: number) => {
-    api.application.list(page.toString(), "@me")
+    api.application.list(page, "@me")
       .then(data => {
         setApplications(data)
         setLoadingTokens(false)

@@ -20,15 +20,23 @@ export class UploadService {
      * - Allow unverified users: `false`
      * - Application token allowed: `true`
      * @param formData
+     * @param albumId Which album will this upload into.
+     * @param _public Is the file public?
      * @returns UploadData
      * @throws ApiError
      */
     public upload(
         formData: UploadFile,
+        albumId?: string | null,
+        _public?: boolean | null,
     ): CancelablePromise<UploadData> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/upload',
+            query: {
+                'album_id': albumId,
+                'public': _public,
+            },
             formData: formData,
             mediaType: 'multipart/form-data',
             errors: {

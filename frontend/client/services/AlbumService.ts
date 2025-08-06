@@ -4,7 +4,7 @@ import type { AlbumCreate } from '../models/AlbumCreate';
 import type { AlbumData } from '../models/AlbumData';
 import type { AlbumUpdate } from '../models/AlbumUpdate';
 import type { MessageResponse } from '../models/MessageResponse';
-import type { Page_ApplicationData } from '../models/Page_ApplicationData';
+import type { Page_AlbumData } from '../models/Page_AlbumData';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -96,17 +96,40 @@ export class AlbumService {
     }
 
     /**
+     * - Allow unverified users: `false`
+     * - Application token allowed: `true`
+     * @param albumId
+     * @param requestBody
+     * @returns MessageResponse
+     * @throws ApiError
+     */
+    public addUploads(
+        albumId: string,
+        requestBody: Array<string>,
+    ): CancelablePromise<MessageResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/album/{album_id}/uploads',
+            path: {
+                'album_id': albumId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * - Allow unverified users: `true`
      * - Application token allowed: `true`
      * @param pageNumber Page to get albums by (starts at 1)
      * @param userId
-     * @returns Page_ApplicationData
+     * @returns Page_AlbumData
      * @throws ApiError
      */
     public list(
         pageNumber: number,
         userId: string,
-    ): CancelablePromise<Page_ApplicationData> {
+    ): CancelablePromise<Page_AlbumData> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/user/{user_id}/album/{page_number}',

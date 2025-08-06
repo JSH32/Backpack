@@ -21,7 +21,6 @@ pub struct UploadData {
     pub thumbnail_url: Option<String>,
     pub hash: String,
     pub size: i64,
-    pub album_id: Option<String>,
     pub public: bool,
     #[schema(value_type = f64)]
     pub uploaded: DateTime<Utc>,
@@ -37,7 +36,6 @@ impl From<uploads::Model> for UploadData {
             hash: upload.hash,
             uploaded: upload.uploaded.into(),
             size: upload.size,
-            album_id: upload.album_id,
             public: upload.public,
             // These fields are not stored in database
             // They are filled in by the route returning it
@@ -113,8 +111,16 @@ pub struct UploadFile {
     pub upload_file: File,
 }
 
-#[derive(Deserialize, IntoParams)]
+#[derive(Deserialize, IntoParams, Clone, Debug)]
 pub struct UploadQuery {
+    /// Which album will this upload into.
+    pub album_id: Option<String>,
+    /// Is the file public?
+    pub public: Option<bool>,
+}
+
+#[derive(Deserialize, IntoParams)]
+pub struct UploadSearchQuery {
     /// Query by name of file.
     pub query: Option<String>,
     /// For non admins, this must be a public album

@@ -1,11 +1,10 @@
-use migration::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
-    IntoActiveValue, ModelTrait, QueryFilter, Set,
+    IntoActiveValue, QueryFilter, Set,
 };
 
 use crate::{
-    database::entity::{albums, sea_orm_active_enums::Role, uploads, users},
+    database::entity::{album_uploads, albums, sea_orm_active_enums::Role, uploads, users},
     internal::{lateinit::LateInit, validate_length},
 };
 
@@ -96,6 +95,9 @@ impl AlbumService {
     /// * `id` - Album ID.
     /// * `delete_files` - Should all files in this album be deleted?
     /// * `accessing_user` - User who is accessing this album.
+    ///
+    /// # Returns
+    /// Old album record before deletion
     pub async fn delete(
         &self,
         id: &str,
@@ -107,32 +109,120 @@ impl AlbumService {
             .await?;
 
         if delete_files {
-            self.file_service
-                .delete_batch(
-                    &album
-                        .find_related(uploads::Entity)
-                        .all(self.database.as_ref())
-                        .await
-                        .map_err(|e| ServiceError::DbErr(e))?
-                        .iter()
-                        .map(|f| f.id.clone())
-                        .collect(),
-                    None,
-                )
-                .await?;
-        } else {
-            uploads::Entity::update_many()
-                .col_expr(
-                    uploads::Column::AlbumId,
-                    Expr::value::<Option<String>>(None),
-                )
-                .filter(uploads::Column::AlbumId.eq(album.id.to_owned()))
-                .exec(self.database.as_ref())
+            // Get all upload IDs linked to this album
+            let upload_ids: Vec<String> = album_uploads::Entity::find()
+                .filter(album_uploads::Column::AlbumId.eq(&album.id))
+                .all(self.database.as_ref())
                 .await
-                .map_err(|e| ServiceError::DbErr(e))?;
+                .map_err(|e| ServiceError::DbErr(e))?
+                .into_iter()
+                .map(|au| au.upload_id)
+                .collect();
+
+            if !upload_ids.is_empty() {
+                self.file_service.delete_batch(&upload_ids, None).await?;
+            }
         }
 
+        album
+            .clone()
+            .into_active_model()
+            .delete(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
         Ok(album)
+    }
+
+    /// Add uploads to an album by creating links in the junction table.
+    ///
+    /// # Arguments
+    ///
+    /// * `album_id` - Album ID to add uploads to
+    /// * `upload_ids` - List of upload IDs to add
+    /// * `accessing_user` - User performing the operation
+    ///
+    /// # Returns
+    /// Number of uploads successfully added
+    pub async fn add_to_album(
+        &self,
+        album_id: &str,
+        upload_ids: &[String],
+        accessing_user: Option<&users::Model>,
+    ) -> ServiceResult<usize> {
+        let album = self
+            .by_id_authorized(album_id.into(), accessing_user, true)
+            .await?;
+
+        if upload_ids.is_empty() {
+            return Ok(0);
+        }
+
+        // Get all uploads that exist
+        let uploads = uploads::Entity::find()
+            .filter(uploads::Column::Id.is_in(upload_ids.iter().cloned()))
+            .all(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        // Filter uploads based on access rules
+        let accessible_uploads: Vec<&uploads::Model> = uploads
+            .iter()
+            .filter(|upload| {
+                // Public uploads can always be added
+                if upload.public {
+                    return true;
+                }
+
+                // Private uploads can only be added if owned by the accessing user
+                if let Some(accessing_user) = accessing_user {
+                    upload.uploader == accessing_user.id
+                } else {
+                    false
+                }
+            })
+            .collect();
+
+        if accessible_uploads.is_empty() {
+            return Ok(0);
+        }
+
+        // Get existing links to avoid duplicates
+        let existing_links: std::collections::HashSet<String> = album_uploads::Entity::find()
+            .filter(album_uploads::Column::AlbumId.eq(&album.id))
+            .filter(
+                album_uploads::Column::UploadId
+                    .is_in(accessible_uploads.iter().map(|u| u.id.clone())),
+            )
+            .all(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?
+            .into_iter()
+            .map(|link| link.upload_id)
+            .collect();
+
+        // Create new links for uploads not already in the album
+        let new_links: Vec<album_uploads::ActiveModel> = accessible_uploads
+            .into_iter()
+            .filter(|upload| !existing_links.contains(&upload.id))
+            .map(|upload| album_uploads::ActiveModel {
+                album_id: Set(album.id.clone()),
+                upload_id: Set(upload.id.clone()),
+                ..Default::default()
+            })
+            .collect();
+
+        if new_links.is_empty() {
+            return Ok(0);
+        }
+
+        // Insert all new links
+        album_uploads::Entity::insert_many(new_links.clone())
+            .exec(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+
+        Ok(new_links.len())
     }
 
     pub async fn update(
@@ -172,13 +262,14 @@ impl AlbumService {
         validate_length("Album name", 4, 16, model.name.as_ref())?;
 
         if let Some(description) = model.description.as_ref() {
-            validate_length("Album description", 1, 512, &description)?;
+            validate_length("Album description", 0, 512, &description)?;
         }
 
         // Album with the same name owned by the same user already exists.
         if let Some(_) = albums::Entity::find()
             .filter(albums::Column::Name.eq(model.name.as_ref().to_string()))
             .filter(albums::Column::UserId.eq(model.user_id.as_ref().to_string()))
+            .filter(albums::Column::Id.ne(model.id.as_ref().to_string()))
             .one(self.database.as_ref())
             .await
             .map_err(|e| ServiceError::DbErr(e))?

@@ -16,6 +16,7 @@ pub fn get_routes() -> Scope {
         .service(delete)
         .service(create)
         .service(update)
+        .service(add_uploads)
 }
 
 /// Get album info.
@@ -137,4 +138,37 @@ async fn update(
         )
         .await
         .to_response::<AlbumData>(StatusCode::OK)
+}
+
+/// Add uploads to an album
+///
+/// - Allow unverified users: `false`
+/// - Application token allowed: `true`
+#[utoipa::path(
+    context_path = "/api/album",
+    tag = "album",
+    responses(
+        (status = 200, body = MessageResponse),
+        (status = 401, body = MessageResponse)
+    ),
+    security(("apiKey" = [])),
+)]
+#[post("/{album_id}/uploads")]
+async fn add_uploads(
+    service: web::Data<AlbumService>,
+    album_id: web::Path<String>,
+    upload_ids: web::Json<Vec<String>>,
+    user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
+) -> impl Responder {
+    match service
+        .add_to_album(&album_id, &upload_ids, Some(&user))
+        .await
+    {
+        Ok(count) => MessageResponse::new(
+            StatusCode::OK,
+            &format!("Successfully added {} uploads to album", count),
+        )
+        .http_response(),
+        Err(e) => e.to_response(),
+    }
 }

@@ -17,7 +17,7 @@ use self::providers::StorageProvider;
 use super::{album::AlbumService, prelude::*};
 use crate::{
     config::StorageConfig,
-    database::entity::{sea_orm_active_enums::Role, uploads, users},
+    database::entity::{album_uploads, sea_orm_active_enums::Role, uploads, users},
     internal::file::{get_thumbnail_image, IMAGE_EXTS},
     models::{BatchDeleteResponse, BatchFileError, UploadData, UploadStats},
 };
@@ -210,6 +210,8 @@ impl UploadService {
         user_id: &str,
         name: &str,
         buffer: &Vec<u8>,
+        album_id: Option<String>,
+        public: Option<bool>,
     ) -> ServiceResult<UploadResult> {
         if buffer.len() > self.file_size_limit {
             return Err(ServiceError::TooLarge(format!(
@@ -238,17 +240,48 @@ impl UploadService {
             return Ok(UploadResult::Conflict(self.to_upload_data(file)));
         }
 
+        // Album ID will be set if exists and owned by the uploading user.
+        // Admin does not get permission to upload *for* other users.
+        let album_id = match album_id {
+            Some(v) => {
+                let album = self.album_service.by_id(v).await.map_err(|_| {
+                    ServiceError::InvalidData("Invalid album provided.".to_string())
+                })?;
+
+                if album.user_id != user_id {
+                    return Err(ServiceError::InvalidData(
+                        "Invalid album provided.".to_string(),
+                    ));
+                }
+
+                Some(album.id)
+            }
+            None => None,
+        };
+
         let mut file = uploads::ActiveModel {
             uploader: Set(user_id.into()),
             name: Set(filename.to_owned()),
             original_name: Set(name.into()),
             hash: Set(hash.to_owned()),
             size: Set(buffer.len() as i64),
+            public: Set(public.unwrap_or(false)),
             ..Default::default()
         }
         .insert(self.database.as_ref())
         .await
         .map_err(|e| ServiceError::DbErr(e))?;
+
+        if let Some(album_id) = album_id {
+            album_uploads::ActiveModel {
+                album_id: Set(album_id.to_owned()),
+                upload_id: Set(file.clone().id),
+                ..Default::default()
+            }
+            .insert(self.database.as_ref())
+            .await
+            .map_err(|e| ServiceError::DbErr(e))?;
+        }
 
         // Upload file to storage provider
         // If this fails attempt to delete the file from database
@@ -347,6 +380,7 @@ impl UploadService {
         public: Option<bool>,
         accessing_user: Option<&users::Model>,
     ) -> ServiceResult<ServicePage<UploadData>> {
+        let mut query_builder = uploads::Entity::find();
         let mut conditions = Condition::all();
 
         if let Some(user_id) = user_id.to_owned() {
@@ -381,7 +415,10 @@ impl UploadService {
                 }
             }
 
-            conditions = conditions.add(uploads::Column::AlbumId.eq(album_id));
+            // Join with album_uploads table to filter by album
+            query_builder = query_builder
+                .inner_join(album_uploads::Entity)
+                .filter(album_uploads::Column::AlbumId.eq(album_id));
         }
 
         if let Some(public) = public {
@@ -405,7 +442,9 @@ impl UploadService {
             conditions = conditions.add(uploads::Column::Public.eq(public));
         }
 
-        let page = self.get_page(page, page_size, Some(conditions)).await?;
+        let page = self
+            .get_page_with_query(page, page_size, Some(conditions), Some(query_builder))
+            .await?;
 
         Ok(ServicePage {
             page: page.page,

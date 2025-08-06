@@ -5,7 +5,7 @@ use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, AuthOptional, DenyUnverified},
     models::{
         BatchDeleteRequest, BatchDeleteResponse, MessageResponse, SetPublicQuery, UploadConflict,
-        UploadData, UploadFile,
+        UploadData, UploadFile, UploadQuery,
     },
     services::{
         upload::{UploadResult, UploadService},
@@ -150,6 +150,7 @@ async fn set_public(
         (status = 413, body = MessageResponse, description = "File too large")
     ),
     security(("apiKey" = [])),
+    params(UploadQuery),
     request_body(content = UploadFile, content_type = "multipart/form-data")
 )]
 #[post("")]
@@ -157,9 +158,17 @@ async fn upload(
     service: web::Data<UploadService>,
     user: Auth<auth_role::User, DenyUnverified, AllowApplication>,
     file: Multipart<UploadFile>,
+    query: web::Query<UploadQuery>,
 ) -> impl Responder {
+    let query = query.into_inner();
     match service
-        .upload_file(&user.id, &file.upload_file.name, &file.upload_file.bytes)
+        .upload_file(
+            &user.id,
+            &file.upload_file.name,
+            &file.upload_file.bytes,
+            query.album_id,
+            query.public,
+        )
         .await
     {
         Ok(v) => match v {

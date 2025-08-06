@@ -15,8 +15,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use utoipa::ToSchema;
 
-use self::registration_key::RegistrationKeyData;
-pub use self::{admin::*, album::*, application::*, auth::*, uploads::*, user::*};
+pub use self::{application::*, auth::*, uploads::*, user::*};
 
 /// Standard message response.
 ///

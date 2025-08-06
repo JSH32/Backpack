@@ -111,10 +111,6 @@ const FileInfo: React.FC = () => {
                                 <Td>{fileInfo.originalName}</Td>
                             </Tr>
                             <Tr>
-                                <Td>Album</Td>
-                                <Td>{fileInfo.albumId}</Td>
-                            </Tr>
-                            <Tr>
                                 <Td>Public</Td>
                                 <Td><Checkbox checked={fileInfo.public} onChange={e => setPublic(e.target.checked)} /></Td>
                             </Tr>

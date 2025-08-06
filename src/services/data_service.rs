@@ -281,11 +281,28 @@ pub trait DataService<
         page_size: u64,
         condition: Option<Condition>,
     ) -> ServiceResult<ServicePage<M>> {
+        self.get_page_with_query(page, page_size, condition, None)
+            .await
+    }
+
+    /// Get a [`ServicePage`] of [`M`] with optional custom query builder.
+    async fn get_page_with_query(
+        &self,
+        page: u64,
+        page_size: u64,
+        condition: Option<Condition>,
+        query_builder: Option<Select<E>>,
+    ) -> ServiceResult<ServicePage<M>> {
         let (db, _) = self.get_data_source();
 
-        let paginator = match condition {
-            Some(condition) => E::find().filter(condition),
+        let base_query = match query_builder {
+            Some(qb) => qb,
             None => E::find(),
+        };
+
+        let paginator = match condition {
+            Some(condition) => base_query.filter(condition),
+            None => base_query,
         }
         .into_model::<M>()
         .paginate(db.as_ref(), page_size);

@@ -6,7 +6,7 @@ use crate::models::{MessageResponse, Page};
 use crate::services::ToPageResponse;
 use crate::{
     internal::auth::{auth_role, AllowApplication, Auth, DenyUnverified},
-    models::{UploadData, UploadQuery, UploadStats},
+    models::{UploadData, UploadSearchQuery, UploadStats},
     services::{upload::UploadService, ToResponse},
 };
 
@@ -29,7 +29,7 @@ pub fn get_routes() -> Scope {
 	params(
 		("page_number" = u64, Path, description = "Page to get files by (starts at 1)"),
 		("user_id" = str, Path),
-		UploadQuery
+		UploadSearchQuery
 	),
 	security(("apiKey" = [])),
 )]
@@ -38,7 +38,7 @@ async fn list(
     service: web::Data<UploadService>,
     params: web::Path<(String, u64)>,
     user: AuthOptional<auth_role::User, DenyUnverified, AllowApplication>,
-    query: web::Query<UploadQuery>,
+    query: web::Query<UploadSearchQuery>,
 ) -> impl Responder {
     let (user_id, page_number) = params.to_owned();
 

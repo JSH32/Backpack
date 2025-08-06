@@ -3,7 +3,7 @@ use actix_web::{get, web, Responder, Scope};
 
 use crate::{
     internal::auth::{auth_role, AuthOptional},
-    models::{album::AlbumData, ApplicationData, Page},
+    models::{album::AlbumData, Page},
     services::{album::AlbumService, ToPageResponse},
 };
 
@@ -18,7 +18,7 @@ pub fn get_routes() -> Scope {
 #[utoipa::path(
 	context_path = "/api/user/{user_id}/album",
 	tag = "album",
-	responses((status = 200, body = Page<ApplicationData>)),
+	responses((status = 200, body = Page<AlbumData>)),
 	params(
 		("page_number" = u64, Path, description = "Page to get albums by (starts at 1)"),
 		("user_id" = str, Path)

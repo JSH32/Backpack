@@ -7,17 +7,17 @@ import { Page } from "layouts/Page"
 import Router from "next/router"
 import UploadIcon from "assets/icons/upload.svg"
 import { Authenticated } from "components/Authenticated"
-import { 
-    Box, 
-    Divider, 
-    Flex, 
-    Heading, 
-    Stack, 
-    Stat, 
-    StatLabel, 
-    StatNumber, 
-    ToastId, 
-    useToast, 
+import {
+    Box,
+    Divider,
+    Flex,
+    Heading,
+    Stack,
+    Stat,
+    StatLabel,
+    StatNumber,
+    ToastId,
+    useToast,
     Button
 } from "@chakra-ui/react"
 import api from "helpers/api"
@@ -28,8 +28,8 @@ const UploadFiles: React.FC = () => {
     const [currentUploading, setCurrentUploading] = React.useState(0)
 
     const toast = useToast()
-    const toastIdRef = React.useRef<ToastId>()
-    
+    const toastIdRef = React.useRef<ToastId | undefined>(0)
+
     React.useEffect(() => {
         api.upload.stats("@me")
             .then(stats => setUsage(convertBytes(stats.usage)))
@@ -40,7 +40,7 @@ const UploadFiles: React.FC = () => {
     const uploadButtonCallback = React.useCallback(() => {
         (shadowUploader.current as any)?.click()
     }, [shadowUploader])
-    
+
     React.useEffect(() => {
         if (currentUploading > 0) {
             if (!toastIdRef.current) {
@@ -91,13 +91,47 @@ const UploadFiles: React.FC = () => {
             .catch(() => setUsage("0 Bytes"))
     }, [])
 
+    const getAlbumsCallback = React.useCallback(async () => {
+        const firstPage = await api.album.list(1, "@me")
+        let albums = [...firstPage.items]
+
+        for (let i = 2; i < firstPage.pages; i++) {
+            const nextPage = await api.album.list(i, "@me")
+            albums = [...albums, ...nextPage.items]
+        }
+
+        return albums
+    }, [])
+
+    const addFilesToAlbum = React.useCallback((albumId: string, fileIds: string[]) => {
+        return api.album.addUploads(albumId, fileIds)
+            .then(msg => {
+                toast({
+                    title: "Success",
+                    description: msg.message,
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true
+                })
+            })
+            .catch(err => {
+                toast({
+                    title: "Error",
+                    description: err.body.message,
+                    status: "error",
+                    duration: 3000,
+                    isClosable: true
+                })
+            })
+    }, [])
+
     return <Authenticated>
-         <Page title="Uploads">
+        <Page title="Uploads">
             <Flex mt="7em" minH="100vh" justify="center" mb={5}>
                 <Box w={{ base: "90vw", md: "70vw" }} maxW="1200px">
                     <Stack spacing={4}>
                         <Heading>Uploads</Heading>
-                        <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{display: "none"}} multiple/>
+                        <input type="file" ref={shadowUploader} onChange={uploadCallback} style={{ display: "none" }} multiple />
                         <Button
                             onClick={uploadButtonCallback}
                             bg="primary.500"
@@ -112,21 +146,23 @@ const UploadFiles: React.FC = () => {
                             w="60px"
                             h="60px"
                             zIndex={4}>
-                                <Icon w={5} h={5} as={UploadIcon}/>
-                            </Button>
-                        <Divider/>
+                            <Icon w={5} h={5} as={UploadIcon} />
+                        </Button>
+                        <Divider />
                         <Box>
                             <Stat>
                                 <StatLabel>Usage</StatLabel>
                                 <StatNumber>{usage}</StatNumber>
                             </Stat>
                         </Box>
-                        <Divider/>
+                        <Divider />
                         <FileSearch
                             key={searchReload}
-                            onSearch={(page, query) => api.upload.list(page.toString(), "@me", query)}
+                            onSearch={(page, query) => api.upload.list(page, "@me", query)}
                             onDelete={deleteCallback}
-                            onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}/>
+                            onFileDetails={fileId => Router.push(`/user/uploads/${fileId}`)}
+                            onGetAlbums={getAlbumsCallback}
+                            onAddFilesToAlbum={addFilesToAlbum} />
                     </Stack>
                 </Box>
             </Flex>

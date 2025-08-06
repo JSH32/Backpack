@@ -23,6 +23,7 @@ export type { LoginRedirectUrl } from './models/LoginRedirectUrl';
 export type { MessageResponse } from './models/MessageResponse';
 export { OAuthProvider } from './models/OAuthProvider';
 export type { OAuthProviders } from './models/OAuthProviders';
+export type { Page_AlbumData } from './models/Page_AlbumData';
 export type { Page_ApplicationData } from './models/Page_ApplicationData';
 export type { Page_RegistrationKeyData } from './models/Page_RegistrationKeyData';
 export type { Page_UploadData } from './models/Page_UploadData';

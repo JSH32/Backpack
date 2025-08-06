@@ -103,6 +103,14 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(Files::Table)
                     .drop_column(Files::AlbumId)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Files::Table)
                     .drop_column(Files::Public)
                     .to_owned(),
             )

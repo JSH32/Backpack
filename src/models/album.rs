@@ -1,4 +1,4 @@
-use sea_orm::prelude::DateTimeUtc;
+use sea_orm::prelude::DateTimeWithTimeZone;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -17,7 +17,7 @@ pub struct AlbumData {
     pub public: bool,
     /// Date of album creation
     #[schema(value_type = String)]
-    pub created: DateTimeUtc,
+    pub created: DateTimeWithTimeZone,
 }
 
 impl From<albums::Model> for AlbumData {

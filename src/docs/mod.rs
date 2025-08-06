@@ -5,11 +5,7 @@ use utoipa::openapi::LicenseBuilder;
 use utoipa::Modify;
 use utoipa::OpenApi;
 
-use crate::models::*;
-
-use crate::models::admin::registration_key::RegistrationKeyData;
 use crate::routes;
-use crate::services::auth::oauth::OAuthProvider;
 
 /// Backpack API Documentation
 #[derive(OpenApi)]
@@ -29,6 +25,7 @@ use crate::services::auth::oauth::OAuthProvider;
         routes::album::create,
         routes::album::update,
         routes::album::info,
+        routes::album::add_uploads,
         routes::user::album::list,
         routes::upload::upload,
         routes::upload::info,

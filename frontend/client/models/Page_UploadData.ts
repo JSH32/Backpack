@@ -3,7 +3,6 @@
 
 export type Page_UploadData = {
     items: Array<{
-        albumId?: string | null;
         hash: string;
         id: string;
         name: string;
